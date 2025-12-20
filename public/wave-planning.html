@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wave Planning - Lập kế hoạch Wave</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.5em; }
+    .back-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.3); }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .stat-card h3 {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    .stat-card .number {
+      font-size: 2em;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .stat-card.pending .number { color: #f39c12; }
+    .stat-card.progress .number { color: #3498db; }
+    .stat-card.completed .number { color: #27ae60; }
+    
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .controls-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .control-group label {
+      font-size: 0.9em;
+      color: #666;
+      font-weight: 500;
+    }
+    .control-group input, .control-group select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+    .btn-primary:hover { background: #2980b9; }
+    .btn-success {
+      background: #27ae60;
+      color: white;
+    }
+    .btn-success:hover { background: #229954; }
+    .btn-warning {
+      background: #f39c12;
+      color: white;
+    }
+    .btn-warning:hover { background: #e67e22; }
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+    .btn-danger:hover { background: #c0392b; }
+    
+    .waves-table {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .table-header {
+      background: #f8f9fa;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-header h3 {
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.9em;
+    }
+    td {
+      font-size: 0.9em;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-in_progress { background: #d1ecf1; color: #0c5460; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    
+    .priority-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+    .priority-high { background: #e74c3c; color: white; }
+    .priority-medium { background: #f39c12; color: white; }
+    .priority-low { background: #95a5a6; color: white; }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .pagination button:hover { background: #f8f9fa; }
+    .pagination button.active {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+      position: relative;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .modal-header h3 {
+      color: #2c3e50;
+    }
+    .close {
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+    .close:hover { color: #333; }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .form-group textarea {
+      resize: vertical;
+      height: 80px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    .alert {
+      padding: 12px 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      display: none;
+    }
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .auto-generate-section {
+      background: #e8f4fd;
+      border: 1px solid #bee5eb;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .auto-generate-section h4 {
+      color: #0c5460;
+      margin-bottom: 10px;
+    }
+    .auto-generate-controls {
+      display: flex;
+      gap: 15px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Lập kế hoạch Wave</h1>
+    <button class="back-btn" onclick="goBack()">Quay lại</button>
+  </div>
+
+  <div class="container">
+    <!-- Alert Messages -->
+    <div id="alert" class="alert"></div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <h3>Tổng Wave</h3>
+        <div class="number" id="totalWaves">-</div>
+      </div>
+      <div class="stat-card pending">
+        <h3>Chờ xử lý</h3>
+        <div class="number" id="pendingWaves">-</div>
+      </div>
+      <div class="stat-card progress">
+        <h3>Đang thực hiện</h3>
+        <div class="number" id="inProgressWaves">-</div>
+      </div>
+      <div class="stat-card completed">
+        <h3>Hoàn thành</h3>
+        <div class="number" id="completedWaves">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Hôm nay</h3>
+        <div class="number" id="todayWaves">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Tổng Task</h3>
+        <div class="number" id="totalTasks">-</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <!-- Auto Generate Section -->
+      <div class="auto-generate-section">
+        <h4>Tự động tạo Wave từ đơn hàng chờ</h4>
+        <div class="auto-generate-controls">
+          <div class="control-group">
+            <label>Số đơn tối đa/Wave</label>
+            <input type="number" id="maxOrdersPerWave" value="10" min="1" max="50">
+          </div>
+          <div class="control-group">
+            <label>Ưu tiên</label>
+            <select id="autoPriority">
+              <option value="high">Cao</option>
+              <option value="medium" selected>Trung bình</option>
+              <option value="low">Thấp</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>&nbsp;</label>
+            <button class="btn btn-success" onclick="autoGenerateWaves()">Tự động tạo Wave</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div class="control-group">
+          <label>Tìm kiếm Wave</label>
+          <input type="text" id="searchInput" placeholder="Mã Wave...">
+        </div>
+        <div class="control-group">
+          <label>Trạng thái</label>
+          <select id="statusFilter">
+            <option value="">Tất cả trạng thái</option>
+            <option value="pending">Chờ xử lý</option>
+            <option value="in_progress">Đang thực hiện</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="cancelled">Đã hủy</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Operator</label>
+          <select id="operatorFilter">
+            <option value="">Tất cả Operator</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Từ ngày</label>
+          <input type="date" id="dateFrom">
+        </div>
+        <div class="control-group">
+          <label>Đến ngày</label>
+          <input type="date" id="dateTo">
+        </div>
+        <div class="control-group">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" onclick="loadWaves()">Tìm kiếm</button>
+        </div>
+      </div>
+      <div class="controls-row">
+        <button class="btn btn-success" onclick="openCreateModal()">Tạo Wave mới</button>
+      </div>
+    </div>
+
+    <!-- Waves Table -->
+    <div class="waves-table">
+      <div class="table-header">
+        <h3>Danh sách Wave</h3>
+      </div>
+      
+      <div id="loadingDiv" class="loading">
+        Đang tải dữ liệu...
+      </div>
+      
+      <table id="wavesTable" style="display: none;">
+        <thead>
+          <tr>
+            <th>Mã Wave</th>
+            <th>Operator</th>
+            <th>Ưu tiên</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+            <th>Số Task</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="wavesTableBody">
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" style="display: none;">
+    </div>
+  </div>
+
+  <!-- Create/Edit Wave Modal -->
+  <div id="waveModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="waveModalTitle">Tạo Wave mới</h3>
+        <span class="close" onclick="closeWaveModal()">&times;</span>
+      </div>
+      <form id="waveForm">
+        <input type="hidden" id="waveId">
+        <div class="form-group">
+          <label>Operator *</label>
+          <select id="operatorId" required>
+            <option value="">Chọn Operator</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Ưu tiên</label>
+          <select id="priority">
+            <option value="high">Cao</option>
+            <option value="medium" selected>Trung bình</option>
+            <option value="low">Thấp</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Trạng thái</label>
+          <select id="waveStatus">
+            <option value="pending">Chờ xử lý</option>
+            <option value="in_progress">Đang thực hiện</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="cancelled">Đã hủy</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Ghi chú</label>
+          <textarea id="waveNotes" placeholder="Nhập ghi chú..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" onclick="closeWaveModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="waveSubmitBtn">Tạo Wave</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="navigation.js"></script>
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentWaves = [];
+
+    // Load initial data
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSummary();
+      loadOperators();
+      loadWaves();
+    });
+
+    // Load wave summary
+    async function loadSummary() {
+      try {
+        const response = await fetch('/api/waves/summary');
+        const data = await response.json();
+        
+        document.getElementById('totalWaves').textContent = data.total_waves || 0;
+        document.getElementById('pendingWaves').textContent = data.pending_waves || 0;
+        document.getElementById('inProgressWaves').textContent = data.in_progress_waves || 0;
+        document.getElementById('completedWaves').textContent = data.completed_waves || 0;
+        document.getElementById('todayWaves').textContent = data.today_waves || 0;
+        document.getElementById('totalTasks').textContent = data.total_tasks || 0;
+      } catch (error) {
+        console.error('Error loading summary:', error);
+      }
+    }
+
+    // Load operators for filters and forms
+    async function loadOperators() {
+      try {
+        const response = await fetch('/api/waves/operators/list');
+        const data = await response.json();
+        
+        const operatorFilter = document.getElementById('operatorFilter');
+        const operatorSelect = document.getElementById('operatorId');
+        
+        data.operators.forEach(operator => {
+          // Filter dropdown
+          const filterOption = document.createElement('option');
+          filterOption.value = operator;
+          filterOption.textContent = operator;
+          operatorFilter.appendChild(filterOption);
+
+          // Form dropdown
+          const formOption = document.createElement('option');
+          formOption.value = operator;
+          formOption.textContent = operator;
+          operatorSelect.appendChild(formOption);
+        });
+      } catch (error) {
+        console.error('Error loading operators:', error);
+      }
+    }
+
+    // Load waves data
+    async function loadWaves(page = 1) {
+      try {
+        document.getElementById('loadingDiv').style.display = 'block';
+        document.getElementById('wavesTable').style.display = 'none';
+        document.getElementById('pagination').style.display = 'none';
+
+        const params = new URLSearchParams({
+          page: page,
+          limit: 50,
+          status_filter: document.getElementById('statusFilter').value,
+          operator_filter: document.getElementById('operatorFilter').value,
+          date_from: document.getElementById('dateFrom').value,
+          date_to: document.getElementById('dateTo').value
+        });
+
+        const search = document.getElementById('searchInput').value.trim();
+        if (search) {
+          params.append('search', search);
+        }
+
+        const response = await fetch(`/api/waves?${params}`);
+        const data = await response.json();
+
+        currentWaves = data.waves;
+        currentPage = data.pagination.current_page;
+        totalPages = data.pagination.total_pages;
+
+        displayWaves(data.waves);
+        displayPagination(data.pagination);
+
+        document.getElementById('loadingDiv').style.display = 'none';
+        document.getElementById('wavesTable').style.display = 'table';
+        document.getElementById('pagination').style.display = 'flex';
+      } catch (error) {
+        console.error('Error loading waves:', error);
+        showAlert('Lỗi tải dữ liệu Wave', 'error');
+        document.getElementById('loadingDiv').style.display = 'none';
+      }
+    }
+
+    // Display waves in table
+    function displayWaves(waves) {
+      const tbody = document.getElementById('wavesTableBody');
+      tbody.innerHTML = '';
+
+      waves.forEach(wave => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${wave.wave_id}</td>
+          <td>${wave.operator_id || 'N/A'}</td>
+          <td><span class="priority-badge priority-${wave.priority || 'medium'}">${getPriorityText(wave.priority)}</span></td>
+          <td><span class="status-badge status-${wave.status}">${getStatusText(wave.status)}</span></td>
+          <td>${formatDate(wave.created_date)}</td>
+          <td>${wave.task_count || 0}</td>
+          <td>
+            <button class="btn btn-primary" onclick="editWave('${wave.id}')" style="margin-right: 5px; font-size: 0.8em; padding: 4px 8px;">Sửa</button>
+            ${wave.status === 'pending' ? `<button class="btn btn-success" onclick="startWave('${wave.id}')" style="margin-right: 5px; font-size: 0.8em; padding: 4px 8px;">Bắt đầu</button>` : ''}
+            ${wave.status === 'in_progress' ? `<button class="btn btn-warning" onclick="completeWave('${wave.id}')" style="margin-right: 5px; font-size: 0.8em; padding: 4px 8px;">Hoàn thành</button>` : ''}
+            <button class="btn btn-danger" onclick="deleteWave('${wave.id}')" style="font-size: 0.8em; padding: 4px 8px;">Xóa</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Get priority text in Vietnamese
+    function getPriorityText(priority) {
+      const priorityMap = {
+        'high': 'Cao',
+        'medium': 'Trung bình',
+        'low': 'Thấp'
+      };
+      return priorityMap[priority] || priority;
+    }
+
+    // Get status text in Vietnamese
+    function getStatusText(status) {
+      const statusMap = {
+        'pending': 'Chờ xử lý',
+        'in_progress': 'Đang thực hiện',
+        'completed': 'Hoàn thành',
+        'cancelled': 'Đã hủy'
+      };
+      return statusMap[status] || status;
+    }
+
+    // Format date
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('vi-VN');
+    }
+
+    // Display pagination
+    function displayPagination(pagination) {
+      const paginationDiv = document.getElementById('pagination');
+      paginationDiv.innerHTML = '';
+
+      // Previous button
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = 'Trước';
+      prevBtn.disabled = pagination.current_page <= 1;
+      prevBtn.onclick = () => loadWaves(pagination.current_page - 1);
+      paginationDiv.appendChild(prevBtn);
+
+      // Page info
+      const pageInfo = document.createElement('span');
+      pageInfo.textContent = `Trang ${pagination.current_page} / ${pagination.total_pages} (${pagination.total_items} mục)`;
+      pageInfo.style.margin = '0 15px';
+      paginationDiv.appendChild(pageInfo);
+
+      // Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Sau';
+      nextBtn.disabled = pagination.current_page >= pagination.total_pages;
+      nextBtn.onclick = () => loadWaves(pagination.current_page + 1);
+      paginationDiv.appendChild(nextBtn);
+    }
+
+    // Auto generate waves
+    async function autoGenerateWaves() {
+      if (!confirm('Bạn có chắc chắn muốn tự động tạo Wave từ các đơn hàng chờ xử lý?')) {
+        return;
+      }
+
+      try {
+        const maxOrders = parseInt(document.getElementById('maxOrdersPerWave').value);
+        const priority = document.getElementById('autoPriority').value;
+
+        const response = await fetch('/api/waves/auto-generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            max_orders_per_wave: maxOrders,
+            priority: priority
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert(`Tạo thành công ${result.waves.length} Wave từ ${result.total_orders_processed} đơn hàng`, 'success');
+          loadWaves(1);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi tự động tạo Wave', 'error');
+        }
+      } catch (error) {
+        console.error('Error auto-generating waves:', error);
+        showAlert('Lỗi tự động tạo Wave', 'error');
+      }
+    }
+
+    // Open create modal
+    function openCreateModal() {
+      document.getElementById('waveModalTitle').textContent = 'Tạo Wave mới';
+      document.getElementById('waveSubmitBtn').textContent = 'Tạo Wave';
+      document.getElementById('waveForm').reset();
+      document.getElementById('waveId').value = '';
+      document.getElementById('priority').value = 'medium';
+      document.getElementById('waveStatus').value = 'pending';
+      document.getElementById('waveModal').style.display = 'block';
+    }
+
+    // Edit wave
+    async function editWave(id) {
+      try {
+        const response = await fetch(`/api/waves/${id}`);
+        const wave = await response.json();
+
+        document.getElementById('waveModalTitle').textContent = 'Sửa Wave';
+        document.getElementById('waveSubmitBtn').textContent = 'Cập nhật';
+        document.getElementById('waveId').value = wave.id;
+        document.getElementById('operatorId').value = wave.operator_id;
+        document.getElementById('priority').value = wave.priority;
+        document.getElementById('waveStatus').value = wave.status;
+        document.getElementById('waveNotes').value = wave.notes || '';
+        document.getElementById('waveModal').style.display = 'block';
+      } catch (error) {
+        console.error('Error loading wave:', error);
+        showAlert('Lỗi tải thông tin Wave', 'error');
+      }
+    }
+
+    // Start wave
+    async function startWave(id) {
+      if (!confirm('Bạn có chắc chắn muốn bắt đầu Wave này?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/waves/${id}/start`, {
+          method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert('Bắt đầu Wave thành công', 'success');
+          loadWaves(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi bắt đầu Wave', 'error');
+        }
+      } catch (error) {
+        console.error('Error starting wave:', error);
+        showAlert('Lỗi bắt đầu Wave', 'error');
+      }
+    }
+
+    // Complete wave
+    async function completeWave(id) {
+      if (!confirm('Bạn có chắc chắn muốn hoàn thành Wave này?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/waves/${id}/complete`, {
+          method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert('Hoàn thành Wave thành công', 'success');
+          loadWaves(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi hoàn thành Wave', 'error');
+        }
+      } catch (error) {
+        console.error('Error completing wave:', error);
+        showAlert('Lỗi hoàn thành Wave', 'error');
+      }
+    }
+
+    // Delete wave
+    async function deleteWave(id) {
+      if (!confirm('Bạn có chắc chắn muốn xóa Wave này? Tất cả task liên quan sẽ bị xóa.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/waves/${id}`, {
+          method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert('Xóa Wave thành công', 'success');
+          loadWaves(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi xóa Wave', 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting wave:', error);
+        showAlert('Lỗi xóa Wave', 'error');
+      }
+    }
+
+    // Close wave modal
+    function closeWaveModal() {
+      document.getElementById('waveModal').style.display = 'none';
+    }
+
+    // Handle wave form submission
+    document.getElementById('waveForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      try {
+        const waveId = document.getElementById('waveId').value;
+        const isEdit = !!waveId;
+
+        const waveData = {
+          operator_id: document.getElementById('operatorId').value,
+          priority: document.getElementById('priority').value,
+          status: document.getElementById('waveStatus').value,
+          notes: document.getElementById('waveNotes').value
+        };
+
+        const url = isEdit ? `/api/waves/${waveId}` : '/api/waves';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(waveData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert(isEdit ? 'Cập nhật Wave thành công' : 'Tạo Wave thành công', 'success');
+          closeWaveModal();
+          loadWaves(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi lưu Wave', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving wave:', error);
+        showAlert('Lỗi lưu Wave', 'error');
+      }
+    });
+
+    // Show alert message
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      alert.style.display = 'block';
+      
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 5000);
+    }
+
+    // Search on Enter key
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        loadWaves(1);
+      }
+    });
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+      const waveModal = document.getElementById('waveModal');
+      
+      if (event.target === waveModal) {
+        closeWaveModal();
+      }
+    }
+  </script>
+</body>
+</html>

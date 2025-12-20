@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warehouse Management System - AI Optimization</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+      <div class="login-container">
+        <div class="login-header">
+          <h1>Warehouse Management System</h1>
+          <p>AI-Powered Optimization</p>
+        </div>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+          <p id="login-error" class="error-message"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-screen" class="screen">
+      <nav class="sidebar">
+        <div class="sidebar-header">
+          <h2>WMS</h2>
+          <span class="user-role" id="user-role"></span>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item active" data-section="dashboard">Dashboard</li>
+          <li class="nav-item" data-section="inventory">Inventory</li>
+          <li class="nav-item" data-section="orders">Orders</li>
+          <li class="nav-item" data-section="picking">Picking</li>
+          <li class="nav-item" data-section="warehouse">Warehouse</li>
+          <li class="nav-item" data-section="ai">AI Optimization</li>
+          <li class="nav-item" data-section="reports">Reports</li>
+          <li class="nav-item" onclick="window.open('/storage-strategy', '_blank')">Storage Config</li>
+          <li class="nav-item" onclick="window.open('/operators', '_blank')">Operators</li>
+        </ul>
+        <div class="sidebar-footer">
+          <span id="username-display"></span>
+          <button id="logout-btn" class="btn btn-secondary">Logout</button>
+        </div>
+      </nav>
+
+      <main class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="content-section active">
+          <h2>Dashboard</h2>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Total Inventory</h3>
+              <p id="stat-inventory">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Pending Orders</h3>
+              <p id="stat-orders">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Active Waves</h3>
+              <p id="stat-waves">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Today's Picks</h3>
+              <p id="stat-picks">0</p>
+            </div>
+          </div>
+          <div class="charts-grid">
+            <div class="chart-container">
+              <h3>Inventory by Zone</h3>
+              <canvas id="inventory-chart"></canvas>
+            </div>
+            <div class="chart-container">
+              <h3>Order Status</h3>
+              <canvas id="orders-chart"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Inventory Section -->
+        <section id="inventory-section" class="content-section">
+          <h2>Inventory Management</h2>
+          
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="showModal('inbound-modal')">Inbound (Nhap Kho)</button>
+            <button class="btn btn-secondary" onclick="showModal('outbound-modal')">Outbound (Xuat Kho)</button>
+            <button class="btn btn-secondary" onclick="showModal('transfer-modal')">Transfer (Chuyen Kho)</button>
+            <button class="btn btn-secondary" onclick="showModal('adjust-modal')">Adjust Stock</button>
+          </div>
+          
+          <div class="section-header">
+            <div class="filters">
+              <select id="inventory-zone-filter">
+                <option value="">All Zones</option>
+              </select>
+              <select id="inventory-abc-filter">
+                <option value="">All ABC Codes</option>
+                <option value="A">Class A</option>
+                <option value="B">Class B</option>
+                <option value="C">Class C</option>
+              </select>
+              <label>
+                <input type="checkbox" id="low-stock-filter"> Low Stock Only
+              </label>
+            </div>
+            <button class="btn btn-primary" id="refresh-inventory">Refresh</button>
+          </div>
+          <div class="table-container">
+            <table id="inventory-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>ABC Code</th>
+                  <th>Location</th>
+                  <th>Zone</th>
+                  <th>Quantity</th>
+                  <th>Reserved</th>
+                  <th>Available</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Orders Section -->
+        <section id="orders-section" class="content-section">
+          <h2>Order Management</h2>
+          
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="showModal('create-order-modal')">Create Order</button>
+            <button class="btn btn-secondary" onclick="showModal('create-wave-modal')">Create Picking Wave</button>
+          </div>
+          
+          <div class="section-header">
+            <div class="filters">
+              <select id="order-status-filter">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="assigned">Assigned</option>
+                <option value="picking">Picking</option>
+                <option value="picked">Picked</option>
+                <option value="shipped">Shipped</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="refresh-orders">Refresh</button>
+          </div>
+          <div class="table-container">
+            <table id="orders-table">
+              <thead>
+                <tr>
+                  <th>Order Number</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Items</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Picking Section -->
+        <section id="picking-section" class="content-section">
+          <h2>Picking Operations</h2>
+          <div class="section-header">
+            <div class="filters">
+              <select id="wave-status-filter">
+                <option value="">All Status</option>
+                <option value="created">Created</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="refresh-waves">Refresh</button>
+          </div>
+          <div class="table-container">
+            <table id="waves-table">
+              <thead>
+                <tr>
+                  <th>Wave Number</th>
+                  <th>Status</th>
+                  <th>Total Items</th>
+                  <th>Operator</th>
+                  <th>Started</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Warehouse Section -->
+        <section id="warehouse-section" class="content-section">
+          <div class="section-header-main">
+            <h2>Warehouse Layout & Storage Management</h2>
+            <p class="section-description">Interactive 2D warehouse visualization with real-time capacity monitoring</p>
+          </div>
+          
+          <!-- Quick Stats Dashboard -->
+          <div class="warehouse-stats-grid">
+            <div class="stat-card primary">
+              <div class="stat-icon">LOC</div>
+              <div class="stat-content">
+                <h3>Storage Locations</h3>
+                <p class="stat-number" id="warehouse-locations">0</p>
+                <span class="stat-label">Total positions</span>
+              </div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-icon">CAP</div>
+              <div class="stat-content">
+                <h3>Total Capacity</h3>
+                <p class="stat-number" id="warehouse-capacity">0</p>
+                <span class="stat-label">Maximum units</span>
+              </div>
+            </div>
+            <div class="stat-card warning">
+              <div class="stat-icon">USE</div>
+              <div class="stat-content">
+                <h3>Utilization Rate</h3>
+                <p class="stat-number" id="warehouse-utilization">0%</p>
+                <span class="stat-label">Current usage</span>
+              </div>
+            </div>
+            <div class="stat-card info">
+              <div class="stat-icon">ZON</div>
+              <div class="stat-content">
+                <h3>Active Zones</h3>
+                <p class="stat-number" id="warehouse-zones">6</p>
+                <span class="stat-label">A, B, C, D, E, F</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Warehouse Visualization -->
+          <div class="warehouse-main-panel">
+            <div class="panel-header">
+              <h3>2D Storage Map - Interactive Layout</h3>
+              <div class="panel-controls">
+                <select id="viz-color-by" class="control-select">
+                  <option value="zone">View by Zone</option>
+                  <option value="utilization">View by Utilization</option>
+                  <option value="abc">View by ABC Classification</option>
+                  <option value="capacity">View by Capacity</option>
+                </select>
+                <button class="btn btn-primary" onclick="openWarehouseViewer('/warehouse/2d')">
+                  Open Full 2D Map
+                </button>
+                <button class="btn btn-secondary" onclick="loadWarehouseVisualization()">
+                  Refresh Data
+                </button>
+              </div>
+            </div>
+            
+            <!-- Enhanced 2D Visualization -->
+            <div class="warehouse-canvas-container">
+              <div class="canvas-legend">
+                <h4>Storage Levels:</h4>
+                <div class="legend-items">
+                  <div class="legend-item"><div class="legend-color empty"></div>Empty (0)</div>
+                  <div class="legend-item"><div class="legend-color low"></div>Low (1-50)</div>
+                  <div class="legend-item"><div class="legend-color medium"></div>Medium (51-150)</div>
+                  <div class="legend-item"><div class="legend-color high"></div>High (151-250)</div>
+                  <div class="legend-item"><div class="legend-color full"></div>Full (250+)</div>
+                </div>
+              </div>
+              <div class="warehouse-map-container enhanced">
+                <canvas id="warehouse-canvas" width="1000" height="600"></canvas>
+                <div class="map-overlay">
+                  <div class="dock-indicator">DOCK DOORS - Loading/Unloading Area</div>
+                  <div class="entrance-indicator left">ENTRANCE</div>
+                  <div class="exit-indicator right">EXIT</div>
+                </div>
+              </div>
+              <div id="location-tooltip" class="location-tooltip enhanced"></div>
+            </div>
+          </div>
+
+          <!-- Zone Analysis Panel -->
+          <div class="zone-analysis-panel">
+            <div class="panel-header">
+              <h3>Zone Performance Analysis</h3>
+            </div>
+            <div class="zone-grid">
+              <div class="zone-card zone-a">
+                <h4>Zone A</h4>
+                <div class="zone-stats">
+                  <span class="zone-util" id="zone-a-util">0%</span>
+                  <span class="zone-label">Utilization</span>
+                </div>
+              </div>
+              <div class="zone-card zone-b">
+                <h4>Zone B</h4>
+                <div class="zone-stats">
+                  <span class="zone-util" id="zone-b-util">0%</span>
+                  <span class="zone-label">Utilization</span>
+                </div>
+              </div>
+              <div class="zone-card zone-c">
+                <h4>Zone C</h4>
+                <div class="zone-stats">
+                  <span class="zone-util" id="zone-c-util">0%</span>
+                  <span class="zone-label">Utilization</span>
+                </div>
+              </div>
+              <div class="zone-card zone-d">
+                <h4>Zone D</h4>
+                <div class="zone-stats">
+                  <span class="zone-util" id="zone-d-util">0%</span>
+                  <span class="zone-label">Utilization</span>
+                </div>
+              </div>
+              <div class="zone-card zone-e">
+                <h4>Zone E</h4>
+                <div class="zone-stats">
+                  <span class="zone-util" id="zone-e-util">0%</span>
+                  <span class="zone-label">Utilization</span>
+                </div>
+              </div>
+              <div class="zone-card zone-f">
+                <h4>Zone F</h4>
+                <div class="zone-stats">
+                  <span class="zone-util" id="zone-f-util">0%</span>
+                  <span class="zone-label">Utilization</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Panel -->
+          <div class="quick-actions-panel">
+            <div class="panel-header">
+              <h3>Quick Actions</h3>
+            </div>
+            <div class="actions-grid">
+              <button class="action-btn" onclick="showMovementHistory()">
+                <div class="action-icon">HIST</div>
+                <div class="action-text">
+                  <span class="action-title">Movement History</span>
+                  <span class="action-desc">View recent inventory movements</span>
+                </div>
+              </button>
+              <button class="action-btn" onclick="showModal('inbound-modal')">
+                <div class="action-icon">IN</div>
+                <div class="action-text">
+                  <span class="action-title">Quick Inbound</span>
+                  <span class="action-desc">Receive goods into warehouse</span>
+                </div>
+              </button>
+              <button class="action-btn" onclick="showModal('outbound-modal')">
+                <div class="action-icon">OUT</div>
+                <div class="action-text">
+                  <span class="action-title">Quick Outbound</span>
+                  <span class="action-desc">Ship goods from warehouse</span>
+                </div>
+              </button>
+              <button class="action-btn" onclick="generateWarehouseReport()">
+                <div class="action-icon">RPT</div>
+                <div class="action-text">
+                  <span class="action-title">Generate Report</span>
+                  <span class="action-desc">Export warehouse analytics</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- AI Optimization Section -->
+        <section id="ai-section" class="content-section">
+          <h2>AI Optimization</h2>
+          
+          <!-- Comprehensive AI Dashboard Link -->
+          <div class="ai-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 20px;">
+            <h3>AI Warehouse Optimization Dashboard</h3>
+            <p>Comprehensive AI-powered warehouse management with K-Means, DBSCAN, Genetic Algorithm and real-time analytics</p>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+              <a href="/ai" class="btn" style="background: white; color: #667eea; font-weight: bold;">AI Dashboard</a>
+              <a href="/ai/comparison" class="btn" style="background: rgba(255,255,255,0.2); color: white; font-weight: bold; border: 1px solid white;">AI Comparison</a>
+            </div>
+          </div>
+          
+          <div class="ai-cards">
+            <div class="ai-card">
+              <h3>K-Means Clustering</h3>
+              <p>Group products based on sales frequency for ABC classification</p>
+              <div class="form-group">
+                <label>Number of Clusters (K)</label>
+                <input type="number" id="kmeans-k" value="3" min="2" max="10">
+              </div>
+              <button class="btn btn-primary" id="run-kmeans">Run K-Means</button>
+              <div id="kmeans-result" class="ai-result"></div>
+            </div>
+            <div class="ai-card">
+              <h3>DBSCAN Clustering</h3>
+              <p>Detect anomalies and outliers in product patterns</p>
+              <div class="form-group">
+                <label>Epsilon</label>
+                <input type="number" id="dbscan-epsilon" value="0.3" step="0.1" min="0.1">
+              </div>
+              <div class="form-group">
+                <label>Min Points</label>
+                <input type="number" id="dbscan-minpoints" value="3" min="2">
+              </div>
+              <button class="btn btn-primary" id="run-dbscan">Run DBSCAN</button>
+              <div id="dbscan-result" class="ai-result"></div>
+            </div>
+            <div class="ai-card">
+              <h3>Route Optimization</h3>
+              <p>Optimize picking routes using Genetic Algorithm</p>
+              <div class="form-group">
+                <label>Wave ID</label>
+                <select id="route-wave-id"></select>
+              </div>
+              <button class="btn btn-primary" id="run-route-optimization">Optimize Route</button>
+              <div id="route-result" class="ai-result"></div>
+            </div>
+            <div class="ai-card">
+              <h3>Storage Recommendations</h3>
+              <p>Get AI-powered storage location recommendations</p>
+              <button class="btn btn-primary" id="get-recommendations">Get Recommendations</button>
+              <div id="recommendations-result" class="ai-result"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Timeline Section removed - not part of core WMS -->
+
+        <!-- Reports Section -->
+        <section id="reports-section" class="content-section">
+          <h2>Reports</h2>
+          <div class="reports-grid">
+            <div class="report-card">
+              <h3>Warehouse Summary</h3>
+              <p>Overview of warehouse operations</p>
+              <button class="btn btn-primary" data-report="warehouse-summary">Generate</button>
+            </div>
+            <div class="report-card">
+              <h3>Operator Performance</h3>
+              <p>Performance metrics for operators</p>
+              <button class="btn btn-primary" data-report="operator-performance">Generate</button>
+            </div>
+            <div class="report-card">
+              <h3>Inventory Analysis</h3>
+              <p>Detailed inventory analysis</p>
+              <button class="btn btn-primary" data-report="inventory-analysis">Generate</button>
+            </div>
+            <div class="report-card">
+              <h3>AI Optimization</h3>
+              <p>AI optimization results</p>
+              <button class="btn btn-primary" data-report="ai-optimization">Generate</button>
+            </div>
+          </div>
+          <div id="report-output" class="report-output"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <!-- Inbound Modal -->
+  <div id="inbound-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Inbound - Nhap Kho</h3>
+        <span class="close-btn" onclick="closeModal('inbound-modal')">&times;</span>
+      </div>
+      <form id="inbound-form" onsubmit="handleInbound(event)">
+        <div class="form-group">
+          <label>Product Reference</label>
+          <input type="text" id="inbound-product" required placeholder="e.g. O9YFO8">
+        </div>
+        <div class="form-group">
+          <label>Location Code</label>
+          <input type="text" id="inbound-location" required placeholder="e.g. A-14-11">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="inbound-quantity" required min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="inbound-notes" placeholder="Optional notes"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Inbound</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Outbound Modal -->
+  <div id="outbound-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Outbound - Xuat Kho</h3>
+        <span class="close-btn" onclick="closeModal('outbound-modal')">&times;</span>
+      </div>
+      <form id="outbound-form" onsubmit="handleOutbound(event)">
+        <div class="form-group">
+          <label>Product Reference</label>
+          <input type="text" id="outbound-product" required placeholder="e.g. O9YFO8">
+        </div>
+        <div class="form-group">
+          <label>From Location</label>
+          <input type="text" id="outbound-location" required placeholder="e.g. A-14-11">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="outbound-quantity" required min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="outbound-notes" placeholder="Optional notes"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Outbound</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transfer Modal -->
+  <div id="transfer-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Transfer - Chuyen Kho</h3>
+        <span class="close-btn" onclick="closeModal('transfer-modal')">&times;</span>
+      </div>
+      <form id="transfer-form" onsubmit="handleTransfer(event)">
+        <div class="form-group">
+          <label>Product Reference</label>
+          <input type="text" id="transfer-product" required placeholder="e.g. O9YFO8">
+        </div>
+        <div class="form-group">
+          <label>From Location</label>
+          <input type="text" id="transfer-from" required placeholder="e.g. A-14-11">
+        </div>
+        <div class="form-group">
+          <label>To Location</label>
+          <input type="text" id="transfer-to" required placeholder="e.g. B-05-21">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="transfer-quantity" required min="1" value="1">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Transfer</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Adjust Stock Modal -->
+  <div id="adjust-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Adjust Stock - Dieu Chinh Ton Kho</h3>
+        <span class="close-btn" onclick="closeModal('adjust-modal')">&times;</span>
+      </div>
+      <form id="adjust-form" onsubmit="handleAdjust(event)">
+        <div class="form-group">
+          <label>Inventory ID</label>
+          <input type="text" id="adjust-inventory-id" required>
+        </div>
+        <div class="form-group">
+          <label>New Quantity</label>
+          <input type="number" id="adjust-quantity" required min="0">
+        </div>
+        <div class="form-group">
+          <label>Reason</label>
+          <textarea id="adjust-reason" required placeholder="Reason for adjustment"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Adjust Stock</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Order Modal -->
+  <div id="create-order-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Create Order - Tao Don Hang</h3>
+        <span class="close-btn" onclick="closeModal('create-order-modal')">&times;</span>
+      </div>
+      <form id="create-order-form" onsubmit="handleCreateOrder(event)">
+        <div class="form-group">
+          <label>Order Number</label>
+          <input type="text" id="order-number" required placeholder="e.g. ORD-001">
+        </div>
+        <div class="form-group">
+          <label>Customer Code</label>
+          <input type="text" id="order-customer" required placeholder="e.g. CUST001">
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="order-priority">
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Items (Product:Quantity, comma separated)</label>
+          <textarea id="order-items" required placeholder="O9YFO8:5, I1X92B:3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Order</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Wave Modal -->
+  <div id="create-wave-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Create Picking Wave - Tao Dot Lay Hang</h3>
+        <span class="close-btn" onclick="closeModal('create-wave-modal')">&times;</span>
+      </div>
+      <form id="create-wave-form" onsubmit="handleCreateWave(event)">
+        <div class="form-group">
+          <label>Select Orders (hold Ctrl to select multiple)</label>
+          <select id="wave-orders" multiple size="5"></select>
+        </div>
+        <div class="form-group">
+          <label>Assign Operator</label>
+          <select id="wave-operator">
+            <option value="">Unassigned</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Wave</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Picking Task Modal -->
+  <div id="picking-task-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Complete Picking Task</h3>
+        <span class="close-btn" onclick="closeModal('picking-task-modal')">&times;</span>
+      </div>
+      <form id="picking-task-form" onsubmit="handleCompleteTask(event)">
+        <input type="hidden" id="task-id">
+        <div class="form-group">
+          <label>Product</label>
+          <input type="text" id="task-product" readonly>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="task-location" readonly>
+        </div>
+        <div class="form-group">
+          <label>Quantity to Pick</label>
+          <input type="number" id="task-qty-to-pick" readonly>
+        </div>
+        <div class="form-group">
+          <label>Quantity Picked</label>
+          <input type="number" id="task-qty-picked" required min="0">
+        </div>
+        <div class="form-group">
+          <label>Picking Time (seconds)</label>
+          <input type="number" id="task-time" min="1" value="30">
+        </div>
+        <button type="submit" class="btn btn-primary">Complete Task</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Movement History Modal -->
+  <div id="movements-modal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>Movement History - Lich Su Xuat Nhap</h3>
+        <span class="close-btn" onclick="closeModal('movements-modal')">&times;</span>
+      </div>
+      <div id="movements-list" class="table-container"></div>
+    </div>
+  </div>
+
+  <!-- Product Timeline Modal -->
+  <div id="product-timeline-modal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>Product Timeline - Lich Su San Pham</h3>
+        <span class="close-btn" onclick="closeModal('product-timeline-modal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Product Reference</label>
+          <input type="text" id="product-timeline-ref" placeholder="Enter product reference">
+          <button class="btn btn-primary" onclick="showProductTimeline(document.getElementById('product-timeline-ref').value)">Load Timeline</button>
+        </div>
+        <div id="product-timeline-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="event-handlers.js"></script>
+  <script type="module" src="app.js"></script>
+  
+  <script>
+    // Function to open warehouse viewers in same window
+    function openWarehouseViewer(page) {
+      // Store current page for back navigation
+      localStorage.setItem('previousPage', window.location.href);
+      
+      // Navigate to the page in same window
+      window.location.href = page;
+    }
+  </script>
+</body>
+</html>

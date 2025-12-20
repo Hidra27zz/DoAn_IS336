@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Picking Operations - Thao tác Picking</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.5em; }
+    .back-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.3); }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .stat-card h3 {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    .stat-card .number {
+      font-size: 2em;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .stat-card.pending .number { color: #f39c12; }
+    .stat-card.progress .number { color: #3498db; }
+    .stat-card.completed .number { color: #27ae60; }
+    .stat-card.error .number { color: #e74c3c; }
+    
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .controls-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .control-group label {
+      font-size: 0.9em;
+      color: #666;
+      font-weight: 500;
+    }
+    .control-group input, .control-group select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+    .btn-primary:hover { background: #2980b9; }
+    .btn-success {
+      background: #27ae60;
+      color: white;
+    }
+    .btn-success:hover { background: #229954; }
+    .btn-warning {
+      background: #f39c12;
+      color: white;
+    }
+    .btn-warning:hover { background: #e67e22; }
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+    .btn-danger:hover { background: #c0392b; }
+    
+    .tasks-table {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .table-header {
+      background: #f8f9fa;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-header h3 {
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.9em;
+    }
+    td {
+      font-size: 0.9em;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-in_progress { background: #d1ecf1; color: #0c5460; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    
+    .wave-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      background: #6c757d;
+      color: white;
+    }
+    
+    .location-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      background: #17a2b8;
+      color: white;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .pagination button:hover { background: #f8f9fa; }
+    .pagination button.active {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .modal-header h3 {
+      color: #2c3e50;
+    }
+    .close {
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+    .close:hover { color: #333; }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .form-group textarea {
+      resize: vertical;
+      height: 80px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    .alert {
+      padding: 12px 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      display: none;
+    }
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .task-details {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 15px;
+    }
+    .task-details h4 {
+      color: #495057;
+      margin-bottom: 8px;
+    }
+    .task-details p {
+      margin: 4px 0;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Thao tác Picking</h1>
+    <button class="back-btn" onclick="goBack()">Quay lại</button>
+  </div>
+
+  <div class="container">
+    <!-- Alert Messages -->
+    <div id="alert" class="alert"></div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <h3>Tổng Task</h3>
+        <div class="number" id="totalTasks">-</div>
+      </div>
+      <div class="stat-card pending">
+        <h3>Chờ thực hiện</h3>
+        <div class="number" id="pendingTasks">-</div>
+      </div>
+      <div class="stat-card progress">
+        <h3>Đang thực hiện</h3>
+        <div class="number" id="inProgressTasks">-</div>
+      </div>
+      <div class="stat-card completed">
+        <h3>Hoàn thành</h3>
+        <div class="number" id="completedTasks">-</div>
+      </div>
+      <div class="stat-card error">
+        <h3>Lỗi</h3>
+        <div class="number" id="errorTasks">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Hôm nay</h3>
+        <div class="number" id="todayTasks">-</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="controls-row">
+        <div class="control-group">
+          <label>Tìm kiếm</label>
+          <input type="text" id="searchInput" placeholder="Wave ID hoặc sản phẩm...">
+        </div>
+        <div class="control-group">
+          <label>Trạng thái</label>
+          <select id="statusFilter">
+            <option value="">Tất cả trạng thái</option>
+            <option value="pending">Chờ thực hiện</option>
+            <option value="in_progress">Đang thực hiện</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="error">Lỗi</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Wave</label>
+          <select id="waveFilter">
+            <option value="">Tất cả Wave</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Operator</label>
+          <select id="operatorFilter">
+            <option value="">Tất cả Operator</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" onclick="loadTasks()">Tìm kiếm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="tasks-table">
+      <div class="table-header">
+        <h3>Danh sách Task Picking</h3>
+        <div>
+          <button class="btn btn-success" onclick="exportTasks()">Xuất Excel</button>
+        </div>
+      </div>
+      
+      <div id="loadingDiv" class="loading">
+        Đang tải dữ liệu...
+      </div>
+      
+      <table id="tasksTable" style="display: none;">
+        <thead>
+          <tr>
+            <th>Wave ID</th>
+            <th>Sản phẩm</th>
+            <th>Số lượng</th>
+            <th>Vị trí</th>
+            <th>Operator</th>
+            <th>Trạng thái</th>
+            <th>Thời gian</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="tasksTableBody">
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" style="display: none;">
+    </div>
+  </div>
+
+  <!-- Task Details Modal -->
+  <div id="taskModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="taskModalTitle">Chi tiết Task</h3>
+        <span class="close" onclick="closeTaskModal()">&times;</span>
+      </div>
+      <div id="taskDetails" class="task-details">
+      </div>
+      <form id="taskForm">
+        <input type="hidden" id="taskId">
+        <div class="form-group">
+          <label>Trạng thái</label>
+          <select id="taskStatus">
+            <option value="pending">Chờ thực hiện</option>
+            <option value="in_progress">Đang thực hiện</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="error">Lỗi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Số lượng thực tế</label>
+          <input type="number" id="actualQuantity" min="0">
+        </div>
+        <div class="form-group">
+          <label>Ghi chú</label>
+          <textarea id="taskNotes" placeholder="Nhập ghi chú..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" onclick="closeTaskModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Cập nhật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="navigation.js"></script>
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentTasks = [];
+
+    // Load initial data
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSummary();
+      loadWaves();
+      loadOperators();
+      loadTasks();
+    });
+
+    // Load task summary
+    async function loadSummary() {
+      try {
+        const response = await fetch('/api/picking/summary');
+        const data = await response.json();
+        
+        document.getElementById('totalTasks').textContent = data.total_tasks || 0;
+        document.getElementById('pendingTasks').textContent = data.pending_tasks || 0;
+        document.getElementById('inProgressTasks').textContent = data.in_progress_tasks || 0;
+        document.getElementById('completedTasks').textContent = data.completed_tasks || 0;
+        document.getElementById('errorTasks').textContent = data.error_tasks || 0;
+        document.getElementById('todayTasks').textContent = data.today_tasks || 0;
+      } catch (error) {
+        console.error('Error loading summary:', error);
+      }
+    }
+
+    // Load waves for filter
+    async function loadWaves() {
+      try {
+        const response = await fetch('/api/waves');
+        const data = await response.json();
+        
+        const waveSelect = document.getElementById('waveFilter');
+        
+        // Get unique wave IDs
+        const waveIds = [...new Set(data.waves.map(w => w.wave_id))];
+        
+        waveIds.forEach(waveId => {
+          const option = document.createElement('option');
+          option.value = waveId;
+          option.textContent = waveId;
+          waveSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading waves:', error);
+      }
+    }
+
+    // Load operators for filter
+    async function loadOperators() {
+      try {
+        const response = await fetch('/api/picking/operators/list');
+        const data = await response.json();
+        
+        const operatorSelect = document.getElementById('operatorFilter');
+        
+        data.operators.forEach(operator => {
+          const option = document.createElement('option');
+          option.value = operator;
+          option.textContent = operator;
+          operatorSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading operators:', error);
+      }
+    }
+
+    // Load tasks data
+    async function loadTasks(page = 1) {
+      try {
+        document.getElementById('loadingDiv').style.display = 'block';
+        document.getElementById('tasksTable').style.display = 'none';
+        document.getElementById('pagination').style.display = 'none';
+
+        const params = new URLSearchParams({
+          page: page,
+          limit: 50,
+          status_filter: document.getElementById('statusFilter').value,
+          wave_filter: document.getElementById('waveFilter').value,
+          operator_filter: document.getElementById('operatorFilter').value
+        });
+
+        const search = document.getElementById('searchInput').value.trim();
+        if (search) {
+          params.append('search', search);
+        }
+
+        const response = await fetch(`/api/picking?${params}`);
+        const data = await response.json();
+
+        currentTasks = data.tasks;
+        currentPage = data.pagination.current_page;
+        totalPages = data.pagination.total_pages;
+
+        displayTasks(data.tasks);
+        displayPagination(data.pagination);
+
+        document.getElementById('loadingDiv').style.display = 'none';
+        document.getElementById('tasksTable').style.display = 'table';
+        document.getElementById('pagination').style.display = 'flex';
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+        showAlert('Lỗi tải dữ liệu Task', 'error');
+        document.getElementById('loadingDiv').style.display = 'none';
+      }
+    }
+
+    // Display tasks in table
+    function displayTasks(tasks) {
+      const tbody = document.getElementById('tasksTableBody');
+      tbody.innerHTML = '';
+
+      tasks.forEach(task => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><span class="wave-badge">${task.wave_id}</span></td>
+          <td>${task.product_reference}</td>
+          <td>${(task.quantity || 0).toLocaleString()}</td>
+          <td><span class="location-badge">${task.location_id || 'N/A'}</span></td>
+          <td>${task.operator_id || 'N/A'}</td>
+          <td><span class="status-badge status-${task.status}">${getStatusText(task.status)}</span></td>
+          <td>${formatDateTime(task.created_at)}</td>
+          <td>
+            <button class="btn btn-primary" onclick="openTaskModal('${task.id}')" style="margin-right: 5px; font-size: 0.8em; padding: 4px 8px;">Chi tiết</button>
+            ${task.status === 'pending' ? `<button class="btn btn-success" onclick="startTask('${task.id}')" style="margin-right: 5px; font-size: 0.8em; padding: 4px 8px;">Bắt đầu</button>` : ''}
+            ${task.status === 'in_progress' ? `<button class="btn btn-warning" onclick="completeTask('${task.id}')" style="font-size: 0.8em; padding: 4px 8px;">Hoàn thành</button>` : ''}
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Get status text in Vietnamese
+    function getStatusText(status) {
+      const statusMap = {
+        'pending': 'Chờ thực hiện',
+        'in_progress': 'Đang thực hiện',
+        'completed': 'Hoàn thành',
+        'error': 'Lỗi'
+      };
+      return statusMap[status] || status;
+    }
+
+    // Format date time
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleString('vi-VN');
+    }
+
+    // Display pagination
+    function displayPagination(pagination) {
+      const paginationDiv = document.getElementById('pagination');
+      paginationDiv.innerHTML = '';
+
+      // Previous button
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = 'Trước';
+      prevBtn.disabled = pagination.current_page <= 1;
+      prevBtn.onclick = () => loadTasks(pagination.current_page - 1);
+      paginationDiv.appendChild(prevBtn);
+
+      // Page info
+      const pageInfo = document.createElement('span');
+      pageInfo.textContent = `Trang ${pagination.current_page} / ${pagination.total_pages} (${pagination.total_items} mục)`;
+      pageInfo.style.margin = '0 15px';
+      paginationDiv.appendChild(pageInfo);
+
+      // Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Sau';
+      nextBtn.disabled = pagination.current_page >= pagination.total_pages;
+      nextBtn.onclick = () => loadTasks(pagination.current_page + 1);
+      paginationDiv.appendChild(nextBtn);
+    }
+
+    // Open task modal
+    async function openTaskModal(id) {
+      try {
+        const response = await fetch(`/api/picking/${id}`);
+        const task = await response.json();
+
+        document.getElementById('taskId').value = task.id;
+        document.getElementById('taskStatus').value = task.status;
+        document.getElementById('actualQuantity').value = task.actual_quantity || task.quantity;
+        document.getElementById('taskNotes').value = task.notes || '';
+
+        // Display task details
+        const detailsDiv = document.getElementById('taskDetails');
+        detailsDiv.innerHTML = `
+          <h4>Thông tin Task</h4>
+          <p><strong>Wave ID:</strong> ${task.wave_id}</p>
+          <p><strong>Sản phẩm:</strong> ${task.product_reference}</p>
+          <p><strong>Số lượng yêu cầu:</strong> ${task.quantity}</p>
+          <p><strong>Vị trí:</strong> ${task.location_id || 'Chưa phân bổ'}</p>
+          <p><strong>Operator:</strong> ${task.operator_id}</p>
+          <p><strong>Trạng thái:</strong> ${getStatusText(task.status)}</p>
+          <p><strong>Thời gian tạo:</strong> ${formatDateTime(task.created_at)}</p>
+          ${task.started_at ? `<p><strong>Bắt đầu:</strong> ${formatDateTime(task.started_at)}</p>` : ''}
+          ${task.completed_at ? `<p><strong>Hoàn thành:</strong> ${formatDateTime(task.completed_at)}</p>` : ''}
+        `;
+
+        document.getElementById('taskModal').style.display = 'block';
+      } catch (error) {
+        console.error('Error loading task:', error);
+        showAlert('Lỗi tải thông tin Task', 'error');
+      }
+    }
+
+    // Start task
+    async function startTask(id) {
+      try {
+        const response = await fetch(`/api/picking/${id}/start`, {
+          method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert('Bắt đầu Task thành công', 'success');
+          loadTasks(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi bắt đầu Task', 'error');
+        }
+      } catch (error) {
+        console.error('Error starting task:', error);
+        showAlert('Lỗi bắt đầu Task', 'error');
+      }
+    }
+
+    // Complete task
+    async function completeTask(id) {
+      try {
+        const response = await fetch(`/api/picking/${id}/complete`, {
+          method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert('Hoàn thành Task thành công', 'success');
+          loadTasks(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi hoàn thành Task', 'error');
+        }
+      } catch (error) {
+        console.error('Error completing task:', error);
+        showAlert('Lỗi hoàn thành Task', 'error');
+      }
+    }
+
+    // Close task modal
+    function closeTaskModal() {
+      document.getElementById('taskModal').style.display = 'none';
+    }
+
+    // Handle task form submission
+    document.getElementById('taskForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      try {
+        const taskId = document.getElementById('taskId').value;
+
+        const taskData = {
+          status: document.getElementById('taskStatus').value,
+          actual_quantity: parseInt(document.getElementById('actualQuantity').value),
+          notes: document.getElementById('taskNotes').value
+        };
+
+        const response = await fetch(`/api/picking/${taskId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(taskData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert('Cập nhật Task thành công', 'success');
+          closeTaskModal();
+          loadTasks(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi cập nhật Task', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating task:', error);
+        showAlert('Lỗi cập nhật Task', 'error');
+      }
+    });
+
+    // Export tasks
+    function exportTasks() {
+      const params = new URLSearchParams({
+        status_filter: document.getElementById('statusFilter').value,
+        wave_filter: document.getElementById('waveFilter').value,
+        operator_filter: document.getElementById('operatorFilter').value,
+        export: 'csv'
+      });
+
+      const search = document.getElementById('searchInput').value.trim();
+      if (search) {
+        params.append('search', search);
+      }
+
+      window.open(`/api/picking/export?${params}`, '_blank');
+    }
+
+    // Show alert message
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      alert.style.display = 'block';
+      
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 5000);
+    }
+
+    // Search on Enter key
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        loadTasks(1);
+      }
+    });
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+      const taskModal = document.getElementById('taskModal');
+      
+      if (event.target === taskModal) {
+        closeTaskModal();
+      }
+    }
+  </script>
+</body>
+</html>

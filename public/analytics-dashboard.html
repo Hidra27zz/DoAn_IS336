@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard - Bảng điều khiển Phân tích</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.5em; }
+    .back-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.3); }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .card-header {
+      background: #f8f9fa;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .card-header h3 {
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+    
+    .card-content {
+      padding: 20px;
+    }
+    
+    .stats-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+      border-left: 4px solid #3498db;
+    }
+    
+    .stat-card.products { border-left-color: #e74c3c; }
+    .stat-card.inventory { border-left-color: #f39c12; }
+    .stat-card.orders { border-left-color: #27ae60; }
+    .stat-card.waves { border-left-color: #9b59b6; }
+    .stat-card.picking { border-left-color: #1abc9c; }
+    
+    .stat-card h3 {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    
+    .stat-card .number {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+    
+    .stat-card .change {
+      font-size: 0.8em;
+      color: #27ae60;
+    }
+    
+    .stat-card .change.negative {
+      color: #e74c3c;
+    }
+    
+    .chart-container {
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border-radius: 5px;
+      color: #666;
+    }
+    
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+    
+    .kpi-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+    }
+    
+    .kpi-item.good { border-left-color: #27ae60; }
+    .kpi-item.warning { border-left-color: #f39c12; }
+    .kpi-item.danger { border-left-color: #e74c3c; }
+    
+    .kpi-label {
+      font-weight: 500;
+      color: #2c3e50;
+    }
+    
+    .kpi-value {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #3498db;
+    }
+    
+    .kpi-item.good .kpi-value { color: #27ae60; }
+    .kpi-item.warning .kpi-value { color: #f39c12; }
+    .kpi-item.danger .kpi-value { color: #e74c3c; }
+    
+    .top-list {
+      list-style: none;
+    }
+    
+    .top-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .top-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .rank {
+      background: #3498db;
+      color: white;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+    
+    .rank.gold { background: #f39c12; }
+    .rank.silver { background: #95a5a6; }
+    .rank.bronze { background: #e67e22; }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .refresh-btn {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+    
+    .refresh-btn:hover {
+      background: #2980b9;
+    }
+    
+    .alert {
+      padding: 12px 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      display: none;
+    }
+    
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .alert-warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .alert-danger {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .trend-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8em;
+    }
+    
+    .trend-up { color: #27ae60; }
+    .trend-down { color: #e74c3c; }
+    .trend-stable { color: #95a5a6; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Bảng điều khiển Phân tích</h1>
+    <button class="back-btn" onclick="goBack()">Quay lại</button>
+  </div>
+
+  <div class="container">
+    <!-- Alert Messages -->
+    <div id="alert" class="alert"></div>
+
+    <!-- Overview Statistics -->
+    <div class="stats-overview">
+      <div class="stat-card products">
+        <h3>Tổng sản phẩm</h3>
+        <div class="number" id="totalProducts">-</div>
+        <div class="change" id="productsChange">-</div>
+      </div>
+      <div class="stat-card inventory">
+        <h3>Tổng tồn kho</h3>
+        <div class="number" id="totalInventory">-</div>
+        <div class="change" id="inventoryChange">-</div>
+      </div>
+      <div class="stat-card orders">
+        <h3>Đơn hàng tháng này</h3>
+        <div class="number" id="monthlyOrders">-</div>
+        <div class="change" id="ordersChange">-</div>
+      </div>
+      <div class="stat-card waves">
+        <h3>Wave hoàn thành</h3>
+        <div class="number" id="completedWaves">-</div>
+        <div class="change" id="wavesChange">-</div>
+      </div>
+      <div class="stat-card picking">
+        <h3>Hiệu suất Picking</h3>
+        <div class="number" id="pickingEfficiency">-</div>
+        <div class="change" id="pickingChange">-</div>
+      </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- Warehouse KPIs -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Chỉ số KPI Kho hàng</h3>
+          <button class="refresh-btn" onclick="loadKPIs()">Làm mới</button>
+        </div>
+        <div class="card-content">
+          <div class="kpi-grid">
+            <div class="kpi-item" id="utilizationKPI">
+              <span class="kpi-label">Tỷ lệ sử dụng kho</span>
+              <span class="kpi-value" id="utilizationValue">-</span>
+            </div>
+            <div class="kpi-item" id="accuracyKPI">
+              <span class="kpi-label">Độ chính xác Picking</span>
+              <span class="kpi-value" id="accuracyValue">-</span>
+            </div>
+            <div class="kpi-item" id="turnoverKPI">
+              <span class="kpi-label">Vòng quay hàng tồn</span>
+              <span class="kpi-value" id="turnoverValue">-</span>
+            </div>
+            <div class="kpi-item" id="fulfillmentKPI">
+              <span class="kpi-label">Tỷ lệ hoàn thành đơn</span>
+              <span class="kpi-value" id="fulfillmentValue">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Products -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Sản phẩm hàng đầu</h3>
+          <button class="refresh-btn" onclick="loadTopProducts()">Làm mới</button>
+        </div>
+        <div class="card-content">
+          <ul class="top-list" id="topProductsList">
+            <li class="loading">Đang tải dữ liệu...</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Top Customers -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Khách hàng hàng đầu</h3>
+          <button class="refresh-btn" onclick="loadTopCustomers()">Làm mới</button>
+        </div>
+        <div class="card-content">
+          <ul class="top-list" id="topCustomersList">
+            <li class="loading">Đang tải dữ liệu...</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Operator Performance -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Hiệu suất Operator</h3>
+          <button class="refresh-btn" onclick="loadOperatorPerformance()">Làm mới</button>
+        </div>
+        <div class="card-content">
+          <ul class="top-list" id="operatorPerformanceList">
+            <li class="loading">Đang tải dữ liệu...</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Inventory Alerts -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Cảnh báo Tồn kho</h3>
+          <button class="refresh-btn" onclick="loadInventoryAlerts()">Làm mới</button>
+        </div>
+        <div class="card-content">
+          <ul class="top-list" id="inventoryAlertsList">
+            <li class="loading">Đang tải dữ liệu...</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Order Trends -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Xu hướng Đơn hàng</h3>
+          <button class="refresh-btn" onclick="loadOrderTrends()">Làm mới</button>
+        </div>
+        <div class="card-content">
+          <div class="chart-container">
+            <div id="orderTrendsChart">Biểu đồ xu hướng đơn hàng sẽ được hiển thị ở đây</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="navigation.js"></script>
+  <script>
+    // Load initial data
+    document.addEventListener('DOMContentLoaded', function() {
+      loadOverviewStats();
+      loadKPIs();
+      loadTopProducts();
+      loadTopCustomers();
+      loadOperatorPerformance();
+      loadInventoryAlerts();
+      loadOrderTrends();
+      
+      // Auto refresh every 5 minutes
+      setInterval(loadOverviewStats, 5 * 60 * 1000);
+    });
+
+    // Load overview statistics
+    async function loadOverviewStats() {
+      try {
+        // Load products summary
+        const productsResponse = await fetch('/api/products/summary');
+        const productsData = await productsResponse.json();
+        document.getElementById('totalProducts').textContent = productsData.total_products || 0;
+
+        // Load inventory summary
+        const inventoryResponse = await fetch('/api/inventory/summary');
+        const inventoryData = await inventoryResponse.json();
+        document.getElementById('totalInventory').textContent = (inventoryData.total_quantity || 0).toLocaleString();
+
+        // Load orders summary
+        const ordersResponse = await fetch('/api/orders/summary');
+        const ordersData = await ordersResponse.json();
+        document.getElementById('monthlyOrders').textContent = ordersData.this_month_orders || 0;
+
+        // Load waves summary
+        const wavesResponse = await fetch('/api/waves/summary');
+        const wavesData = await wavesResponse.json();
+        document.getElementById('completedWaves').textContent = wavesData.completed_waves || 0;
+
+        // Calculate picking efficiency
+        const pickingResponse = await fetch('/api/picking/summary');
+        const pickingData = await pickingResponse.json();
+        const efficiency = pickingData.total_tasks > 0 ? 
+          ((pickingData.completed_tasks / pickingData.total_tasks) * 100).toFixed(1) : 0;
+        document.getElementById('pickingEfficiency').textContent = efficiency + '%';
+
+      } catch (error) {
+        console.error('Error loading overview stats:', error);
+      }
+    }
+
+    // Load KPIs
+    async function loadKPIs() {
+      try {
+        // Warehouse utilization
+        const locationsResponse = await fetch('/api/locations/summary');
+        const locationsData = await locationsResponse.json();
+        const utilization = locationsData.total_locations > 0 ? 
+          ((locationsData.occupied_locations / locationsData.total_locations) * 100).toFixed(1) : 0;
+        
+        document.getElementById('utilizationValue').textContent = utilization + '%';
+        updateKPIStatus('utilizationKPI', utilization, 80, 60);
+
+        // Picking accuracy (mock data)
+        const accuracy = 98.5;
+        document.getElementById('accuracyValue').textContent = accuracy + '%';
+        updateKPIStatus('accuracyKPI', accuracy, 95, 90);
+
+        // Inventory turnover (mock calculation)
+        const turnover = 12.3;
+        document.getElementById('turnoverValue').textContent = turnover.toFixed(1);
+        updateKPIStatus('turnoverKPI', turnover, 10, 5);
+
+        // Order fulfillment rate (mock data)
+        const fulfillment = 96.2;
+        document.getElementById('fulfillmentValue').textContent = fulfillment + '%';
+        updateKPIStatus('fulfillmentKPI', fulfillment, 95, 90);
+
+      } catch (error) {
+        console.error('Error loading KPIs:', error);
+      }
+    }
+
+    // Update KPI status based on thresholds
+    function updateKPIStatus(elementId, value, goodThreshold, warningThreshold) {
+      const element = document.getElementById(elementId);
+      element.className = 'kpi-item';
+      
+      if (value >= goodThreshold) {
+        element.classList.add('good');
+      } else if (value >= warningThreshold) {
+        element.classList.add('warning');
+      } else {
+        element.classList.add('danger');
+      }
+    }
+
+    // Load top products
+    async function loadTopProducts() {
+      try {
+        const response = await fetch('/api/orders/summary');
+        const data = await response.json();
+        
+        const list = document.getElementById('topProductsList');
+        list.innerHTML = '';
+
+        // Mock top products data (in real implementation, this would come from order analysis)
+        const topProducts = [
+          { name: 'O9YFO8', orders: 156, trend: 'up' },
+          { name: 'P2XKL9', orders: 142, trend: 'up' },
+          { name: 'M5VBN3', orders: 128, trend: 'down' },
+          { name: 'Q7WER4', orders: 115, trend: 'stable' },
+          { name: 'R8TYU5', orders: 98, trend: 'up' }
+        ];
+
+        topProducts.forEach((product, index) => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="rank ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}">${index + 1}</span>
+              <span>${product.name}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span>${product.orders} đơn</span>
+              <span class="trend-indicator trend-${product.trend}">
+                ${product.trend === 'up' ? '↗' : product.trend === 'down' ? '↘' : '→'}
+              </span>
+            </div>
+          `;
+          list.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Error loading top products:', error);
+        document.getElementById('topProductsList').innerHTML = '<li>Lỗi tải dữ liệu</li>';
+      }
+    }
+
+    // Load top customers
+    async function loadTopCustomers() {
+      try {
+        const response = await fetch('/api/orders/summary');
+        const data = await response.json();
+        
+        const list = document.getElementById('topCustomersList');
+        list.innerHTML = '';
+
+        if (data.top_customers && data.top_customers.length > 0) {
+          data.top_customers.slice(0, 5).forEach((customer, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="rank ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}">${index + 1}</span>
+                <span>${customer.customer}</span>
+              </div>
+              <div>
+                <span>${customer.total_orders} đơn</span>
+              </div>
+            `;
+            list.appendChild(li);
+          });
+        } else {
+          list.innerHTML = '<li>Chưa có dữ liệu khách hàng</li>';
+        }
+      } catch (error) {
+        console.error('Error loading top customers:', error);
+        document.getElementById('topCustomersList').innerHTML = '<li>Lỗi tải dữ liệu</li>';
+      }
+    }
+
+    // Load operator performance
+    async function loadOperatorPerformance() {
+      try {
+        const response = await fetch('/api/waves/summary');
+        const data = await response.json();
+        
+        const list = document.getElementById('operatorPerformanceList');
+        list.innerHTML = '';
+
+        if (data.top_operators && data.top_operators.length > 0) {
+          data.top_operators.slice(0, 5).forEach((operator, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="rank ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}">${index + 1}</span>
+                <span>${operator.operator}</span>
+              </div>
+              <div>
+                <span>${operator.completion_rate}% hoàn thành</span>
+              </div>
+            `;
+            list.appendChild(li);
+          });
+        } else {
+          list.innerHTML = '<li>Chưa có dữ liệu operator</li>';
+        }
+      } catch (error) {
+        console.error('Error loading operator performance:', error);
+        document.getElementById('operatorPerformanceList').innerHTML = '<li>Lỗi tải dữ liệu</li>';
+      }
+    }
+
+    // Load inventory alerts
+    async function loadInventoryAlerts() {
+      try {
+        const response = await fetch('/api/inventory/alerts/low-stock?threshold=20');
+        const data = await response.json();
+        
+        const list = document.getElementById('inventoryAlertsList');
+        list.innerHTML = '';
+
+        if (data.items && data.items.length > 0) {
+          data.items.slice(0, 5).forEach((item, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <div>
+                <span>${item.product?.reference || 'N/A'}</span>
+                <small style="color: #666; display: block;">${item.location?.location_id || 'N/A'}</small>
+              </div>
+              <div style="color: #e74c3c; font-weight: bold;">
+                ${item.quantity || 0} còn lại
+              </div>
+            `;
+            list.appendChild(li);
+          });
+        } else {
+          list.innerHTML = '<li style="color: #27ae60;">Không có cảnh báo tồn kho</li>';
+        }
+      } catch (error) {
+        console.error('Error loading inventory alerts:', error);
+        document.getElementById('inventoryAlertsList').innerHTML = '<li>Lỗi tải dữ liệu</li>';
+      }
+    }
+
+    // Load order trends
+    async function loadOrderTrends() {
+      try {
+        // This would typically load chart data and render a chart
+        // For now, we'll show a placeholder
+        document.getElementById('orderTrendsChart').innerHTML = `
+          <div style="text-align: center; color: #666;">
+            <p>Biểu đồ xu hướng đơn hàng</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">
+              Tích hợp với thư viện biểu đồ như Chart.js hoặc D3.js<br>
+              để hiển thị xu hướng đơn hàng theo thời gian
+            </p>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error loading order trends:', error);
+      }
+    }
+
+    // Show alert message
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      alert.style.display = 'block';
+      
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

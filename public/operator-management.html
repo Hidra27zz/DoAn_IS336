@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operator Management - WMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .operator-card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            border-radius: 10px;
+        }
+        .operator-card:hover {
+            transform: translateY(-2px);
+        }
+        .status-active {
+            color: #28a745;
+        }
+        .status-inactive {
+            color: #dc3545;
+        }
+        .status-busy {
+            color: #ffc107;
+        }
+        .performance-chart {
+            height: 200px;
+        }
+        .kpi-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .comparison-table {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-users me-2"></i>Operator Management
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Dashboard</a>
+                <a class="nav-link" href="/picking">Picking</a>
+                <a class="nav-link" href="/waves">Waves</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="fas fa-users me-2"></i>Operator Management</h2>
+                <p class="text-muted">Manage warehouse operators and track performance</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOperatorModal">
+                    <i class="fas fa-plus me-2"></i>Add Operator
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshData()">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <h6>Total Operators</h6>
+                    <h3 id="total-operators">0</h3>
+                    <small>Active workforce</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <h6>Active Now</h6>
+                    <h3 id="active-operators">0</h3>
+                    <small>Currently working</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <h6>Avg Performance</h6>
+                    <h3 id="avg-performance">0%</h3>
+                    <small>Team efficiency</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <h6>Tasks Today</h6>
+                    <h3 id="tasks-today">0</h3>
+                    <small>Completed picks</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operators List -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Operators</h5>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" id="statusFilter" onchange="filterOperators()">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="busy">Busy</option>
+                            </select>
+                            <input type="text" class="form-control form-control-sm" id="searchOperator" placeholder="Search operators..." onkeyup="searchOperators()">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="operators-grid">
+                            <!-- Operators will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Comparison -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="comparison-table card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Performance Comparison</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="performance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Operator</th>
+                                        <th>Tasks/Hour</th>
+                                        <th>Avg Pick Time</th>
+                                        <th>Completion Rate</th>
+                                        <th>Issue Rate</th>
+                                        <th>Performance Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Performance data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Performance Chart</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="performanceChart" class="performance-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Operator Modal -->
+    <div class="modal fade" id="addOperatorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Operator</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addOperatorForm" onsubmit="addOperator(event)">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Operator ID</label>
+                            <input type="text" class="form-control" id="operatorId" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="operatorName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="operatorEmail">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="operatorPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" id="operatorRole" required>
+                                <option value="operator">Operator</option>
+                                <option value="senior_operator">Senior Operator</option>
+                                <option value="team_lead">Team Lead</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Shift</label>
+                            <select class="form-select" id="operatorShift" required>
+                                <option value="morning">Morning (6AM - 2PM)</option>
+                                <option value="afternoon">Afternoon (2PM - 10PM)</option>
+                                <option value="night">Night (10PM - 6AM)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Operator</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Operator Modal -->
+    <div class="modal fade" id="editOperatorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Operator</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editOperatorForm" onsubmit="updateOperator(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="editOperatorId">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="editOperatorName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editOperatorEmail">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="editOperatorPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" id="editOperatorRole" required>
+                                <option value="operator">Operator</option>
+                                <option value="senior_operator">Senior Operator</option>
+                                <option value="team_lead">Team Lead</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="editOperatorStatus" required>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Operator</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let operators = [];
+        let performanceChart = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOperators();
+            loadPerformanceData();
+            initializeChart();
+        });
+
+        async function loadOperators() {
+            try {
+                const response = await fetch('/api/operators', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    operators = data.operators || [];
+                } else {
+                    // Use demo data if API fails
+                    operators = generateDemoOperators();
+                }
+                
+                displayOperators(operators);
+                updateKPIs();
+            } catch (error) {
+                console.error('Error loading operators:', error);
+                operators = generateDemoOperators();
+                displayOperators(operators);
+                updateKPIs();
+            }
+        }
+
+        function generateDemoOperators() {
+            return [
+                {
+                    id: 'OP001',
+                    name: 'John Smith',
+                    email: 'john.smith@warehouse.com',
+                    phone: '+1-555-0101',
+                    role: 'senior_operator',
+                    status: 'active',
+                    shift: 'morning',
+                    currentWave: 'W001',
+                    tasksToday: 45,
+                    performance: {
+                        tasksPerHour: 12.5,
+                        avgPickTime: 2.1,
+                        completionRate: 98.5,
+                        issueRate: 1.2,
+                        score: 95
+                    }
+                },
+                {
+                    id: 'OP002',
+                    name: 'Mary Johnson',
+                    email: 'mary.johnson@warehouse.com',
+                    phone: '+1-555-0102',
+                    role: 'operator',
+                    status: 'busy',
+                    shift: 'morning',
+                    currentWave: 'W002',
+                    tasksToday: 38,
+                    performance: {
+                        tasksPerHour: 10.8,
+                        avgPickTime: 2.4,
+                        completionRate: 96.2,
+                        issueRate: 2.1,
+                        score: 88
+                    }
+                },
+                {
+                    id: 'OP003',
+                    name: 'David Wilson',
+                    email: 'david.wilson@warehouse.com',
+                    phone: '+1-555-0103',
+                    role: 'team_lead',
+                    status: 'active',
+                    shift: 'afternoon',
+                    currentWave: null,
+                    tasksToday: 52,
+                    performance: {
+                        tasksPerHour: 14.2,
+                        avgPickTime: 1.9,
+                        completionRate: 99.1,
+                        issueRate: 0.8,
+                        score: 97
+                    }
+                },
+                {
+                    id: 'OP004',
+                    name: 'Sarah Brown',
+                    email: 'sarah.brown@warehouse.com',
+                    phone: '+1-555-0104',
+                    role: 'operator',
+                    status: 'inactive',
+                    shift: 'night',
+                    currentWave: null,
+                    tasksToday: 0,
+                    performance: {
+                        tasksPerHour: 9.5,
+                        avgPickTime: 2.8,
+                        completionRate: 94.5,
+                        issueRate: 3.2,
+                        score: 82
+                    }
+                }
+            ];
+        }
+
+        function displayOperators(operatorList) {
+            const grid = document.getElementById('operators-grid');
+            grid.innerHTML = '';
+
+            operatorList.forEach(operator => {
+                const statusClass = operator.status === 'active' ? 'status-active' : 
+                                  operator.status === 'busy' ? 'status-busy' : 'status-inactive';
+                
+                const statusIcon = operator.status === 'active' ? 'fa-check-circle' : 
+                                 operator.status === 'busy' ? 'fa-clock' : 'fa-times-circle';
+
+                const card = document.createElement('div');
+                card.className = 'col-md-6 col-lg-4 mb-3';
+                card.innerHTML = `
+                    <div class="operator-card card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h6 class="card-title mb-1">${operator.name}</h6>
+                                    <small class="text-muted">${operator.id}</small>
+                                </div>
+                                <div class="text-end">
+                                    <i class="fas ${statusIcon} ${statusClass}"></i>
+                                    <small class="d-block text-muted">${operator.status}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <small class="text-muted">Role:</small> ${operator.role.replace('_', ' ')}<br>
+                                <small class="text-muted">Shift:</small> ${operator.shift}<br>
+                                <small class="text-muted">Current Wave:</small> ${operator.currentWave || 'None'}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <small>Tasks Today:</small>
+                                    <strong>${operator.tasksToday}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small>Performance:</small>
+                                    <strong>${operator.performance.score}%</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editOperator('${operator.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewPerformance('${operator.id}')">
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-${operator.status === 'active' ? 'warning' : 'success'}" 
+                                        onclick="toggleOperatorStatus('${operator.id}')">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            updatePerformanceTable(operatorList);
+        }
+
+        function updateKPIs() {
+            const totalOperators = operators.length;
+            const activeOperators = operators.filter(op => op.status === 'active' || op.status === 'busy').length;
+            const avgPerformance = Math.round(operators.reduce((sum, op) => sum + op.performance.score, 0) / operators.length);
+            const tasksToday = operators.reduce((sum, op) => sum + op.tasksToday, 0);
+
+            document.getElementById('total-operators').textContent = totalOperators;
+            document.getElementById('active-operators').textContent = activeOperators;
+            document.getElementById('avg-performance').textContent = avgPerformance + '%';
+            document.getElementById('tasks-today').textContent = tasksToday;
+        }
+
+        function updatePerformanceTable(operatorList) {
+            const tbody = document.querySelector('#performance-table tbody');
+            tbody.innerHTML = '';
+
+            operatorList.forEach(operator => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <strong>${operator.name}</strong><br>
+                        <small class="text-muted">${operator.id}</small>
+                    </td>
+                    <td>${operator.performance.tasksPerHour}</td>
+                    <td>${operator.performance.avgPickTime} min</td>
+                    <td>${operator.performance.completionRate}%</td>
+                    <td>${operator.performance.issueRate}%</td>
+                    <td>
+                        <span class="badge bg-${operator.performance.score >= 90 ? 'success' : operator.performance.score >= 80 ? 'warning' : 'danger'}">
+                            ${operator.performance.score}%
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            performanceChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Tasks/Hour', 'Completion Rate', 'Pick Speed', 'Accuracy', 'Reliability'],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            updateChart();
+        }
+
+        function updateChart() {
+            const topPerformers = operators
+                .filter(op => op.status !== 'inactive')
+                .sort((a, b) => b.performance.score - a.performance.score)
+                .slice(0, 3);
+
+            const colors = ['#007bff', '#28a745', '#ffc107'];
+            
+            performanceChart.data.datasets = topPerformers.map((operator, index) => ({
+                label: operator.name,
+                data: [
+                    (operator.performance.tasksPerHour / 15) * 100, // Normalize to 100
+                    operator.performance.completionRate,
+                    100 - (operator.performance.avgPickTime / 3) * 100, // Invert pick time
+                    100 - operator.performance.issueRate * 10, // Invert issue rate
+                    operator.performance.score
+                ],
+                borderColor: colors[index],
+                backgroundColor: colors[index] + '20',
+                pointBackgroundColor: colors[index]
+            }));
+
+            performanceChart.update();
+        }
+
+        async function addOperator(event) {
+            event.preventDefault();
+            
+            const operatorData = {
+                id: document.getElementById('operatorId').value,
+                name: document.getElementById('operatorName').value,
+                email: document.getElementById('operatorEmail').value,
+                phone: document.getElementById('operatorPhone').value,
+                role: document.getElementById('operatorRole').value,
+                shift: document.getElementById('operatorShift').value,
+                status: 'active'
+            };
+
+            try {
+                const response = await fetch('/api/operators', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify(operatorData)
+                });
+
+                if (response.ok) {
+                    alert('Operator added successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('addOperatorModal')).hide();
+                    document.getElementById('addOperatorForm').reset();
+                    loadOperators();
+                } else {
+                    alert('Failed to add operator');
+                }
+            } catch (error) {
+                console.error('Error adding operator:', error);
+                alert('Error adding operator');
+            }
+        }
+
+        function editOperator(operatorId) {
+            const operator = operators.find(op => op.id === operatorId);
+            if (!operator) return;
+
+            document.getElementById('editOperatorId').value = operator.id;
+            document.getElementById('editOperatorName').value = operator.name;
+            document.getElementById('editOperatorEmail').value = operator.email || '';
+            document.getElementById('editOperatorPhone').value = operator.phone || '';
+            document.getElementById('editOperatorRole').value = operator.role;
+            document.getElementById('editOperatorStatus').value = operator.status;
+
+            new bootstrap.Modal(document.getElementById('editOperatorModal')).show();
+        }
+
+        async function updateOperator(event) {
+            event.preventDefault();
+            
+            const operatorId = document.getElementById('editOperatorId').value;
+            const operatorData = {
+                name: document.getElementById('editOperatorName').value,
+                email: document.getElementById('editOperatorEmail').value,
+                phone: document.getElementById('editOperatorPhone').value,
+                role: document.getElementById('editOperatorRole').value,
+                status: document.getElementById('editOperatorStatus').value
+            };
+
+            try {
+                const response = await fetch(`/api/operators/${operatorId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify(operatorData)
+                });
+
+                if (response.ok) {
+                    alert('Operator updated successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('editOperatorModal')).hide();
+                    loadOperators();
+                } else {
+                    alert('Failed to update operator');
+                }
+            } catch (error) {
+                console.error('Error updating operator:', error);
+                alert('Error updating operator');
+            }
+        }
+
+        async function toggleOperatorStatus(operatorId) {
+            const operator = operators.find(op => op.id === operatorId);
+            if (!operator) return;
+
+            const newStatus = operator.status === 'active' ? 'inactive' : 'active';
+            
+            try {
+                const response = await fetch(`/api/operators/${operatorId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    loadOperators();
+                } else {
+                    alert('Failed to update operator status');
+                }
+            } catch (error) {
+                console.error('Error updating operator status:', error);
+                alert('Error updating operator status');
+            }
+        }
+
+        function viewPerformance(operatorId) {
+            // Open performance detail view
+            window.open(`/operators/${operatorId}/performance`, '_blank');
+        }
+
+        function filterOperators() {
+            const status = document.getElementById('statusFilter').value;
+            const filtered = status ? operators.filter(op => op.status === status) : operators;
+            displayOperators(filtered);
+        }
+
+        function searchOperators() {
+            const query = document.getElementById('searchOperator').value.toLowerCase();
+            const filtered = operators.filter(op => 
+                op.name.toLowerCase().includes(query) || 
+                op.id.toLowerCase().includes(query)
+            );
+            displayOperators(filtered);
+        }
+
+        function refreshData() {
+            loadOperators();
+            loadPerformanceData();
+        }
+
+        async function loadPerformanceData() {
+            // Load additional performance data if needed
+            updateChart();
+        }
+    </script>
+</body>
+</html>

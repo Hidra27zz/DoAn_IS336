@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warehouse Dashboard - Bảng Điều Khiển Kho Hàng</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      color: #2c3e50;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .dashboard-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    .dashboard-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+
+    .card-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .card-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 15px;
+    }
+
+    .card-description {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+
+    .card-features {
+      list-style: none;
+      margin-bottom: 25px;
+    }
+
+    .card-features li {
+      padding: 5px 0;
+      color: #555;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .card-features li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #2ecc71;
+      font-weight: bold;
+    }
+
+    .card-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+      transition: all 0.3s ease;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #f8f9fa;
+      color: #495057;
+      border: 2px solid #dee2e6;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .stats-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .stat-number {
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .quick-actions {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .quick-actions h3 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .action-btn {
+      background: #f8f9fa;
+      border: 2px solid #dee2e6;
+      padding: 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #495057;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .action-btn:hover {
+      background: #e9ecef;
+      border-color: #667eea;
+      transform: translateY(-2px);
+    }
+
+    .action-icon {
+      font-size: 24px;
+    }
+
+    .action-text {
+      flex: 1;
+    }
+
+    .action-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .action-desc {
+      font-size: 12px;
+      color: #666;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .card-buttons {
+        flex-direction: column;
+      }
+      
+      .btn {
+        flex: none;
+      }
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Warehouse Management Dashboard</h1>
+    <p>Bảng điều khiển quản lý kho hàng - Giao diện trực quan và phân tích thông minh</p>
+  </div>
+
+  <div class="container">
+    <!-- Stats Section -->
+    <div class="stats-section">
+      <h3 style="color: #2c3e50; margin-bottom: 20px;">Thống kê tổng quan</h3>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="totalLocations">-</div>
+          <div class="stat-label">Tổng vị trí kho</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="occupiedLocations">-</div>
+          <div class="stat-label">Vị trí đã sử dụng</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="avgUtilization">-</div>
+          <div class="stat-label">Tỷ lệ sử dụng TB</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="totalProducts">-</div>
+          <div class="stat-label">Tổng sản phẩm</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-grid">
+      <!-- 2D Interactive Viewer -->
+      <div class="dashboard-card">
+        <span class="card-icon">MAP</span>
+        <h3 class="card-title">2D Interactive Viewer</h3>
+        <p class="card-description">
+          Giao diện 2D tương tác để xem layout kho hàng với thông tin chi tiết về từng vị trí, 
+          tỷ lệ sử dụng và trạng thái hàng hóa.
+        </p>
+        <ul class="card-features">
+          <li>Hiển thị theo tỷ lệ sử dụng, zone, sản phẩm</li>
+          <li>Tìm kiếm vị trí nhanh chóng</li>
+          <li>Thông tin chi tiết khi click</li>
+          <li>Xuất báo cáo layout</li>
+          <li>Responsive trên mobile</li>
+        </ul>
+        <div class="card-buttons">
+          <a href="/warehouse/2d" class="btn btn-primary">
+            2D Storage Map
+          </a>
+          <a href="/warehouse/layout" class="btn btn-primary">
+            Phan Tich Layout AI
+          </a>
+          <a href="/warehouse/svg" class="btn btn-secondary">
+            Layout SVG (AutoCAD)
+          </a>
+        </div>
+      </div>
+
+      <!-- AI Optimization Dashboard -->
+      <div class="dashboard-card">
+        <span class="card-icon">AI</span>
+        <h3 class="card-title">AI Optimization Dashboard</h3>
+        <p class="card-description">
+          Comprehensive AI-powered warehouse optimization with K-Means clustering, DBSCAN anomaly detection, 
+          and Genetic Algorithm route optimization.
+        </p>
+        <ul class="card-features">
+          <li>K-Means clustering for ABC classification</li>
+          <li>DBSCAN for anomaly detection</li>
+          <li>Genetic Algorithm route optimization</li>
+          <li>Real-time analytics and recommendations</li>
+          <li>Performance benchmarking</li>
+        </ul>
+        <div class="card-buttons">
+          <a href="/ai" class="btn btn-primary">
+            AI Dashboard
+          </a>
+          <a href="/ai/slotting" class="btn btn-secondary">
+            Slotting AI
+          </a>
+          <a href="/ai/routes" class="btn btn-secondary">
+            Route AI
+          </a>
+          <a href="/ai/comparison" class="btn btn-warning">
+            AI vs Traditional
+          </a>
+        </div>
+      </div>
+
+      <!-- Main WMS System -->
+      <div class="dashboard-card">
+        <span class="card-icon">WMS</span>
+        <h3 class="card-title">Main WMS System</h3>
+        <p class="card-description">
+          Hệ thống quản lý kho hàng chính với đầy đủ chức năng CRUD, AI optimization, 
+          và báo cáo chi tiết.
+        </p>
+        <ul class="card-features">
+          <li>Quản lý inventory, orders, picking</li>
+          <li>AI clustering và route optimization</li>
+          <li>Timeline và báo cáo</li>
+          <li>Dashboard analytics</li>
+          <li>Multi-user với phân quyền</li>
+        </ul>
+        <div class="card-buttons">
+          <a href="/products" class="btn btn-primary">
+            Product Management
+          </a>
+          <a href="/locations" class="btn btn-primary">
+            Location Management
+          </a>
+          <a href="/inventory" class="btn btn-primary">
+            Inventory Management
+          </a>
+          <a href="/orders" class="btn btn-primary">
+            Order Management
+          </a>
+          <a href="/waves" class="btn btn-primary">
+            Wave Planning
+          </a>
+          <a href="/picking" class="btn btn-primary">
+            Picking Operations
+          </a>
+          <a href="/analytics" class="btn btn-warning">
+            Analytics Dashboard
+          </a>
+          <a href="/" class="btn btn-secondary">
+            Vào hệ thống chính
+          </a>
+        </div>
+      </div>
+
+      <!-- Auto Test Dashboard -->
+      <div class="dashboard-card">
+        <span class="card-icon">TEST</span>
+        <h3 class="card-title">Auto Test Dashboard</h3>
+        <p class="card-description">
+          Tự động kiểm thử toàn bộ hệ thống WMS với test suite comprehensive. 
+          Kiểm tra tất cả modules, API endpoints và AI features.
+        </p>
+        <ul class="card-features">
+          <li>Tự động test 10 modules chính</li>
+          <li>Kiểm tra API endpoints</li>
+          <li>Test AI system và algorithms</li>
+          <li>Real-time test progress</li>
+          <li>Detailed logs và reports</li>
+          <li>Performance benchmarking</li>
+        </ul>
+        <div class="card-buttons">
+          <a href="/test" class="btn btn-primary">
+            TEST Auto Test Dashboard
+          </a>
+          <a href="/auto-test" class="btn btn-secondary">
+            Quick Test
+          </a>
+        </div>
+      </div>
+
+      <!-- User Management -->
+      <div class="dashboard-card">
+        <span class="card-icon">USERS</span>
+        <h3 class="card-title">User Management</h3>
+        <p class="card-description">
+          Quản lý người dùng và phân quyền hệ thống với 5 cấp độ: Admin, Manager, 
+          Supervisor, Operator, Viewer. Kiểm soát truy cập chi tiết theo từng module.
+        </p>
+        <ul class="card-features">
+          <li>5 cấp độ phân quyền chi tiết</li>
+          <li>Quản lý users và roles</li>
+          <li>Permission-based access control</li>
+          <li>Audit trail và logging</li>
+          <li>Password management</li>
+          <li>User activity tracking</li>
+        </ul>
+        <div class="card-buttons">
+          <a href="/users" class="btn btn-primary">
+            USERS User Management
+          </a>
+          <a href="javascript:void(0)" onclick="showUserStats()" class="btn btn-secondary">
+            STATS User Statistics
+          </a>
+        </div>
+      </div>
+
+      <!-- Research Dashboard -->
+      <div class="dashboard-card">
+        <span class="card-icon">LAB</span>
+        <h3 class="card-title">Research Dashboard</h3>
+        <p class="card-description">
+          Bảng điều khiển nghiên cứu với các thuật toán AI, phân tích dữ liệu và 
+          tạo báo cáo tự động cho mục đích học thuật.
+        </p>
+        <ul class="card-features">
+          <li>K-Means và DBSCAN clustering</li>
+          <li>Genetic Algorithm optimization</li>
+          <li>Báo cáo nghiên cứu tự động</li>
+          <li>Phân tích hiệu suất AI</li>
+          <li>Export dữ liệu cho nghiên cứu</li>
+        </ul>
+        <div class="card-buttons">
+          <a href="/research" class="btn btn-primary">
+            Research Dashboard
+          </a>
+          <a href="/demo" class="btn btn-secondary">
+            AI Demo
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h3>Thao tác nhanh</h3>
+      <div class="actions-grid">
+        <a href="javascript:void(0)" onclick="quickInventoryCheck()" class="action-btn">
+          <span class="action-icon">INV</span>
+          <div class="action-text">
+            <div class="action-title">Kiểm tra tồn kho</div>
+            <div class="action-desc">Xem nhanh tình trạng inventory</div>
+          </div>
+        </a>
+        
+        <a href="javascript:void(0)" onclick="quickUtilizationReport()" class="action-btn">
+          <span class="action-icon">RPT</span>
+          <div class="action-text">
+            <div class="action-title">Báo cáo sử dụng</div>
+            <div class="action-desc">Tỷ lệ sử dụng kho theo zone</div>
+          </div>
+        </a>
+        
+        <a href="javascript:void(0)" onclick="quickAIAnalysis()" class="action-btn">
+          <span class="action-icon">AI</span>
+          <div class="action-text">
+            <div class="action-title">Phân tích AI</div>
+            <div class="action-desc">Chạy thuật toán tối ưu hóa</div>
+          </div>
+        </a>
+        
+        <a href="javascript:void(0)" onclick="exportAllData()" class="action-btn">
+          <span class="action-icon">SAVE</span>
+          <div class="action-text">
+            <div class="action-title">Xuất dữ liệu</div>
+            <div class="action-desc">Export toàn bộ dữ liệu kho</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load stats on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadWarehouseStats();
+    });
+
+    async function loadWarehouseStats() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          // Redirect to login if no token
+          window.location.href = '/';
+          return;
+        }
+
+        // Load warehouse layout data
+        const response = await fetch('/api/warehouse/layout', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          updateStats(data);
+        } else {
+          throw new Error('Failed to load stats');
+        }
+
+        // Load inventory summary
+        const invResponse = await fetch('/api/inventory/summary', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (invResponse.ok) {
+          const invData = await invResponse.json();
+          document.getElementById('totalProducts').textContent = invData.total_products || 0;
+        }
+
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        document.getElementById('totalLocations').textContent = 'Error';
+        document.getElementById('occupiedLocations').textContent = 'Error';
+        document.getElementById('avgUtilization').textContent = 'Error';
+        document.getElementById('totalProducts').textContent = 'Error';
+      }
+    }
+
+    function updateStats(data) {
+      const totalLocs = data.locations?.length || 0;
+      const occupiedLocs = data.locations?.filter(loc => (loc.total_quantity || 0) > 0).length || 0;
+      const avgUtil = totalLocs > 0 ? 
+        data.locations.reduce((sum, loc) => sum + (loc.utilization_rate || 0), 0) / totalLocs : 0;
+
+      document.getElementById('totalLocations').textContent = totalLocs;
+      document.getElementById('occupiedLocations').textContent = occupiedLocs;
+      document.getElementById('avgUtilization').textContent = avgUtil.toFixed(1) + '%';
+    }
+
+    function previewFeature(type) {
+      const features = {
+        '2d': {
+          title: '2D Interactive Viewer',
+          description: 'Giao diện 2D với khả năng tương tác cao, hiển thị thông tin chi tiết về từng vị trí kho.',
+          image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzJjM2U1MCIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMTUwIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyNCI+MkQgVmlld2VyPC90ZXh0Pgo8L3N2Zz4='
+        },
+
+      };
+
+      const feature = features[type];
+      alert(`${feature.title}\n\n${feature.description}\n\nClick "Mở ${type.toUpperCase()} Viewer" để trải nghiệm!`);
+    }
+
+    function checkSystemStatus() {
+      fetch('/api/health')
+        .then(response => response.json())
+        .then(data => {
+          alert(`Hệ thống đang hoạt động bình thường!\n\nUptime: ${Math.round(data.uptime / 60)} phút\nEnvironment: ${data.environment}\nTimestamp: ${new Date(data.timestamp).toLocaleString()}`);
+        })
+        .catch(error => {
+          alert('Không thể kết nối đến hệ thống!');
+        });
+    }
+
+    async function quickInventoryCheck() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert('Vui lòng đăng nhập trước!');
+          return;
+        }
+
+        const response = await fetch('/api/inventory/summary', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          alert(`Tình trạng tồn kho:\n\n` +
+                `• Tổng sản phẩm: ${data.total_products || 0}\n` +
+                `• Tổng số lượng: ${data.total_quantity || 0}\n` +
+                `• Đã đặt trước: ${data.total_reserved || 0}\n` +
+                `• Có thể sử dụng: ${(data.total_quantity || 0) - (data.total_reserved || 0)}`);
+        } else {
+          throw new Error('Failed to load inventory');
+        }
+      } catch (error) {
+        alert('Lỗi khi tải dữ liệu inventory!');
+      }
+    }
+
+    async function quickUtilizationReport() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert('Vui lòng đăng nhập trước!');
+          return;
+        }
+
+        const response = await fetch('/api/warehouse/utilization', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          let report = `Báo cáo sử dụng kho:\n\n`;
+          report += `Tổng quan: ${data.overall?.utilization_percentage?.toFixed(1) || 0}%\n\n`;
+          
+          if (data.by_zone) {
+            data.by_zone.forEach(zone => {
+              report += `Zone ${zone.zone}: ${zone.utilization_percentage?.toFixed(1) || 0}%\n`;
+            });
+          }
+          
+          alert(report);
+        } else {
+          throw new Error('Failed to load utilization');
+        }
+      } catch (error) {
+        alert('Lỗi khi tải báo cáo sử dụng!');
+      }
+    }
+
+    async function quickAIAnalysis() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert('Vui lòng đăng nhập trước!');
+          return;
+        }
+
+        alert('Đang chạy phân tích AI...\nVui lòng đợi trong giây lát.');
+
+        const response = await fetch('/api/ai/clustering/kmeans', {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ k: 3 })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            alert(`SUCCESS Phân tích AI hoàn thành!\n\n` +
+                  `K-Means Clustering:\n` +
+                  `• Class A: ${data.data.summary?.classA || 0} sản phẩm\n` +
+                  `• Class B: ${data.data.summary?.classB || 0} sản phẩm\n` +
+                  `• Class C: ${data.data.summary?.classC || 0} sản phẩm\n\n` +
+                  `Vào AI Optimization để xem chi tiết!`);
+          } else {
+            throw new Error('AI analysis failed');
+          }
+        } else {
+          throw new Error('Failed to run AI analysis');
+        }
+      } catch (error) {
+        alert('Lỗi khi chạy phân tích AI!');
+      }
+    }
+
+    async function exportAllData() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert('Vui lòng đăng nhập trước!');
+          return;
+        }
+
+        alert('SAVE Đang chuẩn bị xuất dữ liệu...');
+
+        // Get all data
+        const [layout, inventory, orders, waves] = await Promise.all([
+          fetch('/api/warehouse/layout', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/inventory/summary', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/orders?limit=100', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/picking/waves?limit=50', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        const exportData = {
+          timestamp: new Date().toISOString(),
+          warehouse_layout: await layout.json(),
+          inventory_summary: await inventory.json(),
+          orders: await orders.json(),
+          picking_waves: await waves.json()
+        };
+
+        // Download as JSON
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `warehouse-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        alert('SUCCESS Dữ liệu đã được xuất thành công!');
+      } catch (error) {
+        alert('Lỗi khi xuất dữ liệu!');
+      }
+    }
+
+    // Function to open warehouse viewers in same window
+    function openWarehouseViewer(page) {
+      // Store current page for back navigation
+      localStorage.setItem('previousPage', window.location.href);
+      
+      // Navigate to the page
+      window.location.href = page;
+    }
+  </script>
+</body>
+</html>

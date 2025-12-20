@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Management - Quản lý Tồn kho</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.5em; }
+    .back-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.3); }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .stat-card h3 {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    .stat-card .number {
+      font-size: 2em;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .stat-card.warning .number { color: #e74c3c; }
+    .stat-card.success .number { color: #27ae60; }
+    
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .controls-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .control-group label {
+      font-size: 0.9em;
+      color: #666;
+      font-weight: 500;
+    }
+    .control-group input, .control-group select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+    .btn-primary:hover { background: #2980b9; }
+    .btn-success {
+      background: #27ae60;
+      color: white;
+    }
+    .btn-success:hover { background: #229954; }
+    .btn-warning {
+      background: #f39c12;
+      color: white;
+    }
+    .btn-warning:hover { background: #e67e22; }
+    
+    .inventory-table {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .table-header {
+      background: #f8f9fa;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-header h3 {
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.9em;
+    }
+    td {
+      font-size: 0.9em;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    .quantity-cell {
+      font-weight: bold;
+    }
+    .quantity-low { color: #e74c3c; }
+    .quantity-medium { color: #f39c12; }
+    .quantity-high { color: #27ae60; }
+    
+    .abc-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+    .abc-a { background: #e74c3c; color: white; }
+    .abc-b { background: #f39c12; color: white; }
+    .abc-c { background: #95a5a6; color: white; }
+    
+    .zone-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      background: #3498db;
+      color: white;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .pagination button:hover { background: #f8f9fa; }
+    .pagination button.active {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .modal-header h3 {
+      color: #2c3e50;
+    }
+    .close {
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+    .close:hover { color: #333; }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .form-group textarea {
+      resize: vertical;
+      height: 80px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    .alert {
+      padding: 12px 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      display: none;
+    }
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Quản lý Tồn kho</h1>
+    <button class="back-btn" onclick="goBack()">Quay lại</button>
+  </div>
+
+  <div class="container">
+    <!-- Alert Messages -->
+    <div id="alert" class="alert"></div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <h3>Tổng sản phẩm</h3>
+        <div class="number" id="totalProducts">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Tổng vị trí</h3>
+        <div class="number" id="totalLocations">-</div>
+      </div>
+      <div class="stat-card success">
+        <h3>Tổng số lượng</h3>
+        <div class="number" id="totalQuantity">-</div>
+      </div>
+      <div class="stat-card warning">
+        <h3>Đã đặt trước</h3>
+        <div class="number" id="totalReserved">-</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="controls-row">
+        <div class="control-group">
+          <label>Tìm kiếm sản phẩm</label>
+          <input type="text" id="searchInput" placeholder="Nhập mã sản phẩm...">
+        </div>
+        <div class="control-group">
+          <label>Khu vực</label>
+          <select id="zoneFilter">
+            <option value="">Tất cả khu vực</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>ABC Code</label>
+          <select id="abcFilter">
+            <option value="">Tất cả ABC</option>
+            <option value="A">A - Cao</option>
+            <option value="B">B - Trung bình</option>
+            <option value="C">C - Thấp</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Tồn kho thấp</label>
+          <select id="lowStockFilter">
+            <option value="">Tất cả</option>
+            <option value="true">Chỉ tồn kho thấp</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" onclick="loadInventory()">Tìm kiếm</button>
+        </div>
+        <div class="control-group">
+          <label>&nbsp;</label>
+          <button class="btn btn-warning" onclick="showLowStockAlerts()">Cảnh báo tồn kho</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="inventory-table">
+      <div class="table-header">
+        <h3>Danh sách Tồn kho</h3>
+        <div>
+          <button class="btn btn-success" onclick="exportInventory()">Xuất Excel</button>
+        </div>
+      </div>
+      
+      <div id="loadingDiv" class="loading">
+        Đang tải dữ liệu...
+      </div>
+      
+      <table id="inventoryTable" style="display: none;">
+        <thead>
+          <tr>
+            <th>Mã sản phẩm</th>
+            <th>ABC</th>
+            <th>Vị trí</th>
+            <th>Khu vực</th>
+            <th>Số lượng</th>
+            <th>Đã đặt trước</th>
+            <th>Có sẵn</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryTableBody">
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" style="display: none;">
+    </div>
+  </div>
+
+  <!-- Adjust Inventory Modal -->
+  <div id="adjustModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Điều chỉnh Tồn kho</h3>
+        <span class="close" onclick="closeAdjustModal()">&times;</span>
+      </div>
+      <form id="adjustForm">
+        <input type="hidden" id="adjustInventoryId">
+        <div class="form-group">
+          <label>Sản phẩm</label>
+          <input type="text" id="adjustProductRef" readonly>
+        </div>
+        <div class="form-group">
+          <label>Vị trí</label>
+          <input type="text" id="adjustLocation" readonly>
+        </div>
+        <div class="form-group">
+          <label>Số lượng hiện tại</label>
+          <input type="number" id="adjustCurrentQty" readonly>
+        </div>
+        <div class="form-group">
+          <label>Số lượng mới *</label>
+          <input type="number" id="adjustNewQty" min="0" required>
+        </div>
+        <div class="form-group">
+          <label>Lý do điều chỉnh</label>
+          <textarea id="adjustReason" placeholder="Nhập lý do điều chỉnh..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" onclick="closeAdjustModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Điều chỉnh</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reserve Inventory Modal -->
+  <div id="reserveModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Đặt trước Tồn kho</h3>
+        <span class="close" onclick="closeReserveModal()">&times;</span>
+      </div>
+      <form id="reserveForm">
+        <input type="hidden" id="reserveInventoryId">
+        <div class="form-group">
+          <label>Sản phẩm</label>
+          <input type="text" id="reserveProductRef" readonly>
+        </div>
+        <div class="form-group">
+          <label>Vị trí</label>
+          <input type="text" id="reserveLocation" readonly>
+        </div>
+        <div class="form-group">
+          <label>Có sẵn</label>
+          <input type="number" id="reserveAvailable" readonly>
+        </div>
+        <div class="form-group">
+          <label>Số lượng đặt trước *</label>
+          <input type="number" id="reserveQty" min="1" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" onclick="closeReserveModal()">Hủy</button>
+          <button type="submit" class="btn btn-success">Đặt trước</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="navigation.js"></script>
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentInventory = [];
+
+    // Load initial data
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSummary();
+      loadZones();
+      loadInventory();
+    });
+
+    // Load inventory summary
+    async function loadSummary() {
+      try {
+        const response = await fetch('/api/inventory/summary');
+        const data = await response.json();
+        
+        document.getElementById('totalProducts').textContent = data.total_products || 0;
+        document.getElementById('totalLocations').textContent = data.total_locations || 0;
+        document.getElementById('totalQuantity').textContent = (data.total_quantity || 0).toLocaleString();
+        document.getElementById('totalReserved').textContent = (data.total_reserved || 0).toLocaleString();
+      } catch (error) {
+        console.error('Error loading summary:', error);
+      }
+    }
+
+    // Load zones for filter
+    async function loadZones() {
+      try {
+        const response = await fetch('/api/locations');
+        const data = await response.json();
+        
+        const zones = [...new Set(data.locations.map(l => l.zone))].sort();
+        const zoneSelect = document.getElementById('zoneFilter');
+        
+        zones.forEach(zone => {
+          const option = document.createElement('option');
+          option.value = zone;
+          option.textContent = `Khu vực ${zone}`;
+          zoneSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading zones:', error);
+      }
+    }
+
+    // Load inventory data
+    async function loadInventory(page = 1) {
+      try {
+        document.getElementById('loadingDiv').style.display = 'block';
+        document.getElementById('inventoryTable').style.display = 'none';
+        document.getElementById('pagination').style.display = 'none';
+
+        const params = new URLSearchParams({
+          page: page,
+          limit: 50,
+          zone: document.getElementById('zoneFilter').value,
+          abc_code: document.getElementById('abcFilter').value,
+          low_stock: document.getElementById('lowStockFilter').value
+        });
+
+        const search = document.getElementById('searchInput').value.trim();
+        if (search) {
+          params.append('search', search);
+        }
+
+        const response = await fetch(`/api/inventory?${params}`);
+        const data = await response.json();
+
+        currentInventory = data.inventory;
+        currentPage = data.pagination.page;
+        totalPages = data.pagination.pages;
+
+        displayInventory(data.inventory);
+        displayPagination(data.pagination);
+
+        document.getElementById('loadingDiv').style.display = 'none';
+        document.getElementById('inventoryTable').style.display = 'table';
+        document.getElementById('pagination').style.display = 'flex';
+      } catch (error) {
+        console.error('Error loading inventory:', error);
+        showAlert('Lỗi tải dữ liệu tồn kho', 'error');
+        document.getElementById('loadingDiv').style.display = 'none';
+      }
+    }
+
+    // Display inventory in table
+    function displayInventory(inventory) {
+      const tbody = document.getElementById('inventoryTableBody');
+      tbody.innerHTML = '';
+
+      inventory.forEach(item => {
+        const available = (item.quantity || 0) - (item.reserved_quantity || 0);
+        const quantityClass = getQuantityClass(item.quantity);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.product?.reference || 'N/A'}</td>
+          <td><span class="abc-badge abc-${(item.product?.abc_code || 'c').toLowerCase()}">${item.product?.abc_code || 'C'}</span></td>
+          <td>${item.location?.location_id || 'N/A'}</td>
+          <td><span class="zone-badge">${item.location?.zone || 'N/A'}</span></td>
+          <td class="quantity-cell ${quantityClass}">${(item.quantity || 0).toLocaleString()}</td>
+          <td>${(item.reserved_quantity || 0).toLocaleString()}</td>
+          <td class="quantity-cell">${available.toLocaleString()}</td>
+          <td>
+            <button class="btn btn-primary" onclick="openAdjustModal('${item.id}', '${item.product?.reference}', '${item.location?.location_id}', ${item.quantity || 0})" style="margin-right: 5px; font-size: 0.8em; padding: 4px 8px;">Điều chỉnh</button>
+            <button class="btn btn-success" onclick="openReserveModal('${item.id}', '${item.product?.reference}', '${item.location?.location_id}', ${available})" style="font-size: 0.8em; padding: 4px 8px;">Đặt trước</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Get quantity class for color coding
+    function getQuantityClass(quantity) {
+      if (quantity < 20) return 'quantity-low';
+      if (quantity < 100) return 'quantity-medium';
+      return 'quantity-high';
+    }
+
+    // Display pagination
+    function displayPagination(pagination) {
+      const paginationDiv = document.getElementById('pagination');
+      paginationDiv.innerHTML = '';
+
+      // Previous button
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = 'Trước';
+      prevBtn.disabled = pagination.page <= 1;
+      prevBtn.onclick = () => loadInventory(pagination.page - 1);
+      paginationDiv.appendChild(prevBtn);
+
+      // Page info
+      const pageInfo = document.createElement('span');
+      pageInfo.textContent = `Trang ${pagination.page} / ${pagination.pages} (${pagination.total} mục)`;
+      pageInfo.style.margin = '0 15px';
+      paginationDiv.appendChild(pageInfo);
+
+      // Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Sau';
+      nextBtn.disabled = pagination.page >= pagination.pages;
+      nextBtn.onclick = () => loadInventory(pagination.page + 1);
+      paginationDiv.appendChild(nextBtn);
+    }
+
+    // Show low stock alerts
+    async function showLowStockAlerts() {
+      try {
+        const response = await fetch('/api/inventory/alerts/low-stock?threshold=20');
+        const data = await response.json();
+        
+        if (data.count === 0) {
+          showAlert('Không có sản phẩm nào có tồn kho thấp', 'success');
+          return;
+        }
+
+        // Filter current inventory to show only low stock items
+        document.getElementById('lowStockFilter').value = 'true';
+        loadInventory(1);
+        
+        showAlert(`Tìm thấy ${data.count} sản phẩm có tồn kho thấp (< ${data.threshold})`, 'error');
+      } catch (error) {
+        console.error('Error loading low stock alerts:', error);
+        showAlert('Lỗi tải cảnh báo tồn kho', 'error');
+      }
+    }
+
+    // Open adjust modal
+    function openAdjustModal(id, productRef, location, currentQty) {
+      document.getElementById('adjustInventoryId').value = id;
+      document.getElementById('adjustProductRef').value = productRef;
+      document.getElementById('adjustLocation').value = location;
+      document.getElementById('adjustCurrentQty').value = currentQty;
+      document.getElementById('adjustNewQty').value = currentQty;
+      document.getElementById('adjustReason').value = '';
+      document.getElementById('adjustModal').style.display = 'block';
+    }
+
+    // Close adjust modal
+    function closeAdjustModal() {
+      document.getElementById('adjustModal').style.display = 'none';
+    }
+
+    // Open reserve modal
+    function openReserveModal(id, productRef, location, available) {
+      document.getElementById('reserveInventoryId').value = id;
+      document.getElementById('reserveProductRef').value = productRef;
+      document.getElementById('reserveLocation').value = location;
+      document.getElementById('reserveAvailable').value = available;
+      document.getElementById('reserveQty').value = '';
+      document.getElementById('reserveQty').max = available;
+      document.getElementById('reserveModal').style.display = 'block';
+    }
+
+    // Close reserve modal
+    function closeReserveModal() {
+      document.getElementById('reserveModal').style.display = 'none';
+    }
+
+    // Handle adjust form submission
+    document.getElementById('adjustForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      try {
+        const id = document.getElementById('adjustInventoryId').value;
+        const quantity = parseInt(document.getElementById('adjustNewQty').value);
+        const reason = document.getElementById('adjustReason').value;
+
+        const response = await fetch(`/api/inventory/${id}/adjust`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ quantity, reason })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert('Điều chỉnh tồn kho thành công', 'success');
+          closeAdjustModal();
+          loadInventory(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi điều chỉnh tồn kho', 'error');
+        }
+      } catch (error) {
+        console.error('Error adjusting inventory:', error);
+        showAlert('Lỗi điều chỉnh tồn kho', 'error');
+      }
+    });
+
+    // Handle reserve form submission
+    document.getElementById('reserveForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      try {
+        const id = document.getElementById('reserveInventoryId').value;
+        const quantity = parseInt(document.getElementById('reserveQty').value);
+
+        const response = await fetch(`/api/inventory/${id}/reserve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ quantity })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert('Đặt trước tồn kho thành công', 'success');
+          closeReserveModal();
+          loadInventory(currentPage);
+          loadSummary();
+        } else {
+          showAlert(result.error || 'Lỗi đặt trước tồn kho', 'error');
+        }
+      } catch (error) {
+        console.error('Error reserving inventory:', error);
+        showAlert('Lỗi đặt trước tồn kho', 'error');
+      }
+    });
+
+    // Export inventory
+    function exportInventory() {
+      const params = new URLSearchParams({
+        zone: document.getElementById('zoneFilter').value,
+        abc_code: document.getElementById('abcFilter').value,
+        low_stock: document.getElementById('lowStockFilter').value,
+        export: 'csv'
+      });
+
+      const search = document.getElementById('searchInput').value.trim();
+      if (search) {
+        params.append('search', search);
+      }
+
+      window.open(`/api/inventory/export?${params}`, '_blank');
+    }
+
+    // Show alert message
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      alert.style.display = 'block';
+      
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 5000);
+    }
+
+    // Search on Enter key
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        loadInventory(1);
+      }
+    });
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+      const adjustModal = document.getElementById('adjustModal');
+      const reserveModal = document.getElementById('reserveModal');
+      
+      if (event.target === adjustModal) {
+        closeAdjustModal();
+      }
+      if (event.target === reserveModal) {
+        closeReserveModal();
+      }
+    }
+  </script>
+</body>
+</html>

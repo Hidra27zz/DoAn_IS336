@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D Storage Map - Warehouse Layout</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+      color: #333;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+    .header h1 { font-size: 1.2em; }
+    .back-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.3); }
+    .main-container {
+      display: flex;
+      height: calc(100vh - 52px);
+    }
+    .sidebar {
+      width: 180px;
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      padding: 8px;
+      flex-shrink: 0;
+    }
+    .sidebar h3 {
+      color: #667eea;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 0.9em;
+    }
+    .zone-list { list-style: none; }
+    .zone-item {
+      padding: 6px 8px;
+      margin-bottom: 3px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8em;
+      transition: all 0.2s;
+      border: 1px solid #e0e0e0;
+    }
+    .zone-item:hover { background: #e9ecef; }
+    .zone-item.active { background: #667eea; color: white; border-color: #667eea; }
+    .content {
+      flex: 1;
+      padding: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .floor-tabs { display: flex; gap: 4px; }
+    .floor-tab {
+      padding: 5px 12px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.8em;
+      color: #333;
+    }
+    .floor-tab.active { background: #667eea; border-color: #667eea; color: white; }
+    .stats-bar { display: flex; gap: 8px; }
+    .stat-item {
+      background: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.75em;
+      border: 1px solid #ddd;
+    }
+    .stat-item span { color: #667eea; font-weight: bold; }
+    .search-box {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fff;
+      color: #333;
+      font-size: 0.8em;
+      width: 150px;
+    }
+    .zoom-controls { display: flex; gap: 4px; }
+    .zoom-btn {
+      width: 28px;
+      height: 28px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      color: #333;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    .zoom-btn:hover { background: #667eea; color: white; }
+    .map-wrapper {
+      flex: 1;
+      display: flex;
+      gap: 10px;
+      overflow: hidden;
+    }
+    .map-container {
+      flex: 1;
+      background: #fff;
+      border-radius: 6px;
+      overflow: auto;
+      position: relative;
+      border: 1px solid #ddd;
+    }
+    .map-canvas {
+      position: relative;
+      background: #fafbfc;
+    }
+    .location-cell {
+      position: absolute;
+      width: 60px;
+      height: 40px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(0,0,0,0.1);
+      font-size: 9px;
+      font-weight: 500;
+      color: #333;
+      text-shadow: 0 0 2px rgba(255,255,255,0.8);
+    }
+    .location-cell:hover {
+      transform: scale(1.15);
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .location-cell.selected {
+      transform: scale(1.2);
+      z-index: 101;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+      border: 2px solid #667eea;
+    }
+    .location-code {
+      font-weight: 600;
+      font-size: 8px;
+      line-height: 1.1;
+      text-align: center;
+      word-break: break-all;
+    }
+    .location-qty {
+      font-size: 7px;
+      opacity: 0.8;
+    }
+    .cell-empty { background: #f0f0f0; color: #999; }
+    .cell-low { background: #d4edda; color: #155724; }
+    .cell-medium { background: #fff3cd; color: #856404; }
+    .cell-high { background: #f8d7da; color: #721c24; }
+    .cell-full { background: #d6d8db; color: #383d41; }
+    .legend {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7em;
+    }
+    .legend-color {
+      width: 16px;
+      height: 12px;
+      border-radius: 2px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .info-panel {
+      width: 280px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      display: none;
+    }
+    .info-panel.show { display: block; }
+    .info-panel h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 1em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 8px;
+    }
+    .info-panel .close-btn {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+    .info-panel .close-btn:hover { color: #667eea; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.85em;
+    }
+    .info-label { color: #666; }
+    .info-value { color: #333; font-weight: 500; }
+    .product-list {
+      margin-top: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .product-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 8px;
+      background: #f8f9fa;
+      margin-bottom: 3px;
+      border-radius: 3px;
+      font-size: 0.8em;
+    }
+    .axis-label {
+      position: absolute;
+      color: #999;
+      font-size: 9px;
+      pointer-events: none;
+    }
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #666;
+    }
+    .zone-label {
+      position: absolute;
+      color: rgba(102, 126, 234, 0.5);
+      font-size: 20px;
+      font-weight: bold;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>2D Storage Map - Warehouse Layout</h1>
+    <button class="back-btn" onclick="goBack()">Quay lai</button>
+  </div>
+
+  <div class="main-container">
+    <div class="sidebar">
+      <h3>Zones</h3>
+      <ul class="zone-list" id="zoneList"></ul>
+    </div>
+
+    <div class="content">
+      <div class="controls">
+        <div class="floor-tabs" id="floorTabs"></div>
+        <input type="text" class="search-box" id="searchInput" placeholder="Tim vi tri...">
+        <div class="zoom-controls">
+          <button class="zoom-btn" onclick="zoomOut()">-</button>
+          <button class="zoom-btn" onclick="zoomIn()">+</button>
+          <button class="zoom-btn" onclick="resetZoom()">R</button>
+        </div>
+        <div class="stats-bar">
+          <div class="stat-item">Tong: <span id="statTotal">-</span></div>
+          <div class="stat-item">Co hang: <span id="statOccupied">-</span></div>
+          <div class="stat-item">Trong: <span id="statEmpty">-</span></div>
+        </div>
+      </div>
+
+      <div class="map-wrapper">
+        <div class="map-container" id="mapContainer">
+          <div class="map-canvas" id="mapCanvas">
+            <div class="loading">Dang tai du lieu...</div>
+          </div>
+        </div>
+        <div class="info-panel" id="infoPanel">
+          <h3>
+            <span id="infoPanelTitle">Chi tiet</span>
+            <button class="close-btn" onclick="closeInfoPanel()">x</button>
+          </h3>
+          <div id="infoPanelBody"></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <h4 style="margin: 0 0 10px 0; color: #667eea;">STORAGE Mức độ lưu trữ</h4>
+        <div class="legend-item"><div class="legend-color cell-empty"></div>Trống (0)</div>
+        <div class="legend-item"><div class="legend-color cell-low"></div>Thấp (1-50)</div>
+        <div class="legend-item"><div class="legend-color cell-medium"></div>TB (51-150)</div>
+        <div class="legend-item"><div class="legend-color cell-high"></div>Cao (151-250)</div>
+        <div class="legend-item"><div class="legend-color cell-full"></div>Đầy (>250)</div>
+        
+        <h4 style="margin: 15px 0 10px 0; color: #667eea;">MAP Layout & Navigation</h4>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #ff9800; width: 20px; height: 15px;"></div>
+          DOCK Dock Doors - Khu vực dock
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #e3f2fd; border: 2px dashed #666; width: 20px; height: 15px;"></div>
+          LC - Left Corridor
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #f3e5f5; border: 2px dashed #666; width: 20px; height: 15px;"></div>
+          CC - Center Corridor
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #e8f5e8; border: 2px dashed #666; width: 20px; height: 15px;"></div>
+          RC - Right Corridor
+        </div>
+        
+        <h4 style="margin: 15px 0 10px 0; color: #667eea;">TARGET Storage Strategies</h4>
+        <div style="font-size: 12px; color: #666; line-height: 1.4;">
+          <div>• <strong>Class-Based:</strong> ABC classification</div>
+          <div>• <strong>Dedicated:</strong> Fixed locations</div>
+          <div>• <strong>Random:</strong> Any available space</div>
+          <div>• <strong>Hybrid:</strong> Combined approach</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="navigation.js"></script>
+  <script>
+    let storageData = null;
+    let currentZone = 'all';
+    let currentFloor = 1;
+    let selectedLocation = null;
+    let scale = 1.0;
+    const PADDING = 50;
+    const CELL_WIDTH = 60;
+    const CELL_HEIGHT = 40;
+
+    async function loadData() {
+      try {
+        const res = await fetch('/api/public/storage-map');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        storageData = await res.json();
+        console.log('Loaded', storageData.totalLocations, 'locations');
+        renderZoneList();
+        renderFloorTabs();
+        renderMap();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('mapCanvas').innerHTML = 
+          '<div class="loading" style="color:#dc3545">Loi: ' + err.message + '</div>';
+      }
+    }
+
+    function renderZoneList() {
+      const list = document.getElementById('zoneList');
+      list.innerHTML = '';
+      
+      const all = document.createElement('li');
+      all.className = 'zone-item' + (currentZone === 'all' ? ' active' : '');
+      all.innerHTML = '<span>Tat ca</span><span>' + storageData.totalLocations + '</span>';
+      all.onclick = () => selectZone('all');
+      list.appendChild(all);
+      
+      storageData.zones.forEach(z => {
+        const li = document.createElement('li');
+        li.className = 'zone-item' + (currentZone === z.zone ? ' active' : '');
+        li.innerHTML = '<span>Zone ' + z.zone + '</span><span>' + z.locationCount + '</span>';
+        li.onclick = () => selectZone(z.zone);
+        list.appendChild(li);
+      });
+    }
+
+    function renderFloorTabs() {
+      const tabs = document.getElementById('floorTabs');
+      tabs.innerHTML = '';
+      storageData.floors.forEach(f => {
+        const tab = document.createElement('div');
+        tab.className = 'floor-tab' + (f === currentFloor ? ' active' : '');
+        tab.textContent = 'Tang ' + f;
+        tab.onclick = () => selectFloor(f);
+        tabs.appendChild(tab);
+      });
+    }
+
+    function selectZone(z) { currentZone = z; renderZoneList(); renderMap(); }
+    function selectFloor(f) { currentFloor = f; renderFloorTabs(); renderMap(); }
+    function zoomIn() { scale = Math.min(scale * 1.2, 2.0); renderMap(); }
+    function zoomOut() { scale = Math.max(scale / 1.2, 0.4); renderMap(); }
+    function resetZoom() { scale = 1.0; renderMap(); }
+
+    function renderMap() {
+      let locs = storageData.locations.filter(l => l.z === currentFloor);
+      if (currentZone !== 'all') locs = locs.filter(l => l.zone === currentZone);
+
+      const occ = locs.filter(l => l.totalQuantity > 0).length;
+      document.getElementById('statTotal').textContent = locs.length;
+      document.getElementById('statOccupied').textContent = occ;
+      document.getElementById('statEmpty').textContent = locs.length - occ;
+
+      const canvas = document.getElementById('mapCanvas');
+      if (locs.length === 0) {
+        canvas.innerHTML = '<div class="loading">Khong co vi tri</div>';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        return;
+      }
+
+      const xs = locs.map(l => l.x), ys = locs.map(l => l.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      
+      const cellW = CELL_WIDTH * scale;
+      const cellH = CELL_HEIGHT * scale;
+      const spacing = 5 * scale;
+      
+      // Calculate grid positions
+      const uniqueX = [...new Set(xs)].sort((a,b) => a - b);
+      const uniqueY = [...new Set(ys)].sort((a,b) => b - a);
+      
+      const xIndex = {};
+      uniqueX.forEach((x, i) => xIndex[x] = i);
+      const yIndex = {};
+      uniqueY.forEach((y, i) => yIndex[y] = i);
+      
+      const w = uniqueX.length * (cellW + spacing) + PADDING * 2;
+      const h = uniqueY.length * (cellH + spacing) + PADDING * 2;
+      
+      canvas.style.width = Math.max(w, 600) + 'px';
+      canvas.style.height = Math.max(h, 400) + 'px';
+      canvas.innerHTML = '';
+
+      // Add dock doors area
+      const dockY = Math.min(...ys);
+      if (dockY <= -20) {
+        // Main dock area
+        const dockIndicator = document.createElement('div');
+        dockIndicator.className = 'dock-indicator';
+        dockIndicator.style.position = 'absolute';
+        dockIndicator.style.left = PADDING + 'px';
+        dockIndicator.style.top = (PADDING - 40) + 'px';
+        dockIndicator.style.width = (w - PADDING * 2) + 'px';
+        dockIndicator.style.height = '35px';
+        dockIndicator.style.backgroundColor = '#ff9800';
+        dockIndicator.style.color = 'white';
+        dockIndicator.style.textAlign = 'center';
+        dockIndicator.style.lineHeight = '35px';
+        dockIndicator.style.fontWeight = 'bold';
+        dockIndicator.style.borderRadius = '8px';
+        dockIndicator.style.fontSize = '16px';
+        dockIndicator.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        dockIndicator.textContent = 'DOCK DOORS - Khu vực ra/vào hàng';
+        canvas.appendChild(dockIndicator);
+        
+        // Individual dock doors
+        const dockCount = 6;
+        const dockWidth = (w - PADDING * 2) / dockCount;
+        for (let i = 0; i < dockCount; i++) {
+          const door = document.createElement('div');
+          door.style.position = 'absolute';
+          door.style.left = (PADDING + i * dockWidth + 5) + 'px';
+          door.style.top = (PADDING - 15) + 'px';
+          door.style.width = (dockWidth - 10) + 'px';
+          door.style.height = '20px';
+          door.style.backgroundColor = '#e67e22';
+          door.style.border = '2px solid #d35400';
+          door.style.borderRadius = '4px';
+          door.style.textAlign = 'center';
+          door.style.lineHeight = '16px';
+          door.style.fontSize = '10px';
+          door.style.fontWeight = 'bold';
+          door.style.color = 'white';
+          door.textContent = `D${i + 1}`;
+          canvas.appendChild(door);
+        }
+      }
+      
+      // Navigation arrows removed for cleaner layout
+
+      // Group by zone for labels
+      const zoneGroups = {};
+      locs.forEach(l => {
+        if (!zoneGroups[l.zone]) zoneGroups[l.zone] = [];
+        zoneGroups[l.zone].push(l);
+      });
+
+      // Draw corridor indicators
+      const corridors = [
+        { x: 66, name: 'LC', color: '#e3f2fd' },   // Left Corridor
+        { x: 403, name: 'CC', color: '#f3e5f5' },  // Center Corridor  
+        { x: 686, name: 'RC', color: '#e8f5e8' }   // Right Corridor
+      ];
+      
+      corridors.forEach(corridor => {
+        const corridorLocs = locs.filter(l => Math.abs(l.x - corridor.x) < 50);
+        if (corridorLocs.length > 0) {
+          const minYIdx = Math.min(...corridorLocs.map(l => yIndex[l.y]));
+          const maxYIdx = Math.max(...corridorLocs.map(l => yIndex[l.y]));
+          const xIdx = xIndex[corridorLocs[0].x];
+          
+          const corridorLine = document.createElement('div');
+          corridorLine.className = 'corridor-line';
+          corridorLine.style.position = 'absolute';
+          corridorLine.style.left = (xIdx * (cellW + spacing) + PADDING - 10) + 'px';
+          corridorLine.style.top = (minYIdx * (cellH + spacing) + PADDING) + 'px';
+          corridorLine.style.width = '20px';
+          corridorLine.style.height = ((maxYIdx - minYIdx + 1) * (cellH + spacing)) + 'px';
+          corridorLine.style.backgroundColor = corridor.color;
+          corridorLine.style.border = '2px dashed #666';
+          corridorLine.style.borderRadius = '10px';
+          corridorLine.style.opacity = '0.3';
+          corridorLine.style.zIndex = '1';
+          canvas.appendChild(corridorLine);
+          
+          // Corridor label
+          const corridorLabel = document.createElement('div');
+          corridorLabel.className = 'corridor-label';
+          corridorLabel.style.position = 'absolute';
+          corridorLabel.style.left = (xIdx * (cellW + spacing) + PADDING - 5) + 'px';
+          corridorLabel.style.top = (minYIdx * (cellH + spacing) + PADDING - 25) + 'px';
+          corridorLabel.style.fontSize = '12px';
+          corridorLabel.style.fontWeight = 'bold';
+          corridorLabel.style.color = '#666';
+          corridorLabel.style.zIndex = '2';
+          corridorLabel.textContent = corridor.name;
+          canvas.appendChild(corridorLabel);
+        }
+      });
+
+      // Draw zone backgrounds and labels
+      Object.entries(zoneGroups).forEach(([zone, zoneLocs]) => {
+        // Calculate zone boundaries
+        const zoneXs = zoneLocs.map(l => xIndex[l.x]);
+        const zoneYs = zoneLocs.map(l => yIndex[l.y]);
+        const minZoneX = Math.min(...zoneXs);
+        const maxZoneX = Math.max(...zoneXs);
+        const minZoneY = Math.min(...zoneYs);
+        const maxZoneY = Math.max(...zoneYs);
+        
+        // Zone background
+        const zoneBackground = document.createElement('div');
+        zoneBackground.className = 'zone-background';
+        zoneBackground.style.position = 'absolute';
+        zoneBackground.style.left = (minZoneX * (cellW + spacing) + PADDING - 10) + 'px';
+        zoneBackground.style.top = (minZoneY * (cellH + spacing) + PADDING - 10) + 'px';
+        zoneBackground.style.width = ((maxZoneX - minZoneX + 1) * (cellW + spacing) + 20) + 'px';
+        zoneBackground.style.height = ((maxZoneY - minZoneY + 1) * (cellH + spacing) + 20) + 'px';
+        zoneBackground.style.backgroundColor = getZoneColor(zone);
+        zoneBackground.style.opacity = '0.1';
+        zoneBackground.style.border = `2px solid ${getZoneColor(zone)}`;
+        zoneBackground.style.borderRadius = '8px';
+        zoneBackground.style.zIndex = '0';
+        canvas.appendChild(zoneBackground);
+        
+        // Zone label
+        const avgXIdx = zoneLocs.reduce((s, l) => s + xIndex[l.x], 0) / zoneLocs.length;
+        const avgYIdx = zoneLocs.reduce((s, l) => s + yIndex[l.y], 0) / zoneLocs.length;
+        const label = document.createElement('div');
+        label.className = 'zone-label';
+        label.style.left = (avgXIdx * (cellW + spacing) + PADDING) + 'px';
+        label.style.top = (avgYIdx * (cellH + spacing) + PADDING - 30) + 'px';
+        label.style.backgroundColor = getZoneColor(zone);
+        label.style.color = 'white';
+        label.style.padding = '4px 8px';
+        label.style.borderRadius = '4px';
+        label.style.fontSize = '12px';
+        label.style.fontWeight = 'bold';
+        label.style.zIndex = '10';
+        label.textContent = `ZONE ${zone}`;
+        canvas.appendChild(label);
+      });
+
+      // Draw locations
+      locs.forEach(l => {
+        const cell = document.createElement('div');
+        cell.className = 'location-cell ' + getQtyClass(l.totalQuantity);
+        if (selectedLocation && selectedLocation.locationCode === l.locationCode) {
+          cell.classList.add('selected');
+        }
+        
+        const xPos = xIndex[l.x] * (cellW + spacing) + PADDING;
+        const yPos = yIndex[l.y] * (cellH + spacing) + PADDING;
+        
+        cell.style.left = xPos + 'px';
+        cell.style.top = yPos + 'px';
+        cell.style.width = cellW + 'px';
+        cell.style.height = cellH + 'px';
+        cell.style.fontSize = (9 * scale) + 'px';
+        
+        cell.innerHTML = '<div class="location-code">' + l.locationCode + '</div>' +
+                         '<div class="location-qty">' + Math.round(l.totalQuantity) + '</div>';
+        cell.onclick = () => showInfo(l);
+        canvas.appendChild(cell);
+      });
+    }
+
+    function getQtyClass(q) {
+      if (q === 0) return 'cell-empty';
+      if (q <= 50) return 'cell-low';
+      if (q <= 150) return 'cell-medium';
+      if (q <= 250) return 'cell-high';
+      return 'cell-full';
+    }
+
+    function getZoneColor(zone) {
+      const colors = {
+        'A': '#3498db', // Blue
+        'B': '#e74c3c', // Red  
+        'C': '#2ecc71', // Green
+        'D': '#f39c12', // Orange
+        'E': '#9b59b6', // Purple
+        'F': '#1abc9c'  // Teal
+      };
+      return colors[zone] || '#95a5a6'; // Default gray
+    }
+
+    async function showInfo(loc) {
+      selectedLocation = loc;
+      renderMap();
+      
+      document.getElementById('infoPanelTitle').textContent = loc.locationCode;
+      
+      // Show loading
+      document.getElementById('infoPanelBody').innerHTML = '<div style="text-align:center;padding:20px">Đang tải thông tin...</div>';
+      document.getElementById('infoPanel').classList.add('show');
+      
+      // Calculate basic capacity info from location data
+      let capacityInfo = '';
+      try {
+        // Basic capacity calculation
+        const currentQty = loc.totalQuantity || 0;
+        const estimatedCapacity = Math.max(currentQty * 1.5, 300); // Estimate capacity
+        const utilization = Math.round((currentQty / estimatedCapacity) * 100);
+        const available = Math.round(estimatedCapacity - currentQty);
+        
+        // Performance score based on utilization and ABC class
+        let performanceScore = 75; // Base score
+        if (loc.abcCode === 'A') performanceScore += 15;
+        else if (loc.abcCode === 'B') performanceScore += 10;
+        else if (loc.abcCode === 'C') performanceScore += 5;
+        
+        if (utilization > 80) performanceScore -= 10;
+        else if (utilization < 30) performanceScore -= 5;
+        
+        capacityInfo = `
+          <h4 style="color:#667eea;font-size:0.85em;margin-top:15px;border-top:1px solid #e0e0e0;padding-top:10px">STATS Phân tích Capacity:</h4>
+          <div class="info-row"><span class="info-label">Est. Capacity</span><span class="info-value">${estimatedCapacity}</span></div>
+          <div class="info-row"><span class="info-label">Utilization</span><span class="info-value">${utilization}%</span></div>
+          <div class="info-row"><span class="info-label">Available</span><span class="info-value">${available}</span></div>
+          <div class="info-row"><span class="info-label">Performance</span><span class="info-value">${performanceScore}/100</span></div>
+        `;
+        
+        // Simple recommendations based on data
+        capacityInfo += '<h4 style="color:#667eea;font-size:0.85em;margin-top:15px">ANALYSIS Phân tích:</h4>';
+        
+        if (utilization > 85) {
+          capacityInfo += `
+            <div style="background:#f8f9fa;padding:8px;margin:5px 0;border-radius:4px;border-left:3px solid #e74c3c">
+              <div style="font-weight:600;font-size:0.8em">HIGH UTILIZATION</div>
+              <div style="font-size:0.75em;color:#666">Vị trí gần đầy (${utilization}%)</div>
+              <div style="font-size:0.75em;color:#333;margin-top:3px">→ Cần tối ưu hóa hoặc mở rộng</div>
+            </div>
+          `;
+        } else if (utilization < 30) {
+          capacityInfo += `
+            <div style="background:#f8f9fa;padding:8px;margin:5px 0;border-radius:4px;border-left:3px solid #f39c12">
+              <div style="font-weight:600;font-size:0.8em">LOW UTILIZATION</div>
+              <div style="font-size:0.75em;color:#666">Sử dụng thấp (${utilization}%)</div>
+              <div style="font-size:0.75em;color:#333;margin-top:3px">→ Có thể tối ưu hóa không gian</div>
+            </div>
+          `;
+        } else {
+          capacityInfo += `
+            <div style="background:#f8f9fa;padding:8px;margin:5px 0;border-radius:4px;border-left:3px solid #27ae60">
+              <div style="font-weight:600;font-size:0.8em">OPTIMAL USAGE</div>
+              <div style="font-size:0.75em;color:#666">Sử dụng tối ưu (${utilization}%)</div>
+              <div style="font-size:0.75em;color:#333;margin-top:3px">→ Vị trí hoạt động tốt</div>
+            </div>
+          `;
+        }
+        
+        if (loc.abcCode === 'A') {
+          capacityInfo += `
+            <div style="background:#f8f9fa;padding:8px;margin:5px 0;border-radius:4px;border-left:3px solid #3498db">
+              <div style="font-weight:600;font-size:0.8em">CLASS A PRODUCT</div>
+              <div style="font-size:0.75em;color:#666">Sản phẩm quan trọng</div>
+              <div style="font-size:0.75em;color:#333;margin-top:3px">→ Ưu tiên vị trí gần dock</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error calculating capacity:', error);
+        capacityInfo = '<div style="color:#e74c3c;font-size:0.8em;margin-top:10px">Lỗi tính toán capacity</div>';
+      }
+      
+      // Products list
+      let prods = '';
+      if (loc.products && loc.products.length > 0) {
+        prods = '<div class="product-list">';
+        loc.products.forEach(p => {
+          prods += '<div class="product-item"><span>' + p.code + '</span><span>' + p.quantity + '</span></div>';
+        });
+        prods += '</div>';
+      } else {
+        prods = '<p style="color:#666;text-align:center;padding:8px">Khong co san pham</p>';
+      }
+
+      // Update panel with full info
+      document.getElementById('infoPanelBody').innerHTML = 
+        '<div class="info-row"><span class="info-label">Ma vi tri</span><span class="info-value">' + loc.locationCode + '</span></div>' +
+        '<div class="info-row"><span class="info-label">Zone</span><span class="info-value">' + loc.zone + '</span></div>' +
+        '<div class="info-row"><span class="info-label">X</span><span class="info-value">' + loc.x + '</span></div>' +
+        '<div class="info-row"><span class="info-label">Y</span><span class="info-value">' + loc.y + '</span></div>' +
+        '<div class="info-row"><span class="info-label">Tang</span><span class="info-value">' + loc.z + '</span></div>' +
+        '<div class="info-row"><span class="info-label">ABC</span><span class="info-value">' + (loc.abcCode || '-') + '</span></div>' +
+        '<div class="info-row"><span class="info-label">Tong SL</span><span class="info-value">' + loc.totalQuantity.toFixed(1) + '</span></div>' +
+        '<div class="info-row"><span class="info-label">So SP</span><span class="info-value">' + loc.productCount + '</span></div>' +
+        capacityInfo +
+        '<h4 style="margin-top:10px;color:#667eea;font-size:0.85em">PRODUCTS San pham:</h4>' + prods;
+    }
+
+    function closeInfoPanel() {
+      document.getElementById('infoPanel').classList.remove('show');
+      selectedLocation = null;
+      renderMap();
+    }
+
+    document.getElementById('searchInput').addEventListener('keyup', function(e) {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) return;
+      const m = storageData.locations.find(l => 
+        l.locationCode.toLowerCase().includes(q) ||
+        l.products.some(p => p.code.toLowerCase().includes(q))
+      );
+      if (m) {
+        currentFloor = m.z;
+        currentZone = 'all';
+        renderFloorTabs();
+        renderZoneList();
+        renderMap();
+        setTimeout(() => showInfo(m), 50);
+      }
+    });
+
+    function goBack() {
+      window.history.back();
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>

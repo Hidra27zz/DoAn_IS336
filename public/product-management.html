@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Management - Quản lý Sản phẩm</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.5em; }
+    .back-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.3); }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 2em;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+    .stat-label {
+      color: #666;
+      font-size: 0.9em;
+    }
+    
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .controls-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .search-box, .filter-select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .search-box { width: 250px; }
+    .filter-select { width: 150px; }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary { background: #667eea; color: white; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-warning { background: #f39c12; color: white; }
+    .btn-danger { background: #e74c3c; color: white; }
+    .btn:hover { opacity: 0.9; }
+    
+    .products-table {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .table-header {
+      background: #f8f9fa;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-title { font-weight: 600; color: #333; }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #555;
+    }
+    tr:hover { background: #f8f9fa; }
+    
+    .abc-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+    .abc-A { background: #e74c3c; color: white; }
+    .abc-B { background: #f39c12; color: white; }
+    .abc-C { background: #27ae60; color: white; }
+    
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+    }
+    .status-active { background: #d4edda; color: #155724; }
+    .status-inactive { background: #f8d7da; color: #721c24; }
+    
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.8em;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      padding: 20px;
+      background: white;
+    }
+    .page-btn {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .page-btn.active { background: #667eea; color: white; border-color: #667eea; }
+    .page-btn:hover:not(.active) { background: #f8f9fa; }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title { font-size: 1.2em; font-weight: 600; }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: #999;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Product Management - Quản lý Sản phẩm</h1>
+    <a href="warehouse-dashboard.html" class="back-btn">← Quay lại</a>
+  </div>
+
+  <div class="container">
+    <!-- Statistics Cards -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-number" id="totalProducts">-</div>
+        <div class="stat-label">Tổng sản phẩm</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="abcA">-</div>
+        <div class="stat-label">ABC Class A</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="abcB">-</div>
+        <div class="stat-label">ABC Class B</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="abcC">-</div>
+        <div class="stat-label">ABC Class C</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="activeProducts">-</div>
+        <div class="stat-label">Đang hoạt động</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="controls-row">
+        <input type="text" class="search-box" id="searchInput" placeholder="Tìm kiếm theo Reference...">
+        <select class="filter-select" id="abcFilter">
+          <option value="">Tất cả ABC</option>
+          <option value="A">Class A</option>
+          <option value="B">Class B</option>
+          <option value="C">Class C</option>
+        </select>
+        <select class="filter-select" id="sectorFilter">
+          <option value="">Tất cả Sector</option>
+        </select>
+        <button class="btn btn-primary" onclick="openProductModal()">
+          + Thêm sản phẩm
+        </button>
+      </div>
+      <div class="controls-row">
+        <button class="btn btn-success" onclick="openImportModal()">
+          📁 Import CSV
+        </button>
+        <button class="btn btn-warning" onclick="exportProducts()">
+          📄 Export CSV
+        </button>
+        <button class="btn btn-primary" onclick="refreshData()">
+          🔄 Làm mới
+        </button>
+      </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="products-table">
+      <div class="table-header">
+        <div class="table-title">Danh sách Sản phẩm</div>
+        <div id="tableInfo">Đang tải...</div>
+      </div>
+      
+      <div id="tableContainer">
+        <div class="loading">Đang tải dữ liệu...</div>
+      </div>
+      
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- Product Modal -->
+  <div class="modal" id="productModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Thêm sản phẩm mới</div>
+        <button class="close-btn" onclick="closeProductModal()">&times;</button>
+      </div>
+      
+      <div id="modalError"></div>
+      
+      <form id="productForm">
+        <div class="form-group">
+          <label class="form-label">Reference *</label>
+          <input type="text" class="form-input" id="productReference" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ABC Classification *</label>
+          <select class="form-input" id="productABC" required>
+            <option value="">Chọn ABC</option>
+            <option value="A">A - High demand</option>
+            <option value="B">B - Medium demand</option>
+            <option value="C">C - Low demand</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sector</label>
+          <input type="text" class="form-input" id="productSector" placeholder="PF, AC, SP...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mô tả</label>
+          <input type="text" class="form-input" id="productDescription">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Giá đơn vị</label>
+          <input type="number" class="form-input" id="productPrice" step="0.01" min="0">
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn" onclick="closeProductModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Import sản phẩm từ CSV</div>
+        <button class="close-btn" onclick="closeImportModal()">&times;</button>
+      </div>
+      
+      <div id="importError"></div>
+      
+      <form id="importForm">
+        <div class="form-group">
+          <label class="form-label">Chọn file CSV</label>
+          <input type="file" class="form-input" id="csvFile" accept=".csv" required>
+          <small style="color: #666; margin-top: 5px; display: block;">
+            Format: Reference;ABCCOD;Sector (phân cách bằng dấu ;)
+          </small>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn" onclick="closeImportModal()">Hủy</button>
+          <button type="submit" class="btn btn-success" id="importBtn">Import</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="navigation.js"></script>
+  <script>
+    let currentPage = 1;
+    let currentFilters = {};
+    let editingProductId = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      loadStats();
+      loadProducts();
+      setupEventListeners();
+    });
+
+    function setupEventListeners() {
+      // Search and filters
+      document.getElementById('searchInput').addEventListener('input', debounce(handleSearch, 300));
+      document.getElementById('abcFilter').addEventListener('change', handleFilterChange);
+      document.getElementById('sectorFilter').addEventListener('change', handleFilterChange);
+      
+      // Forms
+      document.getElementById('productForm').addEventListener('submit', handleProductSubmit);
+      document.getElementById('importForm').addEventListener('submit', handleImportSubmit);
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/products/stats', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load stats');
+        
+        const stats = await response.json();
+        
+        document.getElementById('totalProducts').textContent = stats.total_products;
+        document.getElementById('abcA').textContent = stats.abc_distribution.A;
+        document.getElementById('abcB').textContent = stats.abc_distribution.B;
+        document.getElementById('abcC').textContent = stats.abc_distribution.C;
+        document.getElementById('activeProducts').textContent = stats.active_products;
+        
+        // Populate sector filter
+        const sectorFilter = document.getElementById('sectorFilter');
+        Object.keys(stats.sector_distribution).forEach(sector => {
+          if (sector !== 'Unknown') {
+            const option = document.createElement('option');
+            option.value = sector;
+            option.textContent = sector;
+            sectorFilter.appendChild(option);
+          }
+        });
+      } catch (error) {
+        console.error('Load stats error:', error);
+      }
+    }
+
+    async function loadProducts(page = 1) {
+      try {
+        const params = new URLSearchParams({
+          page,
+          limit: 20,
+          ...currentFilters
+        });
+        
+        const response = await fetch(`/api/products?${params}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load products');
+        
+        const data = await response.json();
+        
+        renderProductsTable(data.products);
+        renderPagination(data.pagination);
+        
+        document.getElementById('tableInfo').textContent = 
+          `Hiển thị ${data.products.length} / ${data.pagination.total_items} sản phẩm`;
+          
+      } catch (error) {
+        console.error('Load products error:', error);
+        document.getElementById('tableContainer').innerHTML = 
+          '<div class="error">Lỗi tải dữ liệu sản phẩm</div>';
+      }
+    }
+
+    function renderProductsTable(products) {
+      const container = document.getElementById('tableContainer');
+      
+      if (products.length === 0) {
+        container.innerHTML = '<div class="loading">Không có sản phẩm nào</div>';
+        return;
+      }
+      
+      const table = `
+        <table>
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>ABC</th>
+              <th>Sector</th>
+              <th>Mô tả</th>
+              <th>Giá</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${products.map(product => `
+              <tr>
+                <td><strong>${product.reference}</strong></td>
+                <td><span class="abc-badge abc-${product.abc_code}">${product.abc_code}</span></td>
+                <td>${product.sector_code || '-'}</td>
+                <td>${product.description || '-'}</td>
+                <td>${product.unit_price ? '$' + product.unit_price.toFixed(2) : '-'}</td>
+                <td><span class="status-badge status-${product.status || 'active'}">${product.status || 'active'}</span></td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn btn-primary btn-sm" onclick="editProduct('${product.id}')">Sửa</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteProduct('${product.id}', '${product.reference}')">Xóa</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      
+      container.innerHTML = table;
+    }
+
+    function renderPagination(pagination) {
+      const container = document.getElementById('pagination');
+      
+      if (pagination.total_pages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      
+      // Previous button
+      if (pagination.current_page > 1) {
+        html += `<button class="page-btn" onclick="loadProducts(${pagination.current_page - 1})">‹ Trước</button>`;
+      }
+      
+      // Page numbers
+      const startPage = Math.max(1, pagination.current_page - 2);
+      const endPage = Math.min(pagination.total_pages, pagination.current_page + 2);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="page-btn ${i === pagination.current_page ? 'active' : ''}" onclick="loadProducts(${i})">${i}</button>`;
+      }
+      
+      // Next button
+      if (pagination.current_page < pagination.total_pages) {
+        html += `<button class="page-btn" onclick="loadProducts(${pagination.current_page + 1})">Tiếp ›</button>`;
+      }
+      
+      container.innerHTML = html;
+      currentPage = pagination.current_page;
+    }
+
+    function handleSearch() {
+      const search = document.getElementById('searchInput').value.trim();
+      currentFilters.search = search;
+      currentPage = 1;
+      loadProducts(1);
+    }
+
+    function handleFilterChange() {
+      const abcFilter = document.getElementById('abcFilter').value;
+      const sectorFilter = document.getElementById('sectorFilter').value;
+      
+      currentFilters.abc_filter = abcFilter;
+      currentFilters.sector_filter = sectorFilter;
+      currentPage = 1;
+      loadProducts(1);
+    }
+
+    function openProductModal(productId = null) {
+      editingProductId = productId;
+      
+      if (productId) {
+        document.getElementById('modalTitle').textContent = 'Chỉnh sửa sản phẩm';
+        loadProductForEdit(productId);
+      } else {
+        document.getElementById('modalTitle').textContent = 'Thêm sản phẩm mới';
+        document.getElementById('productForm').reset();
+      }
+      
+      document.getElementById('modalError').innerHTML = '';
+      document.getElementById('productModal').style.display = 'block';
+    }
+
+    function closeProductModal() {
+      document.getElementById('productModal').style.display = 'none';
+      editingProductId = null;
+    }
+
+    async function loadProductForEdit(productId) {
+      try {
+        const response = await fetch(`/api/products/${productId}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load product');
+        
+        const product = await response.json();
+        
+        document.getElementById('productReference').value = product.reference;
+        document.getElementById('productABC').value = product.abc_code;
+        document.getElementById('productSector').value = product.sector_code || '';
+        document.getElementById('productDescription').value = product.description || '';
+        document.getElementById('productPrice').value = product.unit_price || '';
+        
+      } catch (error) {
+        console.error('Load product error:', error);
+        showModalError('Lỗi tải thông tin sản phẩm');
+      }
+    }
+
+    async function handleProductSubmit(e) {
+      e.preventDefault();
+      
+      const formData = {
+        reference: document.getElementById('productReference').value.trim(),
+        abc_code: document.getElementById('productABC').value,
+        sector_code: document.getElementById('productSector').value.trim(),
+        description: document.getElementById('productDescription').value.trim(),
+        unit_price: parseFloat(document.getElementById('productPrice').value) || 0
+      };
+      
+      try {
+        document.getElementById('saveBtn').disabled = true;
+        document.getElementById('saveBtn').textContent = 'Đang lưu...';
+        
+        const url = editingProductId ? `/api/products/${editingProductId}` : '/api/products';
+        const method = editingProductId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to save product');
+        }
+        
+        closeProductModal();
+        loadProducts(currentPage);
+        loadStats();
+        showSuccess(editingProductId ? 'Cập nhật sản phẩm thành công' : 'Thêm sản phẩm thành công');
+        
+      } catch (error) {
+        console.error('Save product error:', error);
+        showModalError(error.message);
+      } finally {
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveBtn').textContent = 'Lưu';
+      }
+    }
+
+    function editProduct(productId) {
+      openProductModal(productId);
+    }
+
+    async function deleteProduct(productId, reference) {
+      if (!confirm(`Bạn có chắc muốn xóa sản phẩm "${reference}"?`)) return;
+      
+      try {
+        const response = await fetch(`/api/products/${productId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete product');
+        }
+        
+        loadProducts(currentPage);
+        loadStats();
+        showSuccess('Xóa sản phẩm thành công');
+        
+      } catch (error) {
+        console.error('Delete product error:', error);
+        alert('Lỗi: ' + error.message);
+      }
+    }
+
+    function openImportModal() {
+      document.getElementById('importError').innerHTML = '';
+      document.getElementById('importForm').reset();
+      document.getElementById('importModal').style.display = 'block';
+    }
+
+    function closeImportModal() {
+      document.getElementById('importModal').style.display = 'none';
+    }
+
+    async function handleImportSubmit(e) {
+      e.preventDefault();
+      
+      const fileInput = document.getElementById('csvFile');
+      if (!fileInput.files[0]) return;
+      
+      const formData = new FormData();
+      formData.append('csvFile', fileInput.files[0]);
+      
+      try {
+        document.getElementById('importBtn').disabled = true;
+        document.getElementById('importBtn').textContent = 'Đang import...';
+        
+        const response = await fetch('/api/products/import', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Import failed');
+        }
+        
+        closeImportModal();
+        loadProducts(currentPage);
+        loadStats();
+        
+        alert(`Import thành công!\nĐã import: ${result.summary.imported}\nBỏ qua: ${result.summary.skipped}\nLỗi: ${result.summary.errors}`);
+        
+      } catch (error) {
+        console.error('Import error:', error);
+        showImportError(error.message);
+      } finally {
+        document.getElementById('importBtn').disabled = false;
+        document.getElementById('importBtn').textContent = 'Import';
+      }
+    }
+
+    async function exportProducts() {
+      try {
+        const response = await fetch('/api/products/export', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
+        
+        if (!response.ok) throw new Error('Export failed');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `products_export_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+      } catch (error) {
+        console.error('Export error:', error);
+        alert('Lỗi xuất file: ' + error.message);
+      }
+    }
+
+    function refreshData() {
+      loadStats();
+      loadProducts(currentPage);
+    }
+
+    function showModalError(message) {
+      document.getElementById('modalError').innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function showImportError(message) {
+      document.getElementById('importError').innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function showSuccess(message) {
+      // Create temporary success message
+      const successDiv = document.createElement('div');
+      successDiv.className = 'success';
+      successDiv.textContent = message;
+      successDiv.style.position = 'fixed';
+      successDiv.style.top = '20px';
+      successDiv.style.right = '20px';
+      successDiv.style.zIndex = '9999';
+      
+      document.body.appendChild(successDiv);
+      
+      setTimeout(() => {
+        document.body.removeChild(successDiv);
+      }, 3000);
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+      const productModal = document.getElementById('productModal');
+      const importModal = document.getElementById('importModal');
+      
+      if (event.target === productModal) {
+        closeProductModal();
+      }
+      if (event.target === importModal) {
+        closeImportModal();
+      }
+    }
+  </script>
+</body>
+</html>
