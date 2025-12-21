@@ -12,7 +12,7 @@ async function initializeDatabase() {
         
         process.exit(0);
     } catch (error) {
-        console.error('❌ Database initialization failed:', error);
+        console.error('Database initialization failed:', error);
         process.exit(1);
     }
 }

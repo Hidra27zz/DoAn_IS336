@@ -53,8 +53,8 @@
           <li class="nav-item" data-section="warehouse">Warehouse</li>
           <li class="nav-item" data-section="ai">AI Optimization</li>
           <li class="nav-item" data-section="reports">Reports</li>
-          <li class="nav-item" onclick="window.open('/storage-strategy', '_blank')">Storage Config</li>
-          <li class="nav-item" onclick="window.open('/operators', '_blank')">Operators</li>
+          <li class="nav-item" data-section="storage-config">Storage Config</li>
+          <li class="nav-item" data-section="operators">Operators</li>
         </ul>
         <div class="sidebar-footer">
           <span id="username-display"></span>
@@ -478,6 +478,106 @@
           </div>
           <div id="report-output" class="report-output"></div>
         </section>
+
+        <!-- Storage Config Section -->
+        <section id="storage-config-section" class="content-section">
+          <h2>Storage Strategy Configuration</h2>
+          <div class="config-grid">
+            <div class="config-card">
+              <h3>ABC Classification</h3>
+              <p>Configure product classification rules</p>
+              <div class="form-group">
+                <label>Class A Threshold (%)</label>
+                <input type="number" id="class-a-threshold" value="80" min="0" max="100">
+              </div>
+              <div class="form-group">
+                <label>Class B Threshold (%)</label>
+                <input type="number" id="class-b-threshold" value="15" min="0" max="100">
+              </div>
+              <button class="btn btn-primary" onclick="updateABCConfig()">Update ABC Config</button>
+            </div>
+            <div class="config-card">
+              <h3>Storage Strategy</h3>
+              <p>Configure storage allocation strategy</p>
+              <div class="form-group">
+                <label>Strategy Type</label>
+                <select id="storage-strategy">
+                  <option value="class-based">Class-Based Storage</option>
+                  <option value="random">Random Storage</option>
+                  <option value="dedicated">Dedicated Storage</option>
+                  <option value="hybrid">Hybrid Storage</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="updateStorageStrategy()">Update Strategy</button>
+            </div>
+            <div class="config-card">
+              <h3>Zone Configuration</h3>
+              <p>Configure warehouse zones</p>
+              <div class="form-group">
+                <label>High-Frequency Zone</label>
+                <select id="high-freq-zone">
+                  <option value="A">Zone A</option>
+                  <option value="B">Zone B</option>
+                  <option value="C">Zone C</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Low-Frequency Zone</label>
+                <select id="low-freq-zone">
+                  <option value="D">Zone D</option>
+                  <option value="E">Zone E</option>
+                  <option value="F">Zone F</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="updateZoneConfig()">Update Zones</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Operators Section -->
+        <section id="operators-section" class="content-section">
+          <h2>Operator Management</h2>
+          
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="showModal('create-operator-modal')">Add Operator</button>
+            <button class="btn btn-secondary" onclick="loadOperatorPerformance()">Refresh Performance</button>
+          </div>
+          
+          <div class="section-header">
+            <div class="filters">
+              <select id="operator-status-filter">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table id="operators-table">
+              <thead>
+                <tr>
+                  <th>Operator ID</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Current Wave</th>
+                  <th>Total Picks</th>
+                  <th>Avg Pick Time</th>
+                  <th>Performance</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          
+          <div class="performance-charts">
+            <div class="chart-container">
+              <h3>Operator Performance Comparison</h3>
+              <canvas id="operator-performance-chart"></canvas>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </div>
@@ -711,6 +811,42 @@
         </div>
         <div id="product-timeline-content"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Create Operator Modal -->
+  <div id="create-operator-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Operator</h3>
+        <span class="close-btn" onclick="closeModal('create-operator-modal')">&times;</span>
+      </div>
+      <form id="create-operator-form" onsubmit="handleCreateOperator(event)">
+        <div class="form-group">
+          <label>Operator ID</label>
+          <input type="text" id="operator-id" required placeholder="e.g. OP001">
+        </div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="operator-name" required placeholder="Enter full name">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="operator-status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Shift</label>
+          <select id="operator-shift">
+            <option value="morning">Morning (6AM-2PM)</option>
+            <option value="afternoon">Afternoon (2PM-10PM)</option>
+            <option value="night">Night (10PM-6AM)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Operator</button>
+      </form>
     </div>
   </div>
 

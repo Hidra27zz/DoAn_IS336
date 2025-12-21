@@ -6,7 +6,7 @@ async function clearAndReimportData() {
   
   try {
     // Clear existing data (optional - comment out if you want to keep existing data)
-    console.log('⚠️  Clearing existing data...');
+    console.log('Clearing existing data...');
     // await clearCollections();
     
     // Run the seed script with new path
@@ -14,7 +14,7 @@ async function clearAndReimportData() {
     require('./seed-firebase.js');
     
   } catch (error) {
-    console.error('❌ Re-import failed:', error);
+    console.error('Re-import failed:', error);
     process.exit(1);
   }
 }

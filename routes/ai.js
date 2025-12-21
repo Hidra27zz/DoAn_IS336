@@ -9,6 +9,7 @@ const { AdvancedAnalyticsService } = require('../services/ai-analytics');
 const { ResearchReportService } = require('../services/research-report');
 const aiTrainingService = require('../services/ai-training-service');
 const aiComparisonService = require('../services/ai-comparison-service');
+const MetricsCalculator = require('../services/metrics-calculator');
 const { requireRole } = require('../middleware/auth');
 
 const router = express.Router();
@@ -18,6 +19,7 @@ const predictiveService = new PredictiveAnalyticsService();
 const realTimeOptimizer = new RealTimeOptimizer();
 const analyticsService = new AdvancedAnalyticsService();
 const reportService = new ResearchReportService();
+const metricsCalculator = new MetricsCalculator();
 
 // AI Training Endpoints
 

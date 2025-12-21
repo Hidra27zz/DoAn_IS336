@@ -51,10 +51,10 @@ function loadStorageData() {
       }
     });
     
-    console.log(`✅ Loaded storage data for ${storageDataCache.size} locations from Class_Based_Storage.csv`);
+    console.log(`Loaded storage data for ${storageDataCache.size} locations from Class_Based_Storage.csv`);
     return storageDataCache;
   } catch (error) {
-    console.error('❌ Error loading storage data from CSV:', error);
+    console.error('Error loading storage data from CSV:', error);
     return new Map();
   }
 }
@@ -112,10 +112,10 @@ function loadCompleteWarehouseLayout() {
       }
     });
     
-    console.log(`✅ Loaded ${completeWarehouseLayout.length} locations from CSV layout file`);
+    console.log(`Loaded ${completeWarehouseLayout.length} locations from CSV layout file`);
     return completeWarehouseLayout;
   } catch (error) {
-    console.error('❌ Error loading warehouse layout from CSV:', error);
+    console.error('Error loading warehouse layout from CSV:', error);
     return [];
   }
 }
@@ -273,10 +273,10 @@ function loadStorageStrategyData(filename) {
       }
     });
     
-    console.log(`✅ Loaded ${data.size} locations from ${filename}`);
+    console.log(`Loaded ${data.size} locations from ${filename}`);
     return data;
   } catch (error) {
-    console.error(`❌ Error loading ${filename}:`, error);
+    console.error(`Error loading ${filename}:`, error);
     return new Map();
   }
 }
@@ -307,10 +307,10 @@ function loadOrdersData() {
       }
     });
     
-    console.log(`✅ Loaded ${orders.length} orders from Customer_Order.csv`);
+    console.log(`Loaded ${orders.length} orders from Customer_Order.csv`);
     return orders;
   } catch (error) {
-    console.error('❌ Error loading orders data:', error);
+    console.error('Error loading orders data:', error);
     return [];
   }
 }
@@ -338,10 +338,10 @@ function loadPickingData() {
       }
     });
     
-    console.log(`✅ Loaded ${picking.length} picking tasks from Picking_Wave.csv`);
+    console.log(`Loaded ${picking.length} picking tasks from Picking_Wave.csv`);
     return picking;
   } catch (error) {
-    console.error('❌ Error loading picking data:', error);
+    console.error('Error loading picking data:', error);
     return [];
   }
 }
@@ -367,10 +367,10 @@ function loadProductsData() {
       }
     });
     
-    console.log(`✅ Loaded ${products.size} products from Product.csv`);
+    console.log(`Loaded ${products.size} products from Product.csv`);
     return products;
   } catch (error) {
-    console.error('❌ Error loading products data:', error);
+    console.error('Error loading products data:', error);
     return new Map();
   }
 }
@@ -1652,7 +1652,7 @@ router.post('/ai-optimize', requireRole(['manager', 'admin']), async (req, res) 
     }
     
     // Log optimization activity
-    console.log(`✅ AI Optimization completed: ${optimization_type} by ${req.user.username}`);
+    console.log(`AI Optimization completed: ${optimization_type} by ${req.user.username}`);
     
     res.json({
       success: true,

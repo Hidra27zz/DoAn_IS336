@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Debug: Check if functions are available
   setTimeout(() => {
-    console.log('🔍 Function check:');
+    console.log('Function check:');
     console.log('  - openAdjustModal:', typeof window.openAdjustModal);
     console.log('  - adjustStock:', typeof window.adjustStock);
     console.log('  - viewWave:', typeof window.viewWave);
@@ -138,14 +138,46 @@ function setupEventListeners() {
     item.addEventListener('click', function() {
       const section = this.dataset.section;
       
+      if (!section) return; // Skip if no data-section attribute
+      
+      // Update active states
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       this.classList.add('active');
       
+      // Update content sections
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
       document.getElementById(`${section}-section`).classList.add('active');
       
+      // Update URL without page reload
+      const newUrl = section === 'dashboard' ? '/' : `/${section}`;
+      window.history.pushState({ section }, '', newUrl);
+      
+      // Load section data
       loadSectionData(section);
     });
+  });
+  
+  // Handle browser back/forward buttons
+  window.addEventListener('popstate', function(event) {
+    if (event.state && event.state.section) {
+      const section = event.state.section;
+      
+      // Update active states
+      document.querySelectorAll('.nav-item').forEach(i => {
+        if (i.dataset.section === section) {
+          i.classList.add('active');
+        } else {
+          i.classList.remove('active');
+        }
+      });
+      
+      // Update content sections
+      document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(`${section}-section`).classList.add('active');
+      
+      // Load section data
+      loadSectionData(section);
+    }
   });
   
   // Refresh buttons
@@ -175,8 +207,9 @@ function loadSectionData(section) {
     case 'orders': loadOrdersData(); break;
     case 'picking': loadPickingData(); break;
     case 'warehouse': loadWarehouseData(); break;
-    // timeline removed
     case 'ai': loadAIData(); break;
+    case 'storage-config': loadStorageConfigData(); break;
+    case 'operators': loadOperatorsData(); break;
     case 'reports': break;
   }
 }
@@ -1227,7 +1260,7 @@ window.loadWarehouseData = loadWarehouseData;
 
 // Debug function to test all functions are available
 window.debugFunctions = function() {
-  console.log('🔍 Checking function availability:');
+  console.log('Checking function availability:');
   console.log('openAdjustModal:', typeof window.openAdjustModal);
   console.log('viewWave:', typeof window.viewWave);
   console.log('startWave:', typeof window.startWave);
@@ -1243,10 +1276,10 @@ window.debugFunctions = function() {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(response => response.json())
-    .then(data => console.log('✅ API test successful:', data.inventory?.length || 0, 'items'))
-    .catch(error => console.error('❌ API test failed:', error));
+    .then(data => console.log('API test successful:', data.inventory?.length || 0, 'items'))
+    .catch(error => console.error('API test failed:', error));
   } else {
-    console.log('❌ No auth token found');
+    console.log('No auth token found');
   }
 };
 
@@ -1836,4 +1869,326 @@ async function showProductTimeline(productRef) {
   } else {
     showToast('Product not found or no timeline data', 'error');
   }
+}
+
+// Storage Config Functions
+async function loadStorageConfigData() {
+  // Load current configuration
+  const config = await apiCall('/config/storage');
+  
+  if (config) {
+    document.getElementById('class-a-threshold').value = config.abc_thresholds?.class_a || 80;
+    document.getElementById('class-b-threshold').value = config.abc_thresholds?.class_b || 15;
+    document.getElementById('storage-strategy').value = config.storage_strategy || 'class-based';
+    document.getElementById('high-freq-zone').value = config.zone_config?.high_frequency || 'A';
+    document.getElementById('low-freq-zone').value = config.zone_config?.low_frequency || 'F';
+  }
+}
+
+async function updateABCConfig() {
+  const classA = parseInt(document.getElementById('class-a-threshold').value);
+  const classB = parseInt(document.getElementById('class-b-threshold').value);
+  
+  if (classA + classB >= 100) {
+    showToast('Class A + Class B thresholds must be less than 100%', 'error');
+    return;
+  }
+  
+  const result = await apiCall('/config/storage/abc', {
+    method: 'PUT',
+    body: JSON.stringify({
+      class_a: classA,
+      class_b: classB,
+      class_c: 100 - classA - classB
+    })
+  });
+  
+  if (result?.success) {
+    showToast('ABC configuration updated successfully', 'success');
+  } else {
+    showToast('Failed to update ABC configuration', 'error');
+  }
+}
+
+async function updateStorageStrategy() {
+  const strategy = document.getElementById('storage-strategy').value;
+  
+  const result = await apiCall('/config/storage/strategy', {
+    method: 'PUT',
+    body: JSON.stringify({ strategy })
+  });
+  
+  if (result?.success) {
+    showToast('Storage strategy updated successfully', 'success');
+  } else {
+    showToast('Failed to update storage strategy', 'error');
+  }
+}
+
+async function updateZoneConfig() {
+  const highFreqZone = document.getElementById('high-freq-zone').value;
+  const lowFreqZone = document.getElementById('low-freq-zone').value;
+  
+  const result = await apiCall('/config/storage/zones', {
+    method: 'PUT',
+    body: JSON.stringify({
+      high_frequency: highFreqZone,
+      low_frequency: lowFreqZone
+    })
+  });
+  
+  if (result?.success) {
+    showToast('Zone configuration updated successfully', 'success');
+  } else {
+    showToast('Failed to update zone configuration', 'error');
+  }
+}
+
+// Operators Functions
+async function loadOperatorsData() {
+  const status = document.getElementById('operator-status-filter')?.value || '';
+  
+  let url = '/operators?limit=100';
+  if (status) url += `&status=${status}`;
+  
+  const data = await apiCall(url);
+  
+  if (data?.operators) {
+    const tbody = document.querySelector('#operators-table tbody');
+    tbody.innerHTML = data.operators.map(operator => `
+      <tr>
+        <td>${operator.operator_id || 'N/A'}</td>
+        <td>${operator.name || 'N/A'}</td>
+        <td><span class="status-badge status-${operator.status}">${operator.status}</span></td>
+        <td>${operator.current_wave || 'None'}</td>
+        <td>${operator.total_picks || 0}</td>
+        <td>${operator.avg_pick_time || 0}s</td>
+        <td>
+          <div class="performance-indicator ${getPerformanceClass(operator.performance_score)}">
+            ${operator.performance_score || 0}%
+          </div>
+        </td>
+        <td class="table-actions">
+          <button class="btn btn-small btn-secondary" onclick="editOperator('${operator.id}')">Edit</button>
+          <button class="btn btn-small ${operator.status === 'active' ? 'btn-warning' : 'btn-success'}" 
+                  onclick="toggleOperatorStatus('${operator.id}', '${operator.status}')">
+            ${operator.status === 'active' ? 'Deactivate' : 'Activate'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+  
+  // Load performance chart
+  loadOperatorPerformanceChart();
+}
+
+async function loadOperatorPerformanceChart() {
+  const data = await apiCall('/operators/performance');
+  
+  if (data?.operators) {
+    const ctx = document.getElementById('operator-performance-chart');
+    if (ctx) {
+      if (charts.operatorPerformance) charts.operatorPerformance.destroy();
+      
+      charts.operatorPerformance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.operators.map(op => op.name || op.operator_id),
+          datasets: [
+            {
+              label: 'Total Picks',
+              data: data.operators.map(op => op.total_picks || 0),
+              backgroundColor: '#3b82f6',
+              yAxisID: 'y'
+            },
+            {
+              label: 'Avg Pick Time (s)',
+              data: data.operators.map(op => op.avg_pick_time || 0),
+              backgroundColor: '#ef4444',
+              type: 'line',
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              grid: {
+                drawOnChartArea: false,
+              },
+            }
+          }
+        }
+      });
+    }
+  }
+}
+
+async function handleCreateOperator(event) {
+  event.preventDefault();
+  
+  const operatorData = {
+    operator_id: document.getElementById('operator-id').value,
+    name: document.getElementById('operator-name').value,
+    status: document.getElementById('operator-status').value,
+    shift: document.getElementById('operator-shift').value
+  };
+  
+  const result = await apiCall('/operators', {
+    method: 'POST',
+    body: JSON.stringify(operatorData)
+  });
+  
+  if (result?.success) {
+    showToast('Operator created successfully', 'success');
+    closeModal('create-operator-modal');
+    document.getElementById('create-operator-form').reset();
+    loadOperatorsData();
+  } else {
+    showToast(result?.error || 'Failed to create operator', 'error');
+  }
+}
+
+async function editOperator(operatorId) {
+  const data = await apiCall(`/operators/${operatorId}`);
+  if (data?.operator) {
+    // Pre-fill form with operator data
+    document.getElementById('operator-id').value = data.operator.operator_id;
+    document.getElementById('operator-name').value = data.operator.name;
+    document.getElementById('operator-status').value = data.operator.status;
+    document.getElementById('operator-shift').value = data.operator.shift || 'morning';
+    
+    showModal('create-operator-modal');
+  }
+}
+
+async function toggleOperatorStatus(operatorId, currentStatus) {
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  
+  const result = await apiCall(`/operators/${operatorId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status: newStatus })
+  });
+  
+  if (result?.success) {
+    showToast(`Operator ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
+    loadOperatorsData();
+  } else {
+    showToast('Failed to update operator status', 'error');
+  }
+}
+
+async function loadOperatorPerformance() {
+  loadOperatorsData();
+}
+
+function getPerformanceClass(score) {
+  if (score >= 90) return 'excellent';
+  if (score >= 75) return 'good';
+  if (score >= 60) return 'average';
+  return 'poor';
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+  // Create toast element if it doesn't exist
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.className = 'toast';
+    document.body.appendChild(toast);
+  }
+  
+  toast.textContent = message;
+  toast.className = `toast toast-${type} show`;
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+// Initialize URL handling on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle initial URL
+  const path = window.location.pathname;
+  let section = 'dashboard';
+  
+  if (path !== '/') {
+    section = path.substring(1); // Remove leading slash
+  }
+  
+  // Set initial state
+  if (section !== 'dashboard') {
+    window.history.replaceState({ section }, '', path);
+  }
+  
+  // Update UI to match URL
+  setTimeout(() => {
+    if (section !== 'dashboard') {
+      document.querySelectorAll('.nav-item').forEach(i => {
+        if (i.dataset.section === section) {
+          i.click();
+        }
+      });
+    }
+  }, 100);
+});
+// Load real-time metrics and update UI
+async function loadRealTimeMetrics() {
+  try {
+    const response = await fetch('/api/metrics/real-time');
+    const result = await response.json();
+    
+    if (result.success) {
+      const metrics = result.data;
+      
+      // Update dashboard stats
+      if (document.getElementById('stat-inventory')) {
+        document.getElementById('stat-inventory').textContent = metrics.totalProducts || 0;
+      }
+      
+      // Update storage strategy metrics
+      if (document.getElementById('space-utilization')) {
+        document.getElementById('space-utilization').textContent = `${metrics.spaceUtilization}%`;
+      }
+      if (document.getElementById('efficiency-score')) {
+        document.getElementById('efficiency-score').textContent = `${metrics.efficiency}%`;
+      }
+      
+      // Update AI dashboard metrics
+      if (document.getElementById('kmeans-accuracy')) {
+        document.getElementById('kmeans-accuracy').textContent = metrics.kmeansAccuracy;
+      }
+      if (document.getElementById('overall-efficiency')) {
+        document.getElementById('overall-efficiency').textContent = `${metrics.overallEfficiency}%`;
+      }
+      if (document.getElementById('genetic-time')) {
+        document.getElementById('genetic-time').textContent = metrics.routeImprovement;
+      }
+      
+      console.log('Real-time metrics updated:', metrics);
+    }
+  } catch (error) {
+    console.error('Error loading real-time metrics:', error);
+  }
+}
+
+// Initialize real-time metrics loading
+if (typeof window !== 'undefined') {
+  // Load metrics on page load and refresh every 30 seconds
+  window.addEventListener('load', function() {
+    loadRealTimeMetrics();
+    setInterval(loadRealTimeMetrics, 30000); // Refresh every 30 seconds
+  });
 }

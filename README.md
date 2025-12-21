@@ -1,8 +1,8 @@
-# 🏭 WAREHOUSE MANAGEMENT SYSTEM WITH AI OPTIMIZATION
+# WAREHOUSE MANAGEMENT SYSTEM WITH AI OPTIMIZATION
 
 Hệ thống quản lý kho hàng thông minh tích hợp AI để tối ưu hóa vận hành, sử dụng dữ liệu thực từ ngành sản xuất giày dép với 122K+ đơn hàng và 215K+ picking tasks.
 
-## 🎯 HIGHLIGHTS
+## HIGHLIGHTS
 
 - **RESTful Architecture** với clean URLs
 - **AI-Powered Optimization** giảm 25-40% thời gian picking
@@ -11,7 +11,7 @@ Hệ thống quản lý kho hàng thông minh tích hợp AI để tối ưu hó
 - **Firebase Integration** cho scalability
 - **Real-time Analytics** với Socket.IO
 
-## 🚀 QUICK START
+## QUICK START
 
 ```bash
 # 1. Clone và cài đặt
@@ -55,7 +55,7 @@ open http://localhost:3000
 - **AI Engine**: K-Means, DBSCAN, Genetic Algorithm
 - **Real-time**: Socket.IO
 
-## 🤖 AI FEATURES
+## AI FEATURES
 
 ### 1. K-Means Clustering (ABC Classification)
 - **Accuracy**: 90-95% vs 70-80% manual
@@ -72,7 +72,7 @@ open http://localhost:3000
 - **TSP optimization** cho picking routes
 - **Real-time route calculation**
 
-## 📊 PERFORMANCE METRICS
+## PERFORMANCE METRICS
 
 | Metric | Traditional | AI Optimized | Improvement |
 |--------|-------------|--------------|-------------|
@@ -81,7 +81,7 @@ open http://localhost:3000
 | Anomaly Detection | Manual | DBSCAN | **Real-time alerts** |
 | Training Time | Hours | 5-10 seconds | **99% faster** |
 
-## 🔧 WMS CORE MODULES
+## WMS CORE MODULES
 
 ### 1. Product Management (`/products`)
 - CRUD operations với AI ABC classification
@@ -118,7 +118,7 @@ open http://localhost:3000
 - AI vs Traditional comparison
 - Operational insights
 
-## 📈 DATA & VALIDATION
+## DATA & VALIDATION
 
 ### Historical Dataset
 - **Products**: 209 footwear items
@@ -193,7 +193,7 @@ POST /api/waves
 - **[AI Implementation](AI_IMPLEMENTATION_COMPLETE.md)** - Chi tiết AI
 - **[WMS Implementation](WMS_IMPLEMENTATION_COMPLETE.md)** - Chi tiết WMS
 
-## 🚀 DEPLOYMENT
+## DEPLOYMENT
 
 ### Local Development
 ```bash
@@ -230,25 +230,25 @@ docker run -p 3000:3000 wms-ai
 ## 🏆 ACHIEVEMENTS
 
 ### Technical
-- ✅ Complete WMS with AI integration
-- ✅ RESTful architecture
-- ✅ Real-time dashboard
-- ✅ Firebase cloud integration
-- ✅ Mobile-responsive design
+- Complete WMS with AI integration
+- RESTful architecture
+- Real-time dashboard
+- Firebase cloud integration
+- Mobile-responsive design
 
 ### Performance
-- ✅ 25-40% picking time reduction
-- ✅ 90-95% ABC classification accuracy
-- ✅ Real-time anomaly detection
-- ✅ 30% warehouse utilization improvement
+- 25-40% picking time reduction
+- 90-95% ABC classification accuracy
+- Real-time anomaly detection
+- 30% warehouse utilization improvement
 
 ### Business Impact
-- ✅ Scalable cloud architecture
-- ✅ Production-ready deployment
-- ✅ ROI: 200-300% within first year
-- ✅ Industry-validated algorithms
+- Scalable cloud architecture
+- Production-ready deployment
+- ROI: 200-300% within first year
+- Industry-validated algorithms
 
-## 📞 SUPPORT
+## SUPPORT
 
 ### Getting Started
 1. Follow [User Guide](docs/USER_GUIDE.md) for detailed instructions
@@ -263,6 +263,6 @@ docker run -p 3000:3000 wms-ai
 
 ---
 
-**🎯 Ready to revolutionize warehouse operations with AI-powered management!**
+**Ready to revolutionize warehouse operations with AI-powered management!**
 
-*Built with ❤️ for the future of intelligent logistics*
+*Built with care for the future of intelligent logistics*

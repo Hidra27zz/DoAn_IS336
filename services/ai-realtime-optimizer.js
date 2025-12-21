@@ -18,7 +18,7 @@ class RealTimeOptimizer {
     if (this.isRunning) return;
     
     this.isRunning = true;
-    console.log('🤖 Real-time AI Optimizer started');
+    console.log('Real-time AI Optimizer started');
     
     // Monitor every 5 minutes
     this.monitoringInterval = setInterval(() => {
@@ -59,7 +59,7 @@ class RealTimeOptimizer {
   // Phân tích real-time performance
   async performRealTimeAnalysis() {
     try {
-      console.log('🔍 Performing real-time analysis...');
+      console.log('Performing real-time analysis...');
       
       const currentMetrics = await this.getCurrentMetrics();
       const optimizationNeeds = await this.identifyOptimizationNeeds(currentMetrics);
@@ -324,7 +324,7 @@ class RealTimeOptimizer {
   }
 
   async logOptimizationAction(need) {
-    console.log(`✅ Optimization completed: ${need.type} (Priority: ${need.priority})`);
+    console.log(`Optimization completed: ${need.type} (Priority: ${need.priority})`);
     // Log to database or monitoring system
   }
 }

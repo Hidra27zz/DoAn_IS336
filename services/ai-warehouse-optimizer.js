@@ -198,7 +198,7 @@ class AIWarehouseOptimizer {
 
   // AI-powered product placement optimization
   optimizeProductPlacement() {
-    console.log('🤖 Starting AI Product Placement Optimization...');
+    console.log('Starting AI Product Placement Optimization...');
     
     // 1. Analyze product frequency from orders
     const productFrequency = this.analyzeProductFrequency();
