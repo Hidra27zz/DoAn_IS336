@@ -1,6 +1,7 @@
 // Firebase Admin SDK Configuration for WMS (Server-side)
 // Project: erpproject-609fd
 const admin = require('firebase-admin');
+const LocalDB = require('../database/local-db');
 
 // Firebase project configuration
 const firebaseConfig = {
@@ -15,6 +16,8 @@ const firebaseConfig = {
 
 let db = null;
 let initialized = false;
+let useLocalDB = false;
+let localDB = null;
 
 // Try to initialize Firebase Admin
 try {
@@ -23,8 +26,8 @@ try {
     const fs = require('fs');
     const path = require('path');
     
-    // Look for service account file with new project ID
     const possibleFiles = [
+      'erpproject-609fd-firebase-adminsdk-fbsvc-4a706a53fe.json',
       'erpproject-609fd-firebase-adminsdk.json',
       'serviceAccountKey.json',
       'firebase-adminsdk.json'
@@ -40,26 +43,20 @@ try {
     }
     
     if (serviceAccountPath) {
-      // Initialize with service account
       const serviceAccount = require(serviceAccountPath);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         projectId: firebaseConfig.projectId
       });
       console.log('✅ Firebase Admin initialized with service account');
+      db = admin.firestore();
+      initialized = true;
     } else {
-      // Initialize with just project ID (for environments with ADC)
-      admin.initializeApp({
-        projectId: firebaseConfig.projectId
-      });
-      console.log('⚠️ Firebase Admin initialized without service account (limited functionality)');
+      throw new Error('Service account not found');
     }
   }
-  
-  db = admin.firestore();
-  initialized = true;
 } catch (error) {
-  console.log('⚠️ Firebase Admin initialization failed:', error.message);
+  console.log('⚠️ Firebase Admin initialization failed, will use local database:', error.message);
   initialized = false;
 }
 
@@ -80,7 +77,11 @@ const COLLECTIONS = {
 
 const FirebaseDB = {
   async create(collectionName, data) {
-    if (!db) throw new Error('Firebase not initialized');
+    if (useLocalDB) {
+      if (!localDB) localDB = new LocalDB();
+      return await localDB.create(collectionName, data);
+    }
+    if (!db) throw new Error('Database not initialized');
     const docRef = await db.collection(collectionName).add({
       ...data,
       created_at: admin.firestore.FieldValue.serverTimestamp(),
@@ -90,7 +91,11 @@ const FirebaseDB = {
   },
 
   async get(collectionName, id) {
-    if (!db) throw new Error('Firebase not initialized');
+    if (useLocalDB) {
+      if (!localDB) localDB = new LocalDB();
+      return await localDB.get(collectionName, id);
+    }
+    if (!db) throw new Error('Database not initialized');
     const doc = await db.collection(collectionName).doc(id).get();
     if (doc.exists) {
       return { id: doc.id, ...doc.data() };
@@ -99,17 +104,34 @@ const FirebaseDB = {
   },
 
   async getAll(collectionName, filters = []) {
-    if (!db) throw new Error('Firebase not initialized');
-    let query = db.collection(collectionName);
-    filters.forEach(f => {
-      query = query.where(f.field, f.op, f.value);
-    });
-    const snapshot = await query.get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (useLocalDB) {
+      if (!localDB) localDB = new LocalDB();
+      return await localDB.getAll(collectionName, filters);
+    }
+    if (!db) throw new Error('Database not initialized');
+    
+    try {
+      let query = db.collection(collectionName);
+      filters.forEach(f => {
+        query = query.where(f.field, f.op, f.value);
+      });
+      const snapshot = await query.get();
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      // If Firebase fails, switch to local DB
+      console.log('⚠️ Firebase query failed, switching to local database');
+      useLocalDB = true;
+      if (!localDB) localDB = new LocalDB();
+      return await localDB.getAll(collectionName, filters);
+    }
   },
 
   async update(collectionName, id, data) {
-    if (!db) throw new Error('Firebase not initialized');
+    if (useLocalDB) {
+      if (!localDB) localDB = new LocalDB();
+      return await localDB.update(collectionName, id, data);
+    }
+    if (!db) throw new Error('Database not initialized');
     await db.collection(collectionName).doc(id).update({
       ...data,
       updated_at: admin.firestore.FieldValue.serverTimestamp()
@@ -118,13 +140,21 @@ const FirebaseDB = {
   },
 
   async delete(collectionName, id) {
-    if (!db) throw new Error('Firebase not initialized');
+    if (useLocalDB) {
+      if (!localDB) localDB = new LocalDB();
+      return await localDB.delete(collectionName, id);
+    }
+    if (!db) throw new Error('Database not initialized');
     await db.collection(collectionName).doc(id).delete();
     return { id };
   },
 
   async query(collectionName, conditions = [], orderByField = null, limitCount = 100) {
-    if (!db) throw new Error('Firebase not initialized');
+    if (useLocalDB) {
+      if (!localDB) localDB = new LocalDB();
+      return await localDB.query(collectionName, conditions, orderByField, limitCount);
+    }
+    if (!db) throw new Error('Database not initialized');
     let query = db.collection(collectionName);
     conditions.forEach(c => {
       query = query.where(c.field, c.op, c.value);
@@ -138,7 +168,11 @@ const FirebaseDB = {
   },
 
   async batch(operations) {
-    if (!db) throw new Error('Firebase not initialized');
+    if (useLocalDB) {
+      if (!localDB) localDB = new LocalDB();
+      return await localDB.batch(operations);
+    }
+    if (!db) throw new Error('Database not initialized');
     const batch = db.batch();
     operations.forEach(op => {
       const docRef = op.id 
@@ -158,4 +192,13 @@ const FirebaseDB = {
   }
 };
 
-module.exports = { admin, db, COLLECTIONS, FirebaseDB, firebaseConfig, initialized };
+module.exports = { 
+  admin, 
+  db, 
+  COLLECTIONS, 
+  FirebaseDB, 
+  firebaseConfig, 
+  initialized, 
+  useLocalDB,
+  setUseLocalDB: (value) => { useLocalDB = value; }
+};

@@ -13,6 +13,69 @@ document.addEventListener('DOMContentLoaded', function() {
   checkAuthStatus();
   setupEventListeners();
   
+  // Setup login form handler
+  console.log('Setting up login form handler...');
+  const loginForm = document.getElementById('login-form');
+  
+  if (!loginForm) {
+    console.error('Login form not found!');
+  } else {
+    console.log('Login form found, adding event listener...');
+    loginForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      console.log('Login form submitted!');
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('login-error');
+      
+      console.log('Login attempt:', { username, password: '***' });
+      
+      try {
+        console.log('Sending login request...');
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        console.log('Login response:', data);
+        
+        if (response.ok) {
+          console.log('Login successful, setting up user data...');
+          authToken = data.token;
+          currentUser = data.user;
+          localStorage.setItem('authToken', authToken);
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          errorEl.textContent = '';
+          
+          console.log('Calling showDashboard...');
+          showDashboard();
+        } else {
+          console.log('Login failed:', data.error);
+          errorEl.textContent = data.error || 'Login failed';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        errorEl.textContent = 'Connection error. Please try again.';
+      }
+    });
+  }
+  
+  // Setup logout handler
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', function() {
+      console.log('Logout clicked');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      authToken = null;
+      currentUser = null;
+      showLoginScreen();
+    });
+  }
+  
   // Debug: Check if functions are available
   setTimeout(() => {
     console.log('Function check:');
@@ -46,59 +109,72 @@ function showLoginScreen() {
 }
 
 function showDashboard() {
+  console.log('Showing dashboard...');
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('dashboard-screen').classList.add('active');
-  document.getElementById('user-role').textContent = currentUser.role;
-  document.getElementById('username-display').textContent = currentUser.username;
-  loadDashboardData();
+  
+  if (currentUser) {
+    document.getElementById('user-role').textContent = currentUser.role;
+    document.getElementById('username-display').textContent = currentUser.username;
+  }
+  
+  // Load dashboard data after showing the screen
+  setTimeout(() => {
+    loadDashboardData();
+  }, 100);
 }
 
 // Login form handler
-document.getElementById('login-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Setting up login form handler...');
+  const loginForm = document.getElementById('login-form');
   
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  const errorEl = document.getElementById('login-error');
+  if (!loginForm) {
+    console.error('Login form not found!');
+    return;
+  }
   
-  try {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
+  console.log('Login form found, adding event listener...');
+  loginForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    console.log('Login form submitted!');
     
-    const data = await response.json();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorEl = document.getElementById('login-error');
+    
+    console.log('Login attempt:', { username, password: '***' });
+    
+    try {
+      console.log('Sending login request...');
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      
+      const data = await response.json();
+      console.log('Login response:', data);
     
     if (response.ok) {
+      console.log('Login successful, setting up user data...');
       authToken = data.token;
       currentUser = data.user;
       localStorage.setItem('authToken', authToken);
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
       errorEl.textContent = '';
       
+      console.log('Calling showDashboard...');
       // Stay on main page after login - no redirect needed
       showDashboard();
     } else {
+      console.log('Login failed:', data.error);
       errorEl.textContent = data.error || 'Login failed';
     }
   } catch (error) {
     console.error('Login error:', error);
     errorEl.textContent = 'Connection error. Please try again.';
   }
-});
-
-// Logout
-document.getElementById('logout-btn').addEventListener('click', function() {
-  // Clear local storage
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('currentUser');
-  
-  // Reset variables
-  authToken = null;
-  currentUser = null;
-  
-  showLoginScreen();
 });
 
 // API helper
@@ -217,32 +293,39 @@ function loadSectionData(section) {
 
 // Dashboard
 async function loadDashboardData() {
-  // Try authenticated API first, fallback to demo data
-  let [inventorySummary, orderStats, pickingPerf] = await Promise.all([
-    apiCall('/inventory/summary'),
-    apiCall('/orders/stats/summary'),
-    apiCall('/picking/performance')
-  ]);
-  
-  // If auth fails, use demo data
-  if (!inventorySummary) {
-    [inventorySummary, orderStats, pickingPerf] = await Promise.all([
-      fetch('/api/demo/inventory/summary').then(r => r.json()),
-      fetch('/api/demo/orders/stats/summary').then(r => r.json()),
-      fetch('/api/demo/picking/performance').then(r => r.json())
+  console.log('Loading dashboard data...');
+  try {
+    // Try authenticated API first, fallback to demo data
+    let [inventorySummary, orderStats, pickingPerf] = await Promise.all([
+      apiCall('/inventory/summary'),
+      apiCall('/orders/stats/summary'),
+      apiCall('/picking/performance')
     ]);
-  }
-  
-  if (inventorySummary) {
-    document.getElementById('stat-inventory').textContent = inventorySummary.total_products || 0;
-  }
-  
-  if (orderStats) {
-    document.getElementById('stat-orders').textContent = orderStats.pending || 0;
-  }
-  
-  if (pickingPerf) {
-    document.getElementById('stat-picks').textContent = pickingPerf.total_picks || 0;
+    
+    console.log('API responses:', { inventorySummary, orderStats, pickingPerf });
+    
+    // If auth fails, use demo data
+    if (!inventorySummary) {
+      console.log('Using demo data...');
+      [inventorySummary, orderStats, pickingPerf] = await Promise.all([
+        fetch('/api/demo/inventory/summary').then(r => r.json()).catch(() => null),
+        fetch('/api/demo/orders/stats/summary').then(r => r.json()).catch(() => null),
+        fetch('/api/demo/picking/performance').then(r => r.json()).catch(() => null)
+      ]);
+    }
+    
+    // Update stats with fallback values
+    document.getElementById('stat-inventory').textContent = inventorySummary?.total_products || '0';
+    document.getElementById('stat-orders').textContent = orderStats?.pending || '0';
+    document.getElementById('stat-picks').textContent = pickingPerf?.total_picks || '0';
+    
+    console.log('Dashboard data loaded successfully');
+  } catch (error) {
+    console.error('Error loading dashboard data:', error);
+    // Set default values on error
+    document.getElementById('stat-inventory').textContent = '0';
+    document.getElementById('stat-orders').textContent = '0';
+    document.getElementById('stat-picks').textContent = '0';
   }
   
   let waves = await apiCall('/picking/waves?status=in_progress');

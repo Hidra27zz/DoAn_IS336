@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <h1>Simple Login Test</h1>
+                <form id="login-form">
+                    <input type="text" id="username" placeholder="Username" value="admin">
+                    <input type="password" id="password" placeholder="Password" value="admin123">
+                    <button type="submit">Login</button>
+                </form>
+                <div id="login-error"></div>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboard-screen" class="screen">
+            <h1>Dashboard</h1>
+            <p>Welcome to the dashboard!</p>
+            <span id="user-role"></span>
+            <span id="username-display"></span>
+            <button id="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        console.log('Script loaded!');
+        
+        const API_BASE = '/api';
+        let authToken = null;
+        let currentUser = null;
+
+        function showLoginScreen() {
+            console.log('Showing login screen');
+            document.getElementById('login-screen').classList.add('active');
+            document.getElementById('dashboard-screen').classList.remove('active');
+        }
+
+        function showDashboard() {
+            console.log('Showing dashboard');
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('dashboard-screen').classList.add('active');
+            
+            if (currentUser) {
+                document.getElementById('user-role').textContent = currentUser.role;
+                document.getElementById('username-display').textContent = currentUser.username;
+            }
+        }
+
+        // Check auth on load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            const token = localStorage.getItem('authToken');
+            const user = localStorage.getItem('currentUser');
+            
+            if (token && user) {
+                authToken = token;
+                currentUser = JSON.parse(user);
+                showDashboard();
+            } else {
+                showLoginScreen();
+            }
+        });
+
+        // Login form
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('Login form submitted');
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('login-error');
+            
+            try {
+                console.log('Sending login request...');
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                console.log('Login response:', data);
+                
+                if (response.ok) {
+                    console.log('Login successful!');
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    errorEl.textContent = '';
+                    
+                    console.log('Calling showDashboard...');
+                    showDashboard();
+                } else {
+                    console.log('Login failed:', data.error);
+                    errorEl.textContent = data.error || 'Login failed';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorEl.textContent = 'Connection error. Please try again.';
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            console.log('Logout clicked');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            authToken = null;
+            currentUser = null;
+            showLoginScreen();
+        });
+    </script>
+</body>
+</html>
