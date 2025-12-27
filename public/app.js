@@ -2227,6 +2227,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 100);
 });
+
 // Load real-time metrics and update UI
 async function loadRealTimeMetrics() {
   try {
@@ -2275,3 +2276,5 @@ if (typeof window !== 'undefined') {
     setInterval(loadRealTimeMetrics, 30000); // Refresh every 30 seconds
   });
 }
+}
+)
