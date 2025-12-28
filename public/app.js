@@ -10,60 +10,205 @@ let charts = {};
 // Initialize application
 document.addEventListener('DOMContentLoaded', function() {
   console.log('WMS Application initializing...');
-  checkAuthStatus();
-  setupEventListeners();
   
-  // Setup login form handler
-  console.log('Setting up login form handler...');
-  const loginForm = document.getElementById('login-form');
+  // Add a small delay to ensure DOM is fully loaded
+  setTimeout(() => {
+    console.log('Starting authentication check...');
+    checkAuthStatus();
+    
+    // Setup login form handler
+    setupLoginHandler();
+    
+    // Setup logout handler
+    setupLogoutHandler();
+    
+    // Make debug function available
+    window.debugApp = window.debugFunctions;
+    
+    console.log('Application initialization complete. Use debugApp() to check system status.');
+  }, 100);
+});
+
+// Check authentication status from localStorage
+function checkAuthStatus() {
+  console.log('Checking auth status...');
+  const token = localStorage.getItem('authToken');
+  const user = localStorage.getItem('currentUser');
   
-  if (!loginForm) {
-    console.error('Login form not found!');
+  console.log('Token exists:', !!token);
+  console.log('User exists:', !!user);
+  
+  if (token && user) {
+    authToken = token;
+    currentUser = JSON.parse(user);
+    console.log('User authenticated:', currentUser.username);
+    showDashboard();
   } else {
+    console.log('No authentication found, showing login screen');
+    showLoginScreen();
+  }
+}
+
+// Authentication handled by API only
+
+function showLoginScreen() {
+  const loginScreen = document.getElementById('login-screen');
+  const dashboardScreen = document.getElementById('dashboard-screen');
+  
+  if (loginScreen) {
+    loginScreen.classList.add('active');
+  } else {
+    console.error('Login screen element not found');
+  }
+  
+  if (dashboardScreen) {
+    dashboardScreen.classList.remove('active');
+  } else {
+    console.error('Dashboard screen element not found');
+  }
+}
+
+function showDashboard() {
+  console.log('Showing dashboard...');
+  const loginScreen = document.getElementById('login-screen');
+  const dashboardScreen = document.getElementById('dashboard-screen');
+  
+  if (loginScreen) {
+    loginScreen.classList.remove('active');
+  } else {
+    console.error('Login screen element not found');
+  }
+  
+  if (dashboardScreen) {
+    dashboardScreen.classList.add('active');
+  } else {
+    console.error('Dashboard screen element not found');
+  }
+  
+  if (currentUser) {
+    const userRole = document.getElementById('user-role');
+    const usernameDisplay = document.getElementById('username-display');
+    
+    if (userRole) {
+      userRole.textContent = currentUser.role;
+    }
+    if (usernameDisplay) {
+      usernameDisplay.textContent = currentUser.username;
+    }
+  }
+  
+  // Setup event listeners after dashboard is shown
+  setTimeout(() => {
+    console.log('Setting up dashboard functionality...');
+    
+    // Check if dashboard elements exist
+    const navItems = document.querySelectorAll('.nav-item');
+    const contentSections = document.querySelectorAll('.content-section');
+    console.log('Dashboard elements check:');
+    console.log('- Nav items:', navItems.length);
+    console.log('- Content sections:', contentSections.length);
+    
+    if (navItems.length === 0) {
+      console.error('Dashboard navigation not loaded properly');
+      return;
+    }
+    
+    // Setup navigation event listeners
+    try {
+      if (typeof setupEventListeners === 'function') {
+        setupEventListeners();
+        console.log('Event listeners setup completed');
+      } else {
+        console.error('setupEventListeners function not found');
+      }
+    } catch (error) {
+      console.error('Error setting up event listeners:', error);
+    }
+    
+    // Load dashboard data
+    try {
+      if (typeof loadDashboardData === 'function') {
+        loadDashboardData();
+        console.log('Dashboard data loading initiated');
+      } else {
+        console.error('loadDashboardData function not found');
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    }
+    
+    // Function availability check
+    console.log('Function check:');
+    console.log('  - openAdjustModal:', typeof openAdjustModal);
+    console.log('  - adjustStock:', typeof adjustStock);
+    console.log('  - viewWave:', typeof viewWave);
+    console.log('  - startWave:', typeof startWave);
+    console.log('  - Auth token exists:', !!localStorage.getItem('authToken'));
+    
+  }, 200);
+}
+
+// Setup login form handler
+function setupLoginHandler() {
+  console.log('Setting up login form handler...');
+  
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
     console.log('Login form found, adding event listener...');
-    loginForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
+    
+    // Remove any existing listeners
+    const newForm = loginForm.cloneNode(true);
+    loginForm.parentNode.replaceChild(newForm, loginForm);
+    
+    newForm.addEventListener('submit', async function(event) {
+      event.preventDefault();
       console.log('Login form submitted!');
       
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-      const errorEl = document.getElementById('login-error');
       
       console.log('Login attempt:', { username, password: '***' });
+      console.log('Sending login request...');
       
       try {
-        console.log('Sending login request...');
-        const response = await fetch(`${API_BASE}/auth/login`, {
+        const response = await fetch('/api/auth/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({ username, password })
         });
         
-        const data = await response.json();
-        console.log('Login response:', data);
+        const result = await response.json();
+        console.log('Login response:', result);
         
-        if (response.ok) {
+        if (response.ok && result.token && result.user) {
           console.log('Login successful, setting up user data...');
-          authToken = data.token;
-          currentUser = data.user;
+          authToken = result.token;
+          currentUser = result.user;
+          
           localStorage.setItem('authToken', authToken);
           localStorage.setItem('currentUser', JSON.stringify(currentUser));
-          errorEl.textContent = '';
           
           console.log('Calling showDashboard...');
           showDashboard();
         } else {
-          console.log('Login failed:', data.error);
-          errorEl.textContent = data.error || 'Login failed';
+          const errorMsg = result.error || result.message || 'Login failed';
+          console.error('Login failed:', errorMsg);
+          showToast(errorMsg, 'error');
         }
       } catch (error) {
         console.error('Login error:', error);
-        errorEl.textContent = 'Connection error. Please try again.';
+        showToast('Connection error: ' + error.message, 'error');
       }
     });
+  } else {
+    console.error('Login form not found!');
   }
-  
-  // Setup logout handler
+}
+
+// Setup logout handler
+function setupLogoutHandler() {
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', function() {
@@ -75,108 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
       showLoginScreen();
     });
   }
-  
-  // Debug: Check if functions are available
-  setTimeout(() => {
-    console.log('Function check:');
-    console.log('  - openAdjustModal:', typeof window.openAdjustModal);
-    console.log('  - adjustStock:', typeof window.adjustStock);
-    console.log('  - viewWave:', typeof window.viewWave);
-    console.log('  - startWave:', typeof window.startWave);
-    console.log('  - Auth token exists:', !!localStorage.getItem('authToken'));
-  }, 1000);
-});
-
-// Check authentication status from localStorage
-function checkAuthStatus() {
-  const token = localStorage.getItem('authToken');
-  const user = localStorage.getItem('currentUser');
-  
-  if (token && user) {
-    authToken = token;
-    currentUser = JSON.parse(user);
-    showDashboard();
-  } else {
-    showLoginScreen();
-  }
 }
-
-// Authentication handled by API only
-
-function showLoginScreen() {
-  document.getElementById('login-screen').classList.add('active');
-  document.getElementById('dashboard-screen').classList.remove('active');
-}
-
-function showDashboard() {
-  console.log('Showing dashboard...');
-  document.getElementById('login-screen').classList.remove('active');
-  document.getElementById('dashboard-screen').classList.add('active');
-  
-  if (currentUser) {
-    document.getElementById('user-role').textContent = currentUser.role;
-    document.getElementById('username-display').textContent = currentUser.username;
-  }
-  
-  // Load dashboard data after showing the screen
-  setTimeout(() => {
-    loadDashboardData();
-  }, 100);
-}
-
-// Login form handler
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Setting up login form handler...');
-  const loginForm = document.getElementById('login-form');
-  
-  if (!loginForm) {
-    console.error('Login form not found!');
-    return;
-  }
-  
-  console.log('Login form found, adding event listener...');
-  loginForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    console.log('Login form submitted!');
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const errorEl = document.getElementById('login-error');
-    
-    console.log('Login attempt:', { username, password: '***' });
-    
-    try {
-      console.log('Sending login request...');
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      
-      const data = await response.json();
-      console.log('Login response:', data);
-    
-    if (response.ok) {
-      console.log('Login successful, setting up user data...');
-      authToken = data.token;
-      currentUser = data.user;
-      localStorage.setItem('authToken', authToken);
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      errorEl.textContent = '';
-      
-      console.log('Calling showDashboard...');
-      // Stay on main page after login - no redirect needed
-      showDashboard();
-    } else {
-      console.log('Login failed:', data.error);
-      errorEl.textContent = data.error || 'Login failed';
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    errorEl.textContent = 'Connection error. Please try again.';
-  }
-});
-
 // API helper
 async function apiCall(endpoint, options = {}) {
   const defaultOptions = {
@@ -210,19 +254,38 @@ async function apiCall(endpoint, options = {}) {
 
 // Navigation
 function setupEventListeners() {
-  document.querySelectorAll('.nav-item').forEach(item => {
+  console.log('Setting up event listeners...');
+  const navItems = document.querySelectorAll('.nav-item');
+  console.log('Found nav items:', navItems.length);
+  
+  if (navItems.length === 0) {
+    console.error('No navigation items found! Dashboard may not be loaded yet.');
+    return;
+  }
+  
+  navItems.forEach(item => {
     item.addEventListener('click', function() {
       const section = this.dataset.section;
+      console.log('Navigation clicked:', section);
       
-      if (!section) return; // Skip if no data-section attribute
+      if (!section) {
+        console.warn('No data-section attribute found on nav item');
+        return;
+      }
       
       // Update active states
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       this.classList.add('active');
       
       // Update content sections
+      const targetSection = document.getElementById(`${section}-section`);
+      if (!targetSection) {
+        console.error(`Section not found: ${section}-section`);
+        return;
+      }
+      
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-      document.getElementById(`${section}-section`).classList.add('active');
+      targetSection.classList.add('active');
       
       // Update URL without page reload
       const newUrl = section === 'dashboard' ? '/' : `/${section}`;
@@ -277,16 +340,23 @@ function setupEventListeners() {
 }
 
 function loadSectionData(section) {
-  switch(section) {
-    case 'dashboard': loadDashboardData(); break;
-    case 'inventory': loadInventoryData(); break;
-    case 'orders': loadOrdersData(); break;
-    case 'picking': loadPickingData(); break;
-    case 'warehouse': loadWarehouseData(); break;
-    case 'ai': loadAIData(); break;
-    case 'storage-config': loadStorageConfigData(); break;
-    case 'operators': loadOperatorsData(); break;
-    case 'reports': break;
+  console.log('Loading section data for:', section);
+  try {
+    switch(section) {
+      case 'dashboard': loadDashboardData(); break;
+      case 'inventory': loadInventoryData(); break;
+      case 'orders': loadOrdersData(); break;
+      case 'picking': loadPickingData(); break;
+      case 'warehouse': loadWarehouseData(); break;
+      case 'ai': loadAIData(); break;
+      case 'storage-config': loadStorageConfigData(); break;
+      case 'operators': loadOperatorsData(); break;
+      case 'reports': break;
+      default:
+        console.warn('Unknown section:', section);
+    }
+  } catch (error) {
+    console.error('Error loading section data:', error);
   }
 }
 
@@ -341,56 +411,95 @@ async function loadDashboardData() {
 }
 
 function renderDashboardCharts(inventorySummary, orderStats) {
+  console.log('Rendering dashboard charts...');
+  console.log('Inventory summary:', inventorySummary);
+  console.log('Order stats:', orderStats);
+  
   // Inventory by Zone Chart
   const inventoryCtx = document.getElementById('inventory-chart');
+  console.log('Inventory canvas element:', inventoryCtx);
+  
   if (inventoryCtx && inventorySummary?.by_zone) {
-    if (charts.inventory) charts.inventory.destroy();
+    console.log('Creating inventory chart with zones:', Object.keys(inventorySummary.by_zone));
+    
+    if (charts.inventory) {
+      console.log('Destroying existing inventory chart');
+      charts.inventory.destroy();
+    }
     
     const zones = Object.keys(inventorySummary.by_zone);
     const quantities = zones.map(z => inventorySummary.by_zone[z].total_quantity);
     
-    charts.inventory = new Chart(inventoryCtx, {
-      type: 'bar',
-      data: {
-        labels: zones.map(z => `Zone ${z}`),
-        datasets: [{
-          label: 'Quantity',
-          data: quantities,
-          backgroundColor: ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6']
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } }
-      }
-    });
+    console.log('Zone data:', zones, quantities);
+    
+    try {
+      charts.inventory = new Chart(inventoryCtx, {
+        type: 'bar',
+        data: {
+          labels: zones.map(z => `Zone ${z}`),
+          datasets: [{
+            label: 'Quantity',
+            data: quantities,
+            backgroundColor: ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      console.log('Inventory chart created successfully');
+    } catch (error) {
+      console.error('Error creating inventory chart:', error);
+    }
+  } else {
+    console.log('Cannot create inventory chart - missing canvas or data');
   }
   
   // Order Status Chart
   const ordersCtx = document.getElementById('orders-chart');
+  console.log('Orders canvas element:', ordersCtx);
+  
   if (ordersCtx && orderStats) {
-    if (charts.orders) charts.orders.destroy();
+    console.log('Creating orders chart with stats:', orderStats);
     
-    charts.orders = new Chart(ordersCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Pending', 'Assigned', 'Picking', 'Picked', 'Shipped'],
-        datasets: [{
-          data: [
-            orderStats.pending || 0,
-            orderStats.assigned || 0,
-            orderStats.picking || 0,
-            orderStats.picked || 0,
-            orderStats.shipped || 0
-          ],
-          backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#22c55e', '#10b981']
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } }
-      }
-    });
+    if (charts.orders) {
+      console.log('Destroying existing orders chart');
+      charts.orders.destroy();
+    }
+    
+    try {
+      charts.orders = new Chart(ordersCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Pending', 'Assigned', 'Picking', 'Picked', 'Shipped'],
+          datasets: [{
+            data: [
+              orderStats.pending || 0,
+              orderStats.assigned || 0,
+              orderStats.picking || 0,
+              orderStats.picked || 0,
+              orderStats.shipped || 0
+            ],
+            backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#22c55e', '#10b981']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+      console.log('Orders chart created successfully');
+    } catch (error) {
+      console.error('Error creating orders chart:', error);
+    }
+  } else {
+    console.log('Cannot create orders chart - missing canvas or data');
   }
 }
 
@@ -1343,18 +1452,30 @@ window.loadWarehouseData = loadWarehouseData;
 
 // Debug function to test all functions are available
 window.debugFunctions = function() {
-  console.log('Checking function availability:');
+  console.log('=== FUNCTION AVAILABILITY CHECK ===');
   console.log('openAdjustModal:', typeof window.openAdjustModal);
   console.log('viewWave:', typeof window.viewWave);
   console.log('startWave:', typeof window.startWave);
   console.log('adjustStock:', typeof window.adjustStock);
-  console.log('reserveStock:', typeof window.reserveStock);
-  console.log('updateOrderStatus:', typeof window.updateOrderStatus);
-  console.log('authToken in localStorage:', !!localStorage.getItem('authToken'));
+  console.log('setupEventListeners:', typeof setupEventListeners);
+  console.log('loadDashboardData:', typeof loadDashboardData);
+  console.log('setupLoginHandler:', typeof setupLoginHandler);
+  console.log('setupLogoutHandler:', typeof setupLogoutHandler);
+  console.log('authToken exists:', !!localStorage.getItem('authToken'));
+  console.log('currentUser exists:', !!localStorage.getItem('currentUser'));
+  
+  // Test DOM elements
+  console.log('=== DOM ELEMENTS CHECK ===');
+  console.log('login-form:', !!document.getElementById('login-form'));
+  console.log('dashboard-screen:', !!document.getElementById('dashboard-screen'));
+  console.log('logout-btn:', !!document.getElementById('logout-btn'));
+  console.log('nav-items count:', document.querySelectorAll('.nav-item').length);
+  console.log('content-sections count:', document.querySelectorAll('.content-section').length);
   
   // Test a simple API call
   const token = localStorage.getItem('authToken');
   if (token) {
+    console.log('=== API TEST ===');
     fetch('/api/inventory?limit=1', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -1362,7 +1483,7 @@ window.debugFunctions = function() {
     .then(data => console.log('API test successful:', data.inventory?.length || 0, 'items'))
     .catch(error => console.error('API test failed:', error));
   } else {
-    console.log('No auth token found');
+    console.log('No auth token found for API test');
   }
 };
 
@@ -2276,5 +2397,3 @@ if (typeof window !== 'undefined') {
     setInterval(loadRealTimeMetrics, 30000); // Refresh every 30 seconds
   });
 }
-}
-)

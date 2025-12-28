@@ -83,28 +83,32 @@ router.get('/summary', async (req, res) => {
 
     const stats = {
       total_orders: orders.length,
-      today_orders: orders.filter(o => o.order_date.startsWith(todayStr)).length,
+      today_orders: orders.filter(o => o.order_date && o.order_date.startsWith(todayStr)).length,
       this_month_orders: orders.filter(o => {
+        if (!o.order_date) return false;
         const orderDate = new Date(o.order_date);
         return orderDate.getMonth() === thisMonth && orderDate.getFullYear() === thisYear;
       }).length,
-      pending_orders: orders.filter(o => o.status === 'pending').length,
-      processing_orders: orders.filter(o => o.status === 'processing').length,
-      completed_orders: orders.filter(o => o.status === 'completed').length,
-      total_quantity: orders.reduce((sum, o) => sum + (o.quantity || 0), 0)
+      pending: orders.filter(o => o.status === 'pending').length,
+      assigned: orders.filter(o => o.status === 'assigned').length,
+      picking: orders.filter(o => o.status === 'picking').length,
+      picked: orders.filter(o => o.status === 'picked').length,
+      shipped: orders.filter(o => o.status === 'shipped').length,
+      total_quantity: orders.reduce((sum, o) => sum + (o.total_items || 0), 0)
     };
 
     // Customer statistics
     const customerStats = {};
     orders.forEach(order => {
-      if (!customerStats[order.customer_id]) {
-        customerStats[order.customer_id] = {
+      const customerId = order.customer_code || order.customer_id || 'unknown';
+      if (!customerStats[customerId]) {
+        customerStats[customerId] = {
           total_orders: 0,
           total_quantity: 0
         };
       }
-      customerStats[order.customer_id].total_orders++;
-      customerStats[order.customer_id].total_quantity += order.quantity || 0;
+      customerStats[customerId].total_orders++;
+      customerStats[customerId].total_quantity += order.total_items || 0;
     });
 
     // Top customers
@@ -120,6 +124,27 @@ router.get('/summary', async (req, res) => {
   } catch (error) {
     console.error('Get order summary error:', error);
     res.status(500).json({ error: 'Failed to get order summary' });
+  }
+});
+
+// GET /api/orders/stats/summary - Alias for summary (for dashboard compatibility)
+router.get('/stats/summary', async (req, res) => {
+  try {
+    const orders = await db.getAllOrders();
+    
+    const stats = {
+      pending: orders.filter(o => o.status === 'pending').length,
+      assigned: orders.filter(o => o.status === 'assigned').length,
+      picking: orders.filter(o => o.status === 'picking').length,
+      picked: orders.filter(o => o.status === 'picked').length,
+      shipped: orders.filter(o => o.status === 'shipped').length,
+      total_orders: orders.length
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Get order stats error:', error);
+    res.status(500).json({ error: 'Failed to get order stats' });
   }
 });
 

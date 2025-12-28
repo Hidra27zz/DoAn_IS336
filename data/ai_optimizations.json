@@ -1,0 +1,142 @@
+[
+  {
+    "id": "doc_1766909122712_4xdyhzau3",
+    "type": "route",
+    "wave_id": "doc_1766908001710_wyc2u9lmu",
+    "result": {
+      "optimized_route": [
+        {
+          "sequence": 1,
+          "task_id": "doc_1766908001710_pxegq13td",
+          "location_id": "doc_1766907954253_9dhzqccjo",
+          "location_code": "L-08-40",
+          "coordinates": {
+            "x": 500,
+            "y": 1048,
+            "z": 4
+          },
+          "quantity": 9,
+          "product_id": "doc_1766907954239_drb4vbqzo"
+        },
+        {
+          "sequence": 2,
+          "task_id": "doc_1766908001710_3x5305jr1",
+          "location_id": "doc_1766907954254_6vul8898d",
+          "location_code": "M-03-11",
+          "coordinates": {
+            "x": 616,
+            "y": 1080,
+            "z": 1
+          },
+          "quantity": 8,
+          "product_id": "doc_1766907954240_saqekpyj0"
+        },
+        {
+          "sequence": 3,
+          "task_id": "doc_1766908001710_o659kmfhg",
+          "location_id": "doc_1766907954256_7zeceru0u",
+          "location_code": "O-01-13",
+          "coordinates": {
+            "x": 634,
+            "y": 1260,
+            "z": 1
+          },
+          "quantity": 1,
+          "product_id": "doc_1766907954239_oc87gqo2w"
+        },
+        {
+          "sequence": 4,
+          "task_id": "doc_1766908001710_3sejoraeb",
+          "location_id": "doc_1766907954259_ttyg212jh",
+          "location_code": "Q-07-40",
+          "coordinates": {
+            "x": 500,
+            "y": 1440,
+            "z": 4
+          },
+          "quantity": 10,
+          "product_id": "doc_1766907954239_9zx2mfhsc"
+        },
+        {
+          "sequence": 5,
+          "task_id": "doc_1766908001710_orhcdemet",
+          "location_id": "doc_1766907954256_ufjwe8rzj",
+          "location_code": "N-19-40",
+          "coordinates": {
+            "x": 202,
+            "y": 1080,
+            "z": 4
+          },
+          "quantity": 5,
+          "product_id": "doc_1766907954239_dobw9ghkf"
+        },
+        {
+          "sequence": 6,
+          "task_id": "doc_1766908001710_1hf1illpu",
+          "location_id": "doc_1766907954250_lqeiviuks",
+          "location_code": "I-23-40",
+          "coordinates": {
+            "x": 102,
+            "y": 572,
+            "z": 4
+          },
+          "quantity": 10,
+          "product_id": "doc_1766907954239_3ss04cu65"
+        },
+        {
+          "sequence": 7,
+          "task_id": "doc_1766908001710_mevwdxk6a",
+          "location_id": "doc_1766907954249_ydfb1bnn3",
+          "location_code": "H-22-21",
+          "coordinates": {
+            "x": 168,
+            "y": 540,
+            "z": 2
+          },
+          "quantity": 6,
+          "product_id": "doc_1766907954239_crl6ecgkn"
+        },
+        {
+          "sequence": 8,
+          "task_id": "doc_1766908001710_tms889dv7",
+          "location_id": "doc_1766907954250_m1qtrz8om",
+          "location_code": "I-15-21",
+          "coordinates": {
+            "x": 318,
+            "y": 572,
+            "z": 2
+          },
+          "quantity": 1,
+          "product_id": "doc_1766907954240_6s2brwfa4"
+        },
+        {
+          "sequence": 9,
+          "task_id": "doc_1766908001710_478nahmye",
+          "location_id": "doc_1766907954252_gmze37t7p",
+          "location_code": "K-05-40",
+          "coordinates": {
+            "x": 550,
+            "y": 900,
+            "z": 4
+          },
+          "quantity": 10,
+          "product_id": "doc_1766907954239_zxpnhegqk"
+        }
+      ],
+      "original_distance": 4723.86,
+      "optimized_distance": 2295.51,
+      "improvement_percentage": 51.41,
+      "estimated_time_seconds": 1800,
+      "estimated_time_minutes": 30,
+      "algorithm": "Genetic Algorithm with 2-opt",
+      "parameters": {
+        "population_size": 50,
+        "generations": 100,
+        "mutation_rate": 0.1
+      }
+    },
+    "created_by": "doc_1766857042198_fhpgmt6ml",
+    "created_at": "2025-12-28T08:05:22.712Z",
+    "updated_at": "2025-12-28T08:05:22.712Z"
+  }
+]

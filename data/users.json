@@ -1,0 +1,42 @@
+[
+  {
+    "id": "doc_1766857042198_fhpgmt6ml",
+    "username": "admin",
+    "email": "admin@wms.local",
+    "password_hash": "$2a$12$Te7teuvVAvz3JliN7uXe5O9C.Kw8UPze7k1Q2IohiK67AvHberAqe",
+    "role": "admin",
+    "status": "active",
+    "created_at": "2025-12-27T17:37:22.198Z",
+    "updated_at": "2025-12-27T17:37:22.198Z"
+  },
+  {
+    "id": "doc_1766857049632_i1n8pbbxu",
+    "username": "manager",
+    "email": "manager@wms.local",
+    "password_hash": "$2a$12$vZ3vxoM39MDjzgyir2ISKOpaQppA3HzHEaNMr1nsMY4KRnX1yrJza",
+    "role": "manager",
+    "status": "active",
+    "created_at": "2025-12-27T17:37:29.632Z",
+    "updated_at": "2025-12-27T17:37:29.632Z"
+  },
+  {
+    "id": "doc_1766857057285_qpt6rrphv",
+    "username": "operator",
+    "email": "operator@wms.local",
+    "password_hash": "$2a$12$acuD24u.CipNrjhvF9jyPusESiXsBqPNGAa0g1iJqYRsMApaQZym2",
+    "role": "operator",
+    "status": "active",
+    "created_at": "2025-12-27T17:37:37.285Z",
+    "updated_at": "2025-12-27T17:37:37.285Z"
+  },
+  {
+    "id": "doc_1766857066070_hovvej6i1",
+    "username": "supervisor",
+    "email": "supervisor@wms.local",
+    "password_hash": "$2a$12$x8aeD.RBuMiCan8gdYf.DeC8Lv3LIoXLAnJD7SWekXe6XXO4/Rwp2",
+    "role": "supervisor",
+    "status": "active",
+    "created_at": "2025-12-27T17:37:46.070Z",
+    "updated_at": "2025-12-27T17:37:46.070Z"
+  }
+]

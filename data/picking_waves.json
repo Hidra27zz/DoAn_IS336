@@ -1,0 +1,94 @@
+[
+  {
+    "id": "doc_1766908001710_wyc2u9lmu",
+    "wave_number": "W001",
+    "status": "completed",
+    "total_items": 32,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-19T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:46:41.710Z"
+  },
+  {
+    "id": "doc_1766908001710_4lvrgwlym",
+    "wave_number": "W002",
+    "status": "completed",
+    "total_items": 46,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-20T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:46:41.710Z"
+  },
+  {
+    "id": "doc_1766908001710_as7fyj16y",
+    "wave_number": "W003",
+    "status": "completed",
+    "total_items": 46,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-21T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:46:41.710Z"
+  },
+  {
+    "id": "doc_1766908001710_lqany4vya",
+    "wave_number": "W004",
+    "status": "completed",
+    "total_items": 43,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-22T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:46:41.710Z"
+  },
+  {
+    "id": "doc_1766908001710_ypekz5msp",
+    "wave_number": "W005",
+    "status": "completed",
+    "total_items": 29,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-23T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:46:41.710Z"
+  },
+  {
+    "id": "doc_1766908001710_pno3isd9e",
+    "wave_number": "W006",
+    "status": "in_progress",
+    "total_items": 35,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-24T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:46:41.710Z"
+  },
+  {
+    "id": "doc_1766908001710_dwpig7qkw",
+    "wave_number": "W007",
+    "status": "in_progress",
+    "total_items": 47,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-25T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:46:41.710Z"
+  },
+  {
+    "id": "doc_1766908001710_643es5bs9",
+    "wave_number": "W008",
+    "status": "in_progress",
+    "total_items": 39,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-26T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:46:41.710Z"
+  },
+  {
+    "id": "doc_1766908001710_ecd60mdez",
+    "wave_number": "W009",
+    "status": "in_progress",
+    "total_items": 27,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-27T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:49:04.074Z",
+    "started_at": "2025-12-28T07:49:04.074Z"
+  },
+  {
+    "id": "doc_1766908001710_5x7pb1f6w",
+    "wave_number": "W010",
+    "status": "in_progress",
+    "total_items": 25,
+    "assigned_operator_id": null,
+    "created_at": "2025-12-28T07:46:41.710Z",
+    "updated_at": "2025-12-28T07:49:06.209Z",
+    "started_at": "2025-12-28T07:49:06.209Z"
+  }
+]
