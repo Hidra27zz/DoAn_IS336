@@ -481,9 +481,9 @@ async function loadDashboardData() {
   
   // Load active waves
   try {
-    let waves = await apiCall('/picking/waves?status=in_progress');
+    let waves = await apiCall('/waves?status=in_progress');
     if (!waves) {
-      waves = await fetch('/api/demo/picking/waves').then(r => r.ok ? r.json() : null);
+      waves = await fetch('/api/demo/waves').then(r => r.ok ? r.json() : null);
     }
     if (waves) {
       const activeWaves = waves.waves?.filter(w => w.status === 'in_progress') || [];
@@ -789,14 +789,26 @@ async function loadOrdersData() {
   let url = '/orders?limit=100';
   if (status) url += `&status=${status}`;
   
-  const data = await apiCall(url);
+  let data = await apiCall(url);
+  
+  // If auth fails, try demo endpoint
+  if (!data) {
+    try {
+      const response = await fetch('/api/demo/orders');
+      if (response.ok) {
+        data = await response.json();
+      }
+    } catch (error) {
+      console.error('Demo orders error:', error);
+    }
+  }
   
   if (data?.orders) {
     const tbody = document.querySelector('#orders-table tbody');
     tbody.innerHTML = data.orders.map(order => `
       <tr>
         <td>${order.order_number || 'N/A'}</td>
-        <td>${order.customer_code || 'N/A'}</td>
+        <td>${order.customer_code || order.customer_name || 'N/A'}</td>
         <td><span class="status-badge status-${order.status}">${order.status}</span></td>
         <td>${order.priority || 'normal'}</td>
         <td>${order.total_items || 0}</td>
@@ -812,6 +824,10 @@ async function loadOrdersData() {
         </td>
       </tr>
     `).join('');
+  } else {
+    // Show empty state
+    const tbody = document.querySelector('#orders-table tbody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666;">No orders found</td></tr>';
   }
 }
 
@@ -826,7 +842,7 @@ async function viewOrder(orderId) {
 async function loadPickingData() {
   const status = document.getElementById('wave-status-filter')?.value || '';
   
-  let url = '/picking/waves?limit=50';
+  let url = '/waves?limit=50';
   if (status) url += `&status=${status}`;
   
   const data = await apiCall(url);
@@ -858,14 +874,14 @@ async function loadPickingData() {
 }
 
 async function viewWave(waveId) {
-  const data = await apiCall(`/picking/waves/${waveId}`);
+  const data = await apiCall(`/waves/${waveId}`);
   if (data) {
     alert(`Wave: #${data.wave.wave_number}\nStatus: ${data.wave.status}\nTasks: ${data.tasks?.length || 0}`);
   }
 }
 
 async function startWave(waveId) {
-  const result = await apiCall(`/picking/waves/${waveId}/start`, { method: 'POST' });
+  const result = await apiCall(`/waves/${waveId}/start`, { method: 'POST' });
   if (result) {
     loadPickingData();
   }
@@ -890,9 +906,6 @@ async function loadWarehouseData() {
       const totalOccupancy = data.zone_summary?.reduce((sum, z) => sum + z.total_occupancy, 0) || 0;
       const utilization = totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
       document.getElementById('warehouse-utilization').textContent = `${utilization}%`;
-      
-      // Update zone summary
-      updateZoneSummary(data.zone_summary);
     }
     
     // Load today's movements
@@ -901,11 +914,8 @@ async function loadWarehouseData() {
       document.getElementById('warehouse-movements').textContent = movements.total_movements || 0;
     }
     
-    // Load storage locations
-    loadStorageLocations();
-    
-    // Load 2D warehouse map
-    loadWarehouse2D();
+    // Load warehouse preview instead of full 2D map
+    loadWarehousePreview();
     
   } catch (error) {
     console.error('Error loading warehouse data:', error);
@@ -917,103 +927,7 @@ async function loadWarehouseData() {
   }
 }
 
-// Load storage locations table
-async function loadStorageLocations() {
-  const zone = document.getElementById('location-zone-filter')?.value || '';
-  const status = document.getElementById('location-status-filter')?.value || '';
-  
-  let url = '/warehouse/locations?limit=100';
-  if (zone) url += `&zone=${zone}`;
-  if (status) url += `&status=${status}`;
-  
-  const data = await apiCall(url);
-  
-  if (data?.locations) {
-    const tbody = document.querySelector('#storage-locations-table tbody');
-    tbody.innerHTML = data.locations.map(location => {
-      const utilization = location.capacity > 0 ? 
-        Math.round((location.current_occupancy / location.capacity) * 100) : 0;
-      
-      let statusClass = 'empty';
-      let statusText = 'Empty';
-      if (utilization >= 100) {
-        statusClass = 'full';
-        statusText = 'Full';
-      } else if (utilization > 0) {
-        statusClass = 'occupied';
-        statusText = 'Occupied';
-      }
-      
-      return `
-        <tr>
-          <td><strong>${location.location_code}</strong></td>
-          <td><span class="zone-badge zone-${location.zone.toLowerCase()}">${location.zone}</span></td>
-          <td>${location.capacity || 0}</td>
-          <td>${location.current_occupancy || 0}</td>
-          <td>
-            <div class="utilization-bar">
-              <div class="utilization-fill" style="width: ${utilization}%"></div>
-              <span class="utilization-text">${utilization}%</span>
-            </div>
-          </td>
-          <td>${location.product_reference || '-'}</td>
-          <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
-          <td class="table-actions">
-            <button class="btn btn-small btn-secondary" onclick="viewLocationDetails('${location.id}')">
-              View
-            </button>
-            <button class="btn btn-small btn-primary" onclick="showLocationModal('${location.id}')">
-              Manage
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-    
-    // Update zone filter options
-    const zones = [...new Set(data.locations.map(l => l.zone))].sort();
-    const zoneFilter = document.getElementById('location-zone-filter');
-    const currentZone = zoneFilter.value;
-    zoneFilter.innerHTML = '<option value="">All Zones</option>' +
-      zones.map(z => `<option value="${z}">Zone ${z}</option>`).join('');
-    zoneFilter.value = currentZone;
-  }
-}
-
-// Update zone summary cards
-function updateZoneSummary(zoneSummary) {
-  if (!zoneSummary) return;
-  
-  const zones = ['A', 'B', 'C', 'D'];
-  
-  zones.forEach(zone => {
-    const zoneData = zoneSummary.find(z => z.zone === zone);
-    
-    const locationsElement = document.getElementById(`zone-${zone.toLowerCase()}-locations`);
-    const utilElement = document.getElementById(`zone-${zone.toLowerCase()}-util`);
-    
-    if (zoneData) {
-      if (locationsElement) {
-        locationsElement.textContent = zoneData.total_locations || 0;
-      }
-      if (utilElement) {
-        const util = zoneData.total_capacity > 0 ? 
-          Math.round((zoneData.total_occupancy / zoneData.total_capacity) * 100) : 0;
-        utilElement.textContent = `${util}%`;
-      }
-    } else {
-      if (locationsElement) locationsElement.textContent = '0';
-      if (utilElement) utilElement.textContent = '0%';
-    }
-  });
-}
-
-// Refresh storage locations
-async function refreshStorageLocations() {
-  console.log('Refreshing storage locations...');
-  await loadStorageLocations();
-  showToast('Storage locations refreshed', 'success');
-}
+// Duplicate showToast function removed - using the first implementation
 
 // View location details
 async function viewLocationDetails(locationId) {
@@ -1118,7 +1032,7 @@ MOVEMENTS TODAY:
 
 // AI Optimization
 async function loadAIData() {
-  const waves = await apiCall('/picking/waves');
+  const waves = await apiCall('/waves');
   if (waves?.waves) {
     const waveSelect = document.getElementById('route-wave-id');
     if (waveSelect) {
@@ -1863,11 +1777,12 @@ window.cancelOrder = cancelOrder;
 window.showMovementHistory = showMovementHistory;
 window.showPickingTaskModal = showPickingTaskModal;
 window.showLocationDetails = showLocationDetails;
-window.refreshStorageLocations = refreshStorageLocations;
 window.viewLocationDetails = viewLocationDetails;
 window.generateWarehouseReport = generateWarehouseReport;
 window.showProductTimeline = showProductTimeline;
-window.loadWarehouse2D = loadWarehouse2D;
+// Make warehouse functions globally available
+window.loadWarehousePreview = loadWarehousePreview;
+window.openWarehouse2DMap = openWarehouse2DMap;
 
 // Make data loading functions available for refresh after operations
 window.loadInventoryData = loadInventoryData;
@@ -1967,284 +1882,70 @@ document.addEventListener('click', function(e) {
 });
 
 
-// 2D Warehouse Map Functions
-let warehouseLocations = [];
-let canvasScale = 1;
-let canvasOffsetX = 50;
-let canvasOffsetY = 50;
-
-async function loadWarehouse2D() {
-  console.log('Loading 2D warehouse map...');
+// Warehouse 2D Map Preview and Full-Screen Functions
+async function loadWarehousePreview() {
+  console.log('Loading warehouse preview data...');
   
   try {
-    const data = await apiCall('/warehouse/locations?include_coordinates=true');
-    
-    if (data?.locations) {
-      warehouseLocations = data.locations;
-      const colorBy = document.getElementById('viz-color-by')?.value || 'zone';
-      
-      drawWarehouse2D(warehouseLocations, colorBy);
-      updateMapLegend(colorBy);
-      
-      console.log(`Loaded ${warehouseLocations.length} locations for 2D map`);
-    } else {
-      console.log('No location data available for 2D map');
-      showEmptyMap();
+    const response = await fetch('/api/public/storage-map');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
-  } catch (error) {
-    console.error('Error loading 2D warehouse map:', error);
-    showEmptyMap();
-  }
-}
-
-function drawWarehouse2D(locations, colorBy = 'zone') {
-  const canvas = document.getElementById('warehouse-canvas');
-  if (!canvas) {
-    console.error('Warehouse canvas not found');
-    return;
-  }
-  
-  const ctx = canvas.getContext('2d');
-  
-  // Clear canvas
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  if (locations.length === 0) {
-    showEmptyMap();
-    return;
-  }
-  
-  // Generate coordinates if not available
-  const locationsWithCoords = locations.map((loc, index) => {
-    if (!loc.x || !loc.y) {
-      // Generate grid-based coordinates
-      const cols = Math.ceil(Math.sqrt(locations.length));
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-      
-      return {
-        ...loc,
-        x: col * 40 + 50,
-        y: row * 30 + 50
-      };
-    }
-    return loc;
-  });
-  
-  // Calculate scale
-  const maxX = Math.max(...locationsWithCoords.map(l => l.x));
-  const maxY = Math.max(...locationsWithCoords.map(l => l.y));
-  const minX = Math.min(...locationsWithCoords.map(l => l.x));
-  const minY = Math.min(...locationsWithCoords.map(l => l.y));
-  
-  const rangeX = maxX - minX || 1;
-  const rangeY = maxY - minY || 1;
-  
-  canvasScale = Math.min((canvas.width - 100) / rangeX, (canvas.height - 100) / rangeY, 2);
-  canvasOffsetX = 50 - minX * canvasScale;
-  canvasOffsetY = 50 - minY * canvasScale;
-  
-  // Draw grid
-  ctx.strokeStyle = '#e2e8f0';
-  ctx.lineWidth = 0.5;
-  for (let i = 0; i <= canvas.width; i += 40) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i, canvas.height);
-    ctx.stroke();
-  }
-  for (let i = 0; i <= canvas.height; i += 30) {
-    ctx.beginPath();
-    ctx.moveTo(0, i);
-    ctx.lineTo(canvas.width, i);
-    ctx.stroke();
-  }
-  
-  // Draw locations
-  locationsWithCoords.forEach(loc => {
-    const x = loc.x * canvasScale + canvasOffsetX;
-    const y = loc.y * canvasScale + canvasOffsetY;
     
-    const color = getLocationColor(loc, colorBy);
-    const size = Math.max(8, Math.min(16, canvasScale * 10));
+    const data = await response.json();
     
-    // Draw location rectangle
-    ctx.fillStyle = color;
-    ctx.fillRect(x - size/2, y - size/2, size, size);
-    
-    // Draw border
-    ctx.strokeStyle = '#1f2937';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x - size/2, y - size/2, size, size);
-    
-    // Draw location code if scale is large enough
-    if (canvasScale > 1) {
-      ctx.fillStyle = '#1f2937';
-      ctx.font = '10px Inter';
-      ctx.textAlign = 'center';
-      ctx.fillText(loc.location_code, x, y + size/2 + 12);
-    }
-  });
-  
-  // Draw zone labels
-  const zones = [...new Set(locationsWithCoords.map(l => l.zone))];
-  zones.forEach(zone => {
-    const zoneLocs = locationsWithCoords.filter(l => l.zone === zone);
-    if (zoneLocs.length > 0) {
-      const avgX = zoneLocs.reduce((s, l) => s + l.x, 0) / zoneLocs.length;
-      const avgY = zoneLocs.reduce((s, l) => s + l.y, 0) / zoneLocs.length;
-      const x = avgX * canvasScale + canvasOffsetX;
-      const y = avgY * canvasScale + canvasOffsetY;
+    if (data) {
+      // Update preview stats
+      document.getElementById('preview-total-locations').textContent = data.totalLocations || 0;
+      document.getElementById('preview-occupied').textContent = data.occupiedLocations || 0;
+      document.getElementById('preview-empty').textContent = data.emptyLocations || 0;
+      document.getElementById('preview-zones').textContent = data.zones?.length || 0;
+      document.getElementById('preview-total-products').textContent = data.totalProducts || 0;
+      document.getElementById('preview-last-update').textContent = new Date().toLocaleString();
       
-      ctx.fillStyle = 'rgba(0,0,0,0.8)';
-      ctx.font = 'bold 14px Inter';
-      ctx.textAlign = 'center';
-      ctx.fillText(`Zone ${zone}`, x, y - 30);
-    }
-  });
-  
-  // Update stored locations for tooltip
-  warehouseLocations = locationsWithCoords;
-}
-
-function getLocationColor(loc, colorBy) {
-  const zoneColors = {
-    'A': '#ef4444', 'B': '#f59e0b', 'C': '#22c55e', 
-    'D': '#3b82f6', 'E': '#8b5cf6', 'F': '#ec4899',
-    'G': '#06b6d4', 'H': '#84cc16', 'I': '#f97316',
-    'J': '#6366f1', 'K': '#14b8a6', 'L': '#f59e0b',
-    'M': '#8b5cf6', 'N': '#ef4444', 'O': '#22c55e',
-    'P': '#3b82f6', 'Q': '#ec4899', 'R': '#06b6d4'
-  };
-  
-  if (colorBy === 'zone') {
-    return zoneColors[loc.zone] || '#94a3b8';
-  } else if (colorBy === 'utilization') {
-    const util = loc.capacity > 0 ? (loc.current_occupancy || 0) / loc.capacity : 0;
-    if (util > 0.8) return '#ef4444';
-    if (util > 0.5) return '#f59e0b';
-    if (util > 0.2) return '#22c55e';
-    return '#94a3b8';
-  } else if (colorBy === 'abc') {
-    // Based on product ABC classification
-    if (loc.product_abc === 'A') return '#ef4444';
-    if (loc.product_abc === 'B') return '#f59e0b';
-    if (loc.product_abc === 'C') return '#22c55e';
-    return '#94a3b8';
-  }
-  return '#94a3b8';
-}
-
-function updateMapLegend(colorBy) {
-  const legend = document.getElementById('map-legend');
-  if (!legend) return;
-  
-  if (colorBy === 'zone') {
-    legend.innerHTML = `
-      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>Zone A</div>
-      <div class="legend-item"><div class="legend-color" style="background:#f59e0b"></div>Zone B</div>
-      <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div>Zone C</div>
-      <div class="legend-item"><div class="legend-color" style="background:#3b82f6"></div>Zone D</div>
-      <div class="legend-item"><div class="legend-color" style="background:#8b5cf6"></div>Other Zones</div>
-    `;
-  } else if (colorBy === 'utilization') {
-    legend.innerHTML = `
-      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>High (>80%)</div>
-      <div class="legend-item"><div class="legend-color" style="background:#f59e0b"></div>Medium (50-80%)</div>
-      <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div>Low (20-50%)</div>
-      <div class="legend-item"><div class="legend-color" style="background:#94a3b8"></div>Empty (<20%)</div>
-    `;
-  } else if (colorBy === 'abc') {
-    legend.innerHTML = `
-      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>Class A (High)</div>
-      <div class="legend-item"><div class="legend-color" style="background:#f59e0b"></div>Class B (Medium)</div>
-      <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div>Class C (Low)</div>
-      <div class="legend-item"><div class="legend-color" style="background:#94a3b8"></div>No Product</div>
-    `;
-  }
-}
-
-function showEmptyMap() {
-  const canvas = document.getElementById('warehouse-canvas');
-  if (!canvas) return;
-  
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  ctx.fillStyle = '#6b7280';
-  ctx.font = '16px Inter';
-  ctx.textAlign = 'center';
-  ctx.fillText('No warehouse location data available', canvas.width / 2, canvas.height / 2);
-  ctx.fillText('Click "Refresh Map" to reload', canvas.width / 2, canvas.height / 2 + 25);
-}
-
-// Canvas hover tooltip
-document.addEventListener('DOMContentLoaded', function() {
-  const canvas = document.getElementById('warehouse-canvas');
-  if (canvas) {
-    canvas.addEventListener('mousemove', function(e) {
-      const rect = this.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      
-      const tooltip = document.getElementById('location-tooltip');
-      if (!tooltip) return;
-      
-      let found = false;
-      
-      for (const loc of warehouseLocations) {
-        const x = loc.x * canvasScale + canvasOffsetX;
-        const y = loc.y * canvasScale + canvasOffsetY;
-        const size = Math.max(8, Math.min(16, canvasScale * 10));
+      // Update zone previews
+      if (data.zones) {
+        data.zones.forEach(zone => {
+          const element = document.getElementById(`zone-${zone.zone.toLowerCase()}-preview`);
+          if (element) {
+            element.textContent = `${zone.locationCount} locations`;
+          }
+        });
         
-        if (Math.abs(mouseX - x) < size && Math.abs(mouseY - y) < size) {
-          const utilization = loc.capacity > 0 ? 
-            Math.round(((loc.current_occupancy || 0) / loc.capacity) * 100) : 0;
-          
-          tooltip.innerHTML = `
-            <strong>${loc.location_code}</strong><br>
-            Zone: ${loc.zone}<br>
-            Capacity: ${loc.capacity || 0}<br>
-            Stock: ${loc.current_occupancy || 0}<br>
-            Utilization: ${utilization}%<br>
-            Product: ${loc.product_reference || 'Empty'}
-          `;
-          tooltip.style.left = (e.clientX + 15) + 'px';
-          tooltip.style.top = (e.clientY + 15) + 'px';
-          tooltip.style.display = 'block';
-          found = true;
-          break;
+        // Update "other zones" count
+        const otherZones = data.zones.filter(z => !['A', 'B', 'C', 'D', 'E', 'F'].includes(z.zone));
+        const otherElement = document.getElementById('zone-other-preview');
+        if (otherElement) {
+          const otherCount = otherZones.reduce((sum, z) => sum + z.locationCount, 0);
+          otherElement.textContent = `${otherCount} locations`;
         }
       }
       
-      if (!found) {
-        tooltip.style.display = 'none';
-      }
-    });
-    
-    canvas.addEventListener('mouseleave', function() {
-      const tooltip = document.getElementById('location-tooltip');
-      if (tooltip) {
-        tooltip.style.display = 'none';
-      }
-    });
+      console.log(`Warehouse preview loaded: ${data.totalLocations} locations, ${data.zones?.length} zones`);
+    }
+  } catch (error) {
+    console.error('Error loading warehouse preview:', error);
+    // Set default values on error
+    document.getElementById('preview-total-locations').textContent = '0';
+    document.getElementById('preview-occupied').textContent = '0';
+    document.getElementById('preview-empty').textContent = '0';
+    document.getElementById('preview-zones').textContent = '0';
+    document.getElementById('preview-total-products').textContent = '0';
+    document.getElementById('preview-last-update').textContent = 'Error loading';
   }
-});
+}
 
-// Color by change handler
-document.addEventListener('DOMContentLoaded', function() {
-  const colorBySelect = document.getElementById('viz-color-by');
-  if (colorBySelect) {
-    colorBySelect.addEventListener('change', function() {
-      if (warehouseLocations.length > 0) {
-        drawWarehouse2D(warehouseLocations, this.value);
-        updateMapLegend(this.value);
-      }
-    });
-  }
-});
+function openWarehouse2DMap() {
+  console.log('Opening warehouse 2D map...');
+  
+  // Navigate to warehouse map endpoint instead of opening new window
+  const currentUrl = window.location.origin;
+  const warehouseMapUrl = `${currentUrl}/warehouse/2d-map`;
+  
+  // Update URL and navigate to warehouse map
+  window.history.pushState({ section: 'warehouse-2d' }, '', '/warehouse/2d-map');
+  window.location.href = '/warehouse/2d-map';
+}
 
 // Timeline Functions
 async function loadInventoryTimeline() {
@@ -2724,77 +2425,7 @@ function getPerformanceClass(score) {
   return 'poor';
 }
 
-// Toast notification function - Improved version  
-function showToast(message, type = 'info', duration = 4000) {
-  // Remove any existing toast
-  const existingToast = document.getElementById('toast');
-  if (existingToast) {
-    existingToast.remove();
-  }
-  
-  // Create new toast element
-  const toast = document.createElement('div');
-  toast.id = 'toast';
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  
-  // Add to DOM
-  document.body.appendChild(toast);
-  
-  // Trigger show animation
-  setTimeout(() => {
-    toast.classList.add('show');
-  }, 10);
-  
-  // Auto remove after duration
-  setTimeout(() => {
-    if (toast && toast.parentNode) {
-      toast.classList.remove('show');
-      setTimeout(() => {
-        if (toast && toast.parentNode) {
-          toast.remove();
-        }
-      }, 300); // Wait for animation to complete
-    }
-  }, duration);
-  
-  // Add click to dismiss
-  toast.addEventListener('click', () => {
-    toast.classList.remove('show');
-    setTimeout(() => {
-      if (toast && toast.parentNode) {
-        toast.remove();
-      }
-    }, 300);
-  });
-  
-  // Add close button for better UX
-  const closeBtn = document.createElement('span');
-  closeBtn.innerHTML = '×';
-  closeBtn.style.cssText = `
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-    opacity: 0.7;
-    line-height: 1;
-  `;
-  closeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toast.classList.remove('show');
-    setTimeout(() => {
-      if (toast && toast.parentNode) {
-        toast.remove();
-      }
-    }, 300);
-  });
-  
-  toast.style.position = 'relative';
-  toast.style.paddingRight = '40px';
-  toast.appendChild(closeBtn);
-}
+// Duplicate showToast function removed - using the first implementation
 
 // Initialize URL handling on page load
 document.addEventListener('DOMContentLoaded', function() {

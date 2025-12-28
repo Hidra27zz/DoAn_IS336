@@ -259,136 +259,107 @@
             </div>
           </div>
 
-          <!-- Storage Locations Management -->
-          <div class="warehouse-panel">
-            <div class="panel-header">
-              <h3>Storage Locations - Vị Trí Lưu Trữ</h3>
-              <div class="panel-controls">
-                <select id="location-zone-filter" class="control-select">
-                  <option value="">All Zones</option>
-                </select>
-                <select id="location-status-filter" class="control-select">
-                  <option value="">All Status</option>
-                  <option value="empty">Empty</option>
-                  <option value="occupied">Occupied</option>
-                  <option value="full">Full</option>
-                </select>
-                <button class="btn btn-primary" onclick="refreshStorageLocations()">
-                  Refresh
-                </button>
-              </div>
-            </div>
-            
-            <div class="table-container">
-              <table id="storage-locations-table">
-                <thead>
-                  <tr>
-                    <th>Location Code</th>
-                    <th>Zone</th>
-                    <th>Capacity</th>
-                    <th>Current Stock</th>
-                    <th>Utilization</th>
-                    <th>Product</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Zone Summary -->
-          <div class="zone-summary-panel">
-            <div class="panel-header">
-              <h3>Zone Summary - Tổng Quan Khu Vực</h3>
-            </div>
-            <div class="zone-grid">
-              <div class="zone-card" id="zone-summary-a">
-                <h4>Zone A</h4>
-                <div class="zone-stats">
-                  <div class="zone-stat">
-                    <span class="zone-number" id="zone-a-locations">0</span>
-                    <span class="zone-label">Locations</span>
-                  </div>
-                  <div class="zone-stat">
-                    <span class="zone-number" id="zone-a-util">0%</span>
-                    <span class="zone-label">Utilization</span>
-                  </div>
-                </div>
-              </div>
-              <div class="zone-card" id="zone-summary-b">
-                <h4>Zone B</h4>
-                <div class="zone-stats">
-                  <div class="zone-stat">
-                    <span class="zone-number" id="zone-b-locations">0</span>
-                    <span class="zone-label">Locations</span>
-                  </div>
-                  <div class="zone-stat">
-                    <span class="zone-number" id="zone-b-util">0%</span>
-                    <span class="zone-label">Utilization</span>
-                  </div>
-                </div>
-              </div>
-              <div class="zone-card" id="zone-summary-c">
-                <h4>Zone C</h4>
-                <div class="zone-stats">
-                  <div class="zone-stat">
-                    <span class="zone-number" id="zone-c-locations">0</span>
-                    <span class="zone-label">Locations</span>
-                  </div>
-                  <div class="zone-stat">
-                    <span class="zone-number" id="zone-c-util">0%</span>
-                    <span class="zone-label">Utilization</span>
-                  </div>
-                </div>
-              </div>
-              <div class="zone-card" id="zone-summary-d">
-                <h4>Zone D</h4>
-                <div class="zone-stats">
-                  <div class="zone-stat">
-                    <span class="zone-number" id="zone-d-locations">0</span>
-                    <span class="zone-label">Locations</span>
-                  </div>
-                  <div class="zone-stat">
-                    <span class="zone-number" id="zone-d-util">0%</span>
-                    <span class="zone-label">Utilization</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2D Warehouse Map -->
+          <!-- 2D Warehouse Map - Full Screen Access -->
           <div class="warehouse-2d-panel">
             <div class="panel-header">
               <h3>2D Warehouse Map - Bản Đồ Kho 2D</h3>
               <div class="panel-controls">
-                <select id="viz-color-by" class="control-select">
-                  <option value="zone">View by Zone</option>
-                  <option value="utilization">View by Utilization</option>
-                  <option value="abc">View by ABC Classification</option>
-                </select>
-                <button class="btn btn-secondary" onclick="loadWarehouse2D()">
-                  Refresh Map
+                <button class="btn btn-primary" onclick="openWarehouse2DMap()">
+                  Mở Bản Đồ Kho 2D
+                </button>
+                <button class="btn btn-secondary" onclick="loadWarehousePreview()">
+                  Refresh Preview
                 </button>
               </div>
             </div>
             
-            <div class="warehouse-canvas-container">
-              <div class="canvas-legend">
-                <h4>Legend:</h4>
-                <div class="legend-items" id="map-legend">
-                  <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>Zone A</div>
-                  <div class="legend-item"><div class="legend-color" style="background:#f59e0b"></div>Zone B</div>
-                  <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div>Zone C</div>
-                  <div class="legend-item"><div class="legend-color" style="background:#3b82f6"></div>Zone D</div>
+            <div class="warehouse-preview-container">
+              <div class="warehouse-preview-info">
+                <div class="preview-stats">
+                  <div class="preview-stat">
+                    <h4>Tổng Vị Trí</h4>
+                    <span id="preview-total-locations">-</span>
+                  </div>
+                  <div class="preview-stat">
+                    <h4>Đã Sử Dụng</h4>
+                    <span id="preview-occupied">-</span>
+                  </div>
+                  <div class="preview-stat">
+                    <h4>Còn Trống</h4>
+                    <span id="preview-empty">-</span>
+                  </div>
+                  <div class="preview-stat">
+                    <h4>Số Zone</h4>
+                    <span id="preview-zones">-</span>
+                  </div>
+                </div>
+                
+                <div class="preview-description">
+                  <h4>Tính Năng Bản Đồ 2D:</h4>
+                  <ul>
+                    <li>Xem toàn bộ layout warehouse với tọa độ thực</li>
+                    <li>Lọc theo tầng (Floor 1-4) và zone (A-R)</li>
+                    <li>Zoom in/out và tìm kiếm vị trí</li>
+                    <li>Hiển thị dock doors và corridor</li>
+                    <li>Chi tiết sản phẩm và capacity cho từng vị trí</li>
+                    <li>Phân tích utilization và performance</li>
+                  </ul>
                 </div>
               </div>
-              <div class="warehouse-map-container">
-                <canvas id="warehouse-canvas" width="800" height="500"></canvas>
+              
+              <div class="warehouse-preview-visual">
+                <div class="preview-zones-grid">
+                  <div class="preview-zone zone-a">
+                    <span>Zone A</span>
+                    <small id="zone-a-preview">48 locations</small>
+                  </div>
+                  <div class="preview-zone zone-b">
+                    <span>Zone B</span>
+                    <small id="zone-b-preview">96 locations</small>
+                  </div>
+                  <div class="preview-zone zone-c">
+                    <span>Zone C</span>
+                    <small id="zone-c-preview">96 locations</small>
+                  </div>
+                  <div class="preview-zone zone-d">
+                    <span>Zone D</span>
+                    <small id="zone-d-preview">96 locations</small>
+                  </div>
+                  <div class="preview-zone zone-e">
+                    <span>Zone E</span>
+                    <small id="zone-e-preview">100 locations</small>
+                  </div>
+                  <div class="preview-zone zone-f">
+                    <span>Zone F</span>
+                    <small id="zone-f-preview">96 locations</small>
+                  </div>
+                  <div class="preview-zone zone-other">
+                    <span>Other Zones</span>
+                    <small id="zone-other-preview">G-R zones</small>
+                  </div>
+                </div>
+                
+                <div class="preview-action">
+                  <button class="btn btn-large btn-primary" onclick="openWarehouse2DMap()">
+                    <div>
+                      <strong>Mở Bản Đồ Kho 2D</strong>
+                      <small>Xem full-screen với tất cả tính năng</small>
+                    </div>
+                  </button>
+                </div>
               </div>
-              <div id="location-tooltip" class="location-tooltip"></div>
+            </div>
+            
+            <div class="warehouse-quick-info">
+              <div class="quick-info-item">
+                <strong>Data Source:</strong> Storage_Location.csv + Class_Based_Storage.csv
+              </div>
+              <div class="quick-info-item">
+                <strong>Last Updated:</strong> <span id="preview-last-update">-</span>
+              </div>
+              <div class="quick-info-item">
+                <strong>Total Products:</strong> <span id="preview-total-products">-</span>
+              </div>
             </div>
           </div>
 
