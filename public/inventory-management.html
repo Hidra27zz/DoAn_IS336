@@ -530,7 +530,10 @@
 
         if (selectedLevel) {
           try {
-            const response = await fetch('/api/locations');
+            const token = localStorage.getItem('authToken');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
+            const response = await fetch('/api/warehouse/locations', { headers });
             const data = await response.json();
             
             // Filter locations by level and get unique zones
@@ -566,7 +569,10 @@
 
         if (selectedLevel && selectedZone) {
           try {
-            const response = await fetch('/api/locations');
+            const token = localStorage.getItem('authToken');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
+            const response = await fetch('/api/warehouse/locations', { headers });
             const data = await response.json();
             
             // Filter locations by level and zone
@@ -598,7 +604,10 @@
     // Load inventory summary
     async function loadSummary() {
       try {
-        const response = await fetch('/api/inventory/summary');
+        const token = localStorage.getItem('authToken');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        
+        const response = await fetch('/api/inventory/summary', { headers });
         const data = await response.json();
         
         document.getElementById('totalProducts').textContent = data.total_products || 0;
@@ -647,7 +656,10 @@
           params.append('search', search);
         }
 
-        const response = await fetch(`/api/inventory?${params}`);
+        const token = localStorage.getItem('authToken');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        const response = await fetch(`/api/inventory?${params}`, { headers });
         const data = await response.json();
 
         currentInventory = data.inventory;
@@ -733,10 +745,13 @@
     // Show low stock alerts
     async function showLowStockAlerts() {
       try {
-        const response = await fetch('/api/inventory/alerts/low-stock?threshold=20');
+        const token = localStorage.getItem('authToken');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        
+        const response = await fetch('/api/inventory/low-stock?threshold=20', { headers });
         const data = await response.json();
         
-        if (data.count === 0) {
+        if (data.low_stock_items && data.low_stock_items.length === 0) {
           showAlert('Không có sản phẩm nào có tồn kho thấp', 'success');
           return;
         }
@@ -745,7 +760,7 @@
         document.getElementById('lowStockFilter').value = 'true';
         loadInventory(1);
         
-        showAlert(`Tìm thấy ${data.count} sản phẩm có tồn kho thấp (< ${data.threshold})`, 'error');
+        showAlert(`Tìm thấy ${data.low_stock_items?.length || 0} sản phẩm có tồn kho thấp (< ${data.threshold})`, 'error');
       } catch (error) {
         console.error('Error loading low stock alerts:', error);
         showAlert('Lỗi tải cảnh báo tồn kho', 'error');
@@ -793,11 +808,17 @@
         const quantity = parseInt(document.getElementById('adjustNewQty').value);
         const reason = document.getElementById('adjustReason').value;
 
+        const token = localStorage.getItem('authToken');
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`/api/inventory/${id}/adjust`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: headers,
           body: JSON.stringify({ quantity, reason })
         });
 
@@ -825,11 +846,17 @@
         const id = document.getElementById('reserveInventoryId').value;
         const quantity = parseInt(document.getElementById('reserveQty').value);
 
+        const token = localStorage.getItem('authToken');
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`/api/inventory/${id}/reserve`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: headers,
           body: JSON.stringify({ quantity })
         });
 

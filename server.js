@@ -495,6 +495,10 @@ app.post('/api/create-default-user', async (req, res) => {
   }
 });
 
+// Import JWT for login
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'wms-secret-key-change-in-production';
+
 // Simple login endpoint for demo
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
@@ -502,12 +506,18 @@ app.post('/api/auth/login', (req, res) => {
   // Simple demo authentication
   if ((username === 'admin' && password === 'admin123') || 
       (username === 'test' && password === 'test123')) {
-    const token = 'demo-token-' + Date.now();
     const user = {
       id: username === 'admin' ? 'admin-001' : 'test-001',
       username: username,
       role: username === 'admin' ? 'admin' : 'operator'
     };
+    
+    // Create JWT token
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
     
     res.json({
       success: true,

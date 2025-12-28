@@ -1869,6 +1869,20 @@ window.generateWarehouseReport = generateWarehouseReport;
 window.showProductTimeline = showProductTimeline;
 window.loadWarehouse2D = loadWarehouse2D;
 
+// Modal functions
+window.showModal = showModal;
+window.closeModal = closeModal;
+window.showToast = showToast;
+
+// Form handlers
+window.handleInbound = handleInbound;
+window.handleOutbound = handleOutbound;
+window.handleTransfer = handleTransfer;
+window.handleAdjust = handleAdjust;
+window.handleCreateOrder = handleCreateOrder;
+window.handleCreateWave = handleCreateWave;
+window.handleCompleteTask = handleCompleteTask;
+
 // Make data loading functions available for refresh after operations
 window.loadInventoryData = loadInventoryData;
 window.loadOrdersData = loadOrdersData;
@@ -2722,78 +2736,6 @@ function getPerformanceClass(score) {
   if (score >= 75) return 'good';
   if (score >= 60) return 'average';
   return 'poor';
-}
-
-// Toast notification function - Improved version  
-function showToast(message, type = 'info', duration = 4000) {
-  // Remove any existing toast
-  const existingToast = document.getElementById('toast');
-  if (existingToast) {
-    existingToast.remove();
-  }
-  
-  // Create new toast element
-  const toast = document.createElement('div');
-  toast.id = 'toast';
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  
-  // Add to DOM
-  document.body.appendChild(toast);
-  
-  // Trigger show animation
-  setTimeout(() => {
-    toast.classList.add('show');
-  }, 10);
-  
-  // Auto remove after duration
-  setTimeout(() => {
-    if (toast && toast.parentNode) {
-      toast.classList.remove('show');
-      setTimeout(() => {
-        if (toast && toast.parentNode) {
-          toast.remove();
-        }
-      }, 300); // Wait for animation to complete
-    }
-  }, duration);
-  
-  // Add click to dismiss
-  toast.addEventListener('click', () => {
-    toast.classList.remove('show');
-    setTimeout(() => {
-      if (toast && toast.parentNode) {
-        toast.remove();
-      }
-    }, 300);
-  });
-  
-  // Add close button for better UX
-  const closeBtn = document.createElement('span');
-  closeBtn.innerHTML = '×';
-  closeBtn.style.cssText = `
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-    opacity: 0.7;
-    line-height: 1;
-  `;
-  closeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toast.classList.remove('show');
-    setTimeout(() => {
-      if (toast && toast.parentNode) {
-        toast.remove();
-      }
-    }, 300);
-  });
-  
-  toast.style.position = 'relative';
-  toast.style.paddingRight = '40px';
-  toast.appendChild(closeBtn);
 }
 
 // Initialize URL handling on page load

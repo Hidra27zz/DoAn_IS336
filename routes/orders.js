@@ -122,6 +122,136 @@ router.get('/stats/summary', async (req, res) => {
   }
 });
 
+// GET /api/orders/:id - Get single order with items
+router.get('/:id', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+
+    // Get order
+    const order = await db.get('SELECT * FROM orders WHERE id = ?', [id]);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Get order items
+    const items = await db.all(`
+      SELECT 
+        oi.*,
+        p.reference as product_reference,
+        p.description as product_description,
+        p.abc_code
+      FROM order_items oi
+      LEFT JOIN products p ON oi.product_reference = p.reference
+      WHERE oi.order_id = ?
+    `, [id]);
+
+    res.json({
+      order: order,
+      items: items,
+      data_source: 'SQL Database'
+    });
+
+  } catch (error) {
+    console.error('Get order error:', error);
+    res.status(500).json({ error: 'Failed to get order' });
+  }
+});
+
+// PUT /api/orders/:id/status - Update order status
+router.put('/:id/status', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ['pending', 'assigned', 'picking', 'picked', 'shipped', 'cancelled'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+    }
+
+    // Check if order exists
+    const existing = await db.get('SELECT * FROM orders WHERE id = ?', [id]);
+    if (!existing) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const oldStatus = existing.status;
+
+    // Update order status
+    await db.run(
+      'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [status, id]
+    );
+
+    res.json({
+      success: true,
+      order_id: id,
+      old_status: oldStatus,
+      new_status: status,
+      data_source: 'SQL Database'
+    });
+
+  } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(500).json({ error: 'Failed to update order status' });
+  }
+});
+
+// POST /api/orders/:id/cancel - Cancel order
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    // Check if order exists
+    const existing = await db.get('SELECT * FROM orders WHERE id = ?', [id]);
+    if (!existing) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Check if order can be cancelled
+    if (['shipped', 'cancelled'].includes(existing.status)) {
+      return res.status(400).json({ error: `Cannot cancel order with status: ${existing.status}` });
+    }
+
+    const oldStatus = existing.status;
+
+    // Update order status to cancelled
+    await db.run(
+      'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ['cancelled', id]
+    );
+
+    // Log cancellation
+    try {
+      await db.run(
+        'INSERT INTO system_logs (level, module, message, details) VALUES (?, ?, ?, ?)',
+        ['INFO', 'orders', `Order cancelled: ${reason || 'No reason provided'}`,
+         JSON.stringify({ order_id: id, order_number: existing.order_number, old_status: oldStatus })]
+      );
+    } catch (logError) {
+      console.log('Could not log cancellation:', logError.message);
+    }
+
+    res.json({
+      success: true,
+      order_id: id,
+      order_number: existing.order_number,
+      old_status: oldStatus,
+      new_status: 'cancelled',
+      reason: reason || 'No reason provided',
+      data_source: 'SQL Database'
+    });
+
+  } catch (error) {
+    console.error('Cancel order error:', error);
+    res.status(500).json({ error: 'Failed to cancel order' });
+  }
+});
+
 // POST /api/orders - Create new order
 router.post('/', async (req, res) => {
   try {

@@ -459,6 +459,106 @@ router.put('/:id', requireRole(['admin', 'manager']), async (req, res) => {
   }
 });
 
+// Adjust inventory quantity (for modal)
+router.put('/:id/adjust', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const { quantity, reason } = req.body;
+    
+    // Validate input
+    if (quantity === undefined || quantity < 0) {
+      return res.status(400).json({ error: 'Valid quantity is required' });
+    }
+    
+    // Check if inventory record exists
+    const existing = await db.get('SELECT * FROM inventory WHERE id = ?', [id]);
+    if (!existing) {
+      return res.status(404).json({ error: 'Inventory record not found' });
+    }
+    
+    const oldQuantity = existing.quantity;
+    const difference = quantity - oldQuantity;
+    
+    // Update inventory
+    await db.run(
+      'UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [quantity, id]
+    );
+    
+    // Log the adjustment (optional - if system_logs table exists)
+    try {
+      await db.run(
+        'INSERT INTO system_logs (level, module, message, details) VALUES (?, ?, ?, ?)',
+        ['INFO', 'inventory', `Inventory adjusted: ${reason || 'Manual adjustment'}`, 
+         JSON.stringify({ inventory_id: id, old_quantity: oldQuantity, new_quantity: quantity, difference })]
+      );
+    } catch (logError) {
+      console.log('Could not log adjustment:', logError.message);
+    }
+    
+    res.json({
+      success: true,
+      inventory_id: id,
+      old_quantity: oldQuantity,
+      new_quantity: quantity,
+      difference: difference,
+      reason: reason || 'Manual adjustment',
+      data_source: 'SQL Database'
+    });
+    
+  } catch (error) {
+    console.error('Adjust inventory error:', error);
+    res.status(500).json({ error: 'Failed to adjust inventory' });
+  }
+});
+
+// Reserve inventory
+router.post('/:id/reserve', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const { quantity } = req.body;
+    
+    // Validate input
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ error: 'Valid quantity is required' });
+    }
+    
+    // Check if inventory record exists
+    const existing = await db.get('SELECT * FROM inventory WHERE id = ?', [id]);
+    if (!existing) {
+      return res.status(404).json({ error: 'Inventory record not found' });
+    }
+    
+    const available = existing.quantity - existing.reserved_quantity;
+    if (quantity > available) {
+      return res.status(400).json({ error: `Cannot reserve ${quantity}. Only ${available} available.` });
+    }
+    
+    const newReserved = existing.reserved_quantity + quantity;
+    
+    // Update inventory
+    await db.run(
+      'UPDATE inventory SET reserved_quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [newReserved, id]
+    );
+    
+    res.json({
+      success: true,
+      inventory_id: id,
+      reserved_quantity: quantity,
+      new_reserved_total: newReserved,
+      available_quantity: existing.quantity - newReserved,
+      data_source: 'SQL Database'
+    });
+    
+  } catch (error) {
+    console.error('Reserve inventory error:', error);
+    res.status(500).json({ error: 'Failed to reserve inventory' });
+  }
+});
+
 // Get low stock items
 router.get('/low-stock', async (req, res) => {
   try {
