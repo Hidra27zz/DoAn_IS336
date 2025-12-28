@@ -706,6 +706,67 @@ app.get('/api/demo/orders/stats/summary', (req, res) => {
   });
 });
 
+// Demo orders list endpoint
+app.get('/api/demo/orders', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    // Read Customer_Order.csv and create demo orders
+    const csvPath = path.join(__dirname, 'datasets/Customer_Order.csv');
+    const csvContent = fs.readFileSync(csvPath, 'utf8');
+    const lines = csvContent.split('\n').slice(1); // Skip header
+    
+    const orderMap = new Map();
+    
+    lines.forEach(line => {
+      if (!line.trim()) return;
+      const parts = line.split(';');
+      const orderNumber = parts[1]?.trim();
+      const customerCode = parts[0]?.trim();
+      const creationDate = parts[6]?.trim();
+      const operator = parts[8]?.trim();
+      
+      if (!orderNumber) return;
+      
+      if (!orderMap.has(orderNumber)) {
+        orderMap.set(orderNumber, {
+          id: orderNumber,
+          order_number: orderNumber,
+          customer_code: customerCode || `Customer_${orderNumber}`,
+          status: Math.random() > 0.7 ? 'pending' : (Math.random() > 0.5 ? 'assigned' : 'picking'),
+          priority: Math.floor(Math.random() * 3) + 1,
+          total_items: 0,
+          created_at: creationDate || new Date().toISOString(),
+          operator: operator
+        });
+      }
+      
+      orderMap.get(orderNumber).total_items++;
+    });
+    
+    const orders = Array.from(orderMap.values()).slice(0, 50); // Limit to 50 orders
+    
+    res.json({
+      success: true,
+      orders: orders,
+      total: orders.length,
+      page: 1,
+      limit: 50
+    });
+    
+  } catch (error) {
+    console.error('Demo orders error:', error);
+    res.json({
+      success: true,
+      orders: [],
+      total: 0,
+      page: 1,
+      limit: 50
+    });
+  }
+});
+
 app.get('/api/demo/picking/performance', (req, res) => {
   const metrics = metricsCalculator.getMetrics();
   
@@ -715,6 +776,17 @@ app.get('/api/demo/picking/performance', (req, res) => {
     total_quantity: metrics.pickingAnalysis.totalQuantityPicked,
     average_pick_time_seconds: Math.round(metrics.pickingAnalysis.averagePickTimeSeconds),
     average_pick_time_minutes: Math.round(metrics.pickingAnalysis.averagePickTimeMinutes * 100) / 100
+  });
+});
+
+app.get('/api/demo/waves', (req, res) => {
+  res.json({
+    success: true,
+    waves: [
+      { id: 'wave-001', wave_number: 'W001', status: 'in_progress', total_items: 25 },
+      { id: 'wave-002', wave_number: 'W002', status: 'created', total_items: 18 },
+      { id: 'wave-003', wave_number: 'W003', status: 'completed', total_items: 32 }
+    ]
   });
 });
 
@@ -1113,6 +1185,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Warehouse 2D Map route
+app.get('/warehouse/2d-map', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'warehouse-2d-storage.html'));
+});
+
 // Dashboard redirect to main page
 app.get('/dashboard', (req, res) => {
   res.redirect('/');
@@ -1120,62 +1197,8 @@ app.get('/dashboard', (req, res) => {
 
 // Auto Test routes removed - not part of core WMS
 
-// WMS Core Modules
-app.get('/products', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'product-management.html'));
-});
-
-app.get('/locations', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'location-management.html'));
-});
-
-app.get('/inventory', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'inventory-management.html'));
-});
-
-app.get('/orders', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'order-management.html'));
-});
-
-app.get('/waves', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'wave-planning.html'));
-});
-
-app.get('/picking', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'picking-operations.html'));
-});
-
-app.get('/analytics', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'analytics-dashboard.html'));
-});
-
-// User management removed - not needed for demo
-
-// AI Modules
-app.get('/ai', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'ai-warehouse-dashboard.html'));
-});
-
-app.get('/ai/comparison', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'ai-comparison-dashboard.html'));
-});
-
-// AI sub-modules integrated into main AI dashboard
-
-// Warehouse Visualization
-app.get('/warehouse/2d', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'warehouse-2d-storage.html'));
-});
-
-// Storage Strategy Configuration
-app.get('/storage-strategy', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'storage-strategy-config.html'));
-});
-
-// Operator Management
-app.get('/operators', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'operator-management.html'));
-});
+// All WMS modules now integrated into main SPA dashboard (index.html)
+// Individual page routes removed - using SPA routing instead
 
 // 3D viewer removed - system uses 2D only
 // app.get('/warehouse/3d', (req, res) => {
