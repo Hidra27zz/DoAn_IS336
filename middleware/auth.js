@@ -1,6 +1,6 @@
-// Authentication Middleware
+// Authentication Middleware - SQL Database
 const jwt = require('jsonwebtoken');
-const db = require('../database/firebase-connection');
+const { getDatabase } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'wms-secret-key-change-in-production';
 
@@ -13,7 +13,21 @@ const authMiddleware = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await db.getUserById(decoded.userId);
+    
+    // For demo purposes, we'll use the decoded token data directly
+    // In production, you might want to verify the user still exists in database
+    if (decoded.username && decoded.role) {
+      req.user = {
+        id: decoded.id,
+        username: decoded.username,
+        role: decoded.role
+      };
+      return next();
+    }
+
+    // If we need to verify user in database
+    const db = await getDatabase();
+    const user = await db.get('SELECT id, username, email, role FROM users WHERE id = ?', [decoded.id]);
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid token. User not found.' });

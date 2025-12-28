@@ -1,7 +1,7 @@
-// Product Management Routes
+// Product Management Routes - SQL Database
 const express = require('express');
 const router = express.Router();
-const db = require('../database/firebase-connection');
+const { getDatabase } = require('../config/database');
 const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
@@ -12,6 +12,7 @@ const upload = multer({ dest: 'uploads/' });
 // GET /api/products - Get all products with filtering and pagination
 router.get('/', async (req, res) => {
   try {
+    const db = await getDatabase();
     const { 
       page = 1, 
       limit = 50, 
@@ -20,365 +21,284 @@ router.get('/', async (req, res) => {
       sector_filter = '' 
     } = req.query;
 
-    let products = await db.getAllProducts();
+    let whereConditions = [];
+    let params = [];
 
-    // Apply filters
+    // Build WHERE clause based on filters
     if (search) {
-      products = products.filter(p => 
-        p.reference.toLowerCase().includes(search.toLowerCase())
-      );
+      whereConditions.push('(reference LIKE ? OR description LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`);
     }
 
     if (abc_filter) {
-      products = products.filter(p => p.abc_code === abc_filter);
+      whereConditions.push('abc_code = ?');
+      params.push(abc_filter);
     }
 
     if (sector_filter) {
-      products = products.filter(p => p.sector_code === sector_filter);
+      whereConditions.push('sector = ?');
+      params.push(sector_filter);
     }
 
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + parseInt(limit);
-    const paginatedProducts = products.slice(startIndex, endIndex);
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // Get total count
+    const countSql = `SELECT COUNT(*) as total FROM products ${whereClause}`;
+    const countResult = await db.get(countSql, params);
+    const total = countResult.total;
+
+    // Get paginated results
+    const offset = (page - 1) * limit;
+    const sql = `
+      SELECT 
+        id,
+        reference,
+        abc_code,
+        sector,
+        description,
+        unit_price,
+        created_at,
+        updated_at
+      FROM products
+      ${whereClause}
+      ORDER BY reference
+      LIMIT ? OFFSET ?
+    `;
+
+    const products = await db.all(sql, [...params, parseInt(limit), offset]);
 
     res.json({
-      products: paginatedProducts,
+      products: products,
       pagination: {
-        current_page: parseInt(page),
-        total_pages: Math.ceil(products.length / limit),
-        total_items: products.length,
-        items_per_page: parseInt(limit)
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total,
+        pages: Math.ceil(total / limit)
       },
-      filters: {
-        abc_codes: ['A', 'B', 'C'],
-        sectors: [...new Set(products.map(p => p.sector_code))].filter(Boolean)
-      }
+      data_source: 'SQL Database'
     });
+
   } catch (error) {
     console.error('Get products error:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+    res.status(500).json({ error: 'Failed to get products' });
   }
 });
 
-// GET /api/products/:id - Get product by ID
-router.get('/:id', async (req, res) => {
+// GET /api/products/:reference - Get specific product
+router.get('/:reference', async (req, res) => {
   try {
-    const product = await db.getProductById(req.params.id);
+    const db = await getDatabase();
+    const { reference } = req.params;
+
+    const product = await db.get('SELECT * FROM products WHERE reference = ?', [reference]);
+
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
     // Get inventory for this product
-    const inventory = await db.getInventoryByProduct(req.params.id);
-    
+    const inventorySql = `
+      SELECT 
+        i.location_code,
+        i.quantity,
+        i.reserved_quantity,
+        sl.zone,
+        sl.x, sl.y, sl.z
+      FROM inventory i
+      JOIN storage_locations sl ON i.location_code = sl.location_code
+      WHERE i.product_reference = ?
+      ORDER BY sl.zone, sl.location_code
+    `;
+
+    const inventory = await db.all(inventorySql, [reference]);
+
+    // Calculate totals
+    const totalQuantity = inventory.reduce((sum, inv) => sum + inv.quantity, 0);
+    const totalReserved = inventory.reduce((sum, inv) => sum + inv.reserved_quantity, 0);
+
     res.json({
-      ...product,
-      inventory_locations: inventory.length,
-      total_quantity: inventory.reduce((sum, inv) => sum + (inv.quantity || 0), 0)
+      product: product,
+      inventory: inventory,
+      summary: {
+        total_quantity: totalQuantity,
+        total_reserved: totalReserved,
+        available_quantity: totalQuantity - totalReserved,
+        location_count: inventory.length
+      },
+      data_source: 'SQL Database'
     });
+
   } catch (error) {
     console.error('Get product error:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
+    res.status(500).json({ error: 'Failed to get product' });
   }
 });
 
 // POST /api/products - Create new product
 router.post('/', async (req, res) => {
   try {
-    const { reference, abc_code, sector_code, description, unit_price } = req.body;
+    const db = await getDatabase();
+    const { reference, abc_code, sector, description, unit_price } = req.body;
 
-    // Validation
-    if (!reference || !abc_code) {
-      return res.status(400).json({ 
-        error: 'Reference and ABC code are required' 
-      });
+    // Validate required fields
+    if (!reference) {
+      return res.status(400).json({ error: 'Product reference is required' });
     }
 
-    if (!['A', 'B', 'C'].includes(abc_code)) {
-      return res.status(400).json({ 
-        error: 'ABC code must be A, B, or C' 
-      });
+    // Check if product already exists
+    const existing = await db.get('SELECT * FROM products WHERE reference = ?', [reference]);
+    if (existing) {
+      return res.status(409).json({ error: 'Product with this reference already exists' });
     }
 
-    // Check if reference already exists
-    const existingProduct = await db.getProductByReference(reference);
-    if (existingProduct) {
-      return res.status(409).json({ 
-        error: 'Product reference already exists' 
-      });
-    }
-
+    // Create product
     const productData = {
-      reference: reference.trim().toUpperCase(),
-      abc_code: abc_code.toUpperCase(),
-      sector_code: sector_code || 'PF',
+      reference,
+      abc_code: abc_code || 'C',
+      sector: sector || 'GENERAL',
       description: description || `Product ${reference}`,
-      unit_price: parseFloat(unit_price) || 0,
-      category: 'Footwear',
-      status: 'active'
+      unit_price: unit_price || 0
     };
 
-    const newProduct = await db.createProduct(productData);
-    
-    // Log activity
-    await db.createLog({
-      action: 'product_created',
-      entity_type: 'product',
-      entity_id: newProduct.id,
-      details: { reference: productData.reference },
-      user_id: req.user?.id || 'system'
+    const result = await db.create('products', productData);
+
+    res.status(201).json({
+      success: true,
+      product: result,
+      data_source: 'SQL Database'
     });
 
-    res.status(201).json(newProduct);
   } catch (error) {
     console.error('Create product error:', error);
     res.status(500).json({ error: 'Failed to create product' });
   }
 });
 
-// PUT /api/products/:id - Update product
-router.put('/:id', async (req, res) => {
+// PUT /api/products/:reference - Update product
+router.put('/:reference', async (req, res) => {
   try {
-    const { reference, abc_code, sector_code, description, unit_price, status } = req.body;
+    const db = await getDatabase();
+    const { reference } = req.params;
+    const { abc_code, sector, description, unit_price } = req.body;
 
-    const existingProduct = await db.getProductById(req.params.id);
-    if (!existingProduct) {
+    // Check if product exists
+    const existing = await db.get('SELECT * FROM products WHERE reference = ?', [reference]);
+    if (!existing) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Validation
-    if (abc_code && !['A', 'B', 'C'].includes(abc_code)) {
-      return res.status(400).json({ 
-        error: 'ABC code must be A, B, or C' 
-      });
+    // Update product
+    const updateData = {};
+    if (abc_code !== undefined) updateData.abc_code = abc_code;
+    if (sector !== undefined) updateData.sector = sector;
+    if (description !== undefined) updateData.description = description;
+    if (unit_price !== undefined) updateData.unit_price = unit_price;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
     }
 
-    const updateData = {};
-    if (reference) updateData.reference = reference.trim().toUpperCase();
-    if (abc_code) updateData.abc_code = abc_code.toUpperCase();
-    if (sector_code) updateData.sector_code = sector_code;
-    if (description) updateData.description = description;
-    if (unit_price !== undefined) updateData.unit_price = parseFloat(unit_price);
-    if (status) updateData.status = status;
+    await db.update('products', existing.id, updateData);
 
-    const updatedProduct = await db.updateProduct(req.params.id, updateData);
-    
-    // Log activity
-    await db.createLog({
-      action: 'product_updated',
-      entity_type: 'product',
-      entity_id: req.params.id,
-      details: { changes: updateData },
-      user_id: req.user?.id || 'system'
+    // Get updated product
+    const updated = await db.get('SELECT * FROM products WHERE reference = ?', [reference]);
+
+    res.json({
+      success: true,
+      product: updated,
+      data_source: 'SQL Database'
     });
 
-    res.json(updatedProduct);
   } catch (error) {
     console.error('Update product error:', error);
     res.status(500).json({ error: 'Failed to update product' });
   }
 });
 
-// DELETE /api/products/:id - Delete product
-router.delete('/:id', async (req, res) => {
+// DELETE /api/products/:reference - Delete product
+router.delete('/:reference', async (req, res) => {
   try {
-    const product = await db.getProductById(req.params.id);
-    if (!product) {
+    const db = await getDatabase();
+    const { reference } = req.params;
+
+    // Check if product exists
+    const existing = await db.get('SELECT * FROM products WHERE reference = ?', [reference]);
+    if (!existing) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
     // Check if product has inventory
-    const inventory = await db.getInventoryByProduct(req.params.id);
-    if (inventory.length > 0) {
-      return res.status(409).json({ 
-        error: 'Cannot delete product with existing inventory' 
-      });
+    const inventory = await db.get('SELECT COUNT(*) as count FROM inventory WHERE product_reference = ?', [reference]);
+    if (inventory.count > 0) {
+      return res.status(409).json({ error: 'Cannot delete product with existing inventory' });
     }
 
-    await db.delete('products', req.params.id);
-    
-    // Log activity
-    await db.createLog({
-      action: 'product_deleted',
-      entity_type: 'product',
-      entity_id: req.params.id,
-      details: { reference: product.reference },
-      user_id: req.user?.id || 'system'
+    // Delete product
+    await db.delete('products', existing.id);
+
+    res.json({
+      success: true,
+      message: 'Product deleted successfully',
+      data_source: 'SQL Database'
     });
 
-    res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     console.error('Delete product error:', error);
     res.status(500).json({ error: 'Failed to delete product' });
   }
 });
 
-// POST /api/products/import - Import products from CSV
-router.post('/import', upload.single('csvFile'), async (req, res) => {
+// GET /api/products/stats/summary - Get product statistics
+router.get('/stats/summary', async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'CSV file is required' });
-    }
+    const db = await getDatabase();
 
-    const results = [];
-    const errors = [];
-    let lineNumber = 1;
+    // Get total products
+    const totalProducts = await db.get('SELECT COUNT(*) as count FROM products');
 
-    // Parse CSV file
-    fs.createReadStream(req.file.path)
-      .pipe(csv({ separator: ';' }))
-      .on('data', (data) => {
-        lineNumber++;
-        try {
-          // Validate required fields
-          if (!data.Reference || !data.ABCCOD) {
-            errors.push(`Line ${lineNumber}: Missing Reference or ABC Code`);
-            return;
-          }
+    // Get products by ABC code
+    const byAbcCode = await db.all(`
+      SELECT 
+        abc_code,
+        COUNT(*) as product_count
+      FROM products
+      GROUP BY abc_code
+      ORDER BY abc_code
+    `);
 
-          if (!['A', 'B', 'C'].includes(data.ABCCOD)) {
-            errors.push(`Line ${lineNumber}: Invalid ABC Code (${data.ABCCOD})`);
-            return;
-          }
+    // Get products by sector
+    const bySector = await db.all(`
+      SELECT 
+        sector,
+        COUNT(*) as product_count
+      FROM products
+      GROUP BY sector
+      ORDER BY product_count DESC
+    `);
 
-          results.push({
-            reference: data.Reference.trim().toUpperCase(),
-            abc_code: data.ABCCOD.toUpperCase(),
-            sector_code: data.Sector || 'PF',
-            description: `Product ${data.Reference}`,
-            unit_price: 0,
-            category: 'Footwear',
-            status: 'active'
-          });
-        } catch (error) {
-          errors.push(`Line ${lineNumber}: ${error.message}`);
-        }
-      })
-      .on('end', async () => {
-        try {
-          // Clean up uploaded file
-          fs.unlinkSync(req.file.path);
+    // Get products with inventory
+    const withInventory = await db.get(`
+      SELECT COUNT(DISTINCT product_reference) as count
+      FROM inventory
+    `);
 
-          if (errors.length > 0) {
-            return res.status(400).json({ 
-              error: 'Validation errors found',
-              errors: errors,
-              valid_records: results.length
-            });
-          }
-
-          // Import valid records
-          let imported = 0;
-          let skipped = 0;
-          const importErrors = [];
-
-          for (const productData of results) {
-            try {
-              // Check if product already exists
-              const existing = await db.getProductByReference(productData.reference);
-              if (existing) {
-                skipped++;
-                continue;
-              }
-
-              await db.createProduct(productData);
-              imported++;
-            } catch (error) {
-              importErrors.push(`${productData.reference}: ${error.message}`);
-            }
-          }
-
-          // Log import activity
-          await db.createLog({
-            action: 'products_imported',
-            entity_type: 'product',
-            details: { 
-              imported, 
-              skipped, 
-              errors: importErrors.length,
-              total_records: results.length 
-            },
-            user_id: req.user?.id || 'system'
-          });
-
-          res.json({
-            message: 'Import completed',
-            summary: {
-              total_records: results.length,
-              imported,
-              skipped,
-              errors: importErrors.length
-            },
-            import_errors: importErrors
-          });
-        } catch (error) {
-          console.error('Import processing error:', error);
-          res.status(500).json({ error: 'Failed to process import' });
-        }
-      })
-      .on('error', (error) => {
-        console.error('CSV parsing error:', error);
-        fs.unlinkSync(req.file.path);
-        res.status(400).json({ error: 'Invalid CSV file format' });
-      });
-  } catch (error) {
-    console.error('Import error:', error);
-    if (req.file) fs.unlinkSync(req.file.path);
-    res.status(500).json({ error: 'Failed to import products' });
-  }
-});
-
-// GET /api/products/export - Export products to CSV
-router.get('/export', async (req, res) => {
-  try {
-    const products = await db.getAllProducts();
-    
-    // Generate CSV content
-    const csvHeader = 'Reference;ABCCOD;Sector;Description;Unit_Price;Status\n';
-    const csvRows = products.map(p => 
-      `${p.reference};${p.abc_code};${p.sector_code || ''};${p.description || ''};${p.unit_price || 0};${p.status || 'active'}`
-    ).join('\n');
-    
-    const csvContent = csvHeader + csvRows;
-    
-    // Set response headers for file download
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="products_export_${new Date().toISOString().split('T')[0]}.csv"`);
-    
-    res.send(csvContent);
-  } catch (error) {
-    console.error('Export error:', error);
-    res.status(500).json({ error: 'Failed to export products' });
-  }
-});
-
-// GET /api/products/stats - Get product statistics
-router.get('/stats', async (req, res) => {
-  try {
-    const products = await db.getAllProducts();
-    
-    const stats = {
-      total_products: products.length,
-      abc_distribution: {
-        A: products.filter(p => p.abc_code === 'A').length,
-        B: products.filter(p => p.abc_code === 'B').length,
-        C: products.filter(p => p.abc_code === 'C').length
-      },
-      sector_distribution: {},
-      active_products: products.filter(p => p.status === 'active').length,
-      inactive_products: products.filter(p => p.status === 'inactive').length
-    };
-
-    // Calculate sector distribution
-    products.forEach(p => {
-      const sector = p.sector_code || 'Unknown';
-      stats.sector_distribution[sector] = (stats.sector_distribution[sector] || 0) + 1;
+    res.json({
+      total_products: totalProducts.count,
+      products_with_inventory: withInventory.count,
+      products_without_inventory: totalProducts.count - withInventory.count,
+      by_abc_code: byAbcCode.reduce((acc, item) => {
+        acc[item.abc_code] = item.product_count;
+        return acc;
+      }, {}),
+      by_sector: bySector.reduce((acc, item) => {
+        acc[item.sector] = item.product_count;
+        return acc;
+      }, {}),
+      data_source: 'SQL Database'
     });
 
-    res.json(stats);
   } catch (error) {
-    console.error('Stats error:', error);
+    console.error('Get product statistics error:', error);
     res.status(500).json({ error: 'Failed to get product statistics' });
   }
 });

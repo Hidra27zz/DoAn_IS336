@@ -1,356 +1,380 @@
-// Storage Location Management Routes
+// Locations Routes - SQL Database with Correct Schema
 const express = require('express');
-const router = express.Router();
-const db = require('../database/firebase-connection');
+const { getDatabase } = require('../config/database');
+const { requireRole } = require('../middleware/auth');
 
-// GET /api/locations - Get all storage locations with filtering
+const router = express.Router();
+
+// Get all locations with hierarchical filtering
 router.get('/', async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 50, 
-      search = '', 
-      zone_filter = '', 
-      floor_filter = '',
-      status_filter = ''
-    } = req.query;
-
-    let locations = await db.getAllStorageLocations();
-
-    // Apply filters
-    if (search) {
-      locations = locations.filter(l => 
-        l.location_code.toLowerCase().includes(search.toLowerCase())
-      );
+    const db = await getDatabase();
+    const { zone, level, page = 1, limit = 100 } = req.query;
+    
+    let whereConditions = [];
+    let params = [];
+    
+    // Build WHERE clause based on filters
+    if (zone) {
+      whereConditions.push('zone = ?');
+      params.push(zone);
     }
-
-    if (zone_filter) {
-      locations = locations.filter(l => l.zone === zone_filter);
+    
+    if (level) {
+      whereConditions.push('z = ?');
+      params.push(parseInt(level));
     }
-
-    if (floor_filter) {
-      locations = locations.filter(l => l.z === parseInt(floor_filter));
-    }
-
-    if (status_filter) {
-      locations = locations.filter(l => l.status === status_filter);
-    }
-
-    // Sort by location code
-    locations.sort((a, b) => a.location_code.localeCompare(b.location_code));
-
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + parseInt(limit);
-    const paginatedLocations = locations.slice(startIndex, endIndex);
-
-    // Get unique zones and floors for filters
-    const zones = [...new Set(locations.map(l => l.zone))].filter(Boolean).sort();
-    const floors = [...new Set(locations.map(l => l.z))].filter(Boolean).sort();
-
+    
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    
+    // Get total count
+    const countSql = `SELECT COUNT(*) as total FROM storage_locations ${whereClause}`;
+    const countResult = await db.get(countSql, params);
+    const total = countResult.total;
+    
+    // Get paginated results
+    const offset = (page - 1) * limit;
+    const sql = `
+      SELECT 
+        id,
+        location_code,
+        x,
+        y,
+        z,
+        zone,
+        capacity,
+        current_occupancy,
+        status,
+        created_at,
+        updated_at
+      FROM storage_locations
+      ${whereClause}
+      ORDER BY zone, z, location_code
+      LIMIT ? OFFSET ?
+    `;
+    
+    const locations = await db.all(sql, [...params, parseInt(limit), offset]);
+    
     res.json({
-      locations: paginatedLocations,
+      locations: locations,
       pagination: {
-        current_page: parseInt(page),
-        total_pages: Math.ceil(locations.length / limit),
-        total_items: locations.length,
-        items_per_page: parseInt(limit)
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total,
+        pages: Math.ceil(total / limit)
       },
-      filters: {
-        zones,
-        floors,
-        statuses: ['active', 'inactive', 'maintenance']
-      }
+      data_source: 'SQL Database'
     });
+    
   } catch (error) {
     console.error('Get locations error:', error);
-    res.status(500).json({ error: 'Failed to fetch locations' });
+    res.status(500).json({ error: 'Failed to get locations' });
   }
 });
 
-// GET /api/locations/:id - Get location by ID
-router.get('/:id', async (req, res) => {
+// Get zones for cascading dropdown
+router.get('/zones', async (req, res) => {
   try {
-    const location = await db.getStorageLocationById(req.params.id);
+    const db = await getDatabase();
+    
+    const sql = `
+      SELECT 
+        zone,
+        COUNT(*) as location_count,
+        MIN(z) as min_level,
+        MAX(z) as max_level
+      FROM storage_locations
+      WHERE status = 'active'
+      GROUP BY zone
+      ORDER BY zone
+    `;
+    
+    const zones = await db.all(sql);
+    
+    res.json({
+      zones: zones,
+      data_source: 'SQL Database'
+    });
+    
+  } catch (error) {
+    console.error('Get zones error:', error);
+    res.status(500).json({ error: 'Failed to get zones' });
+  }
+});
+
+// Get levels by zone for cascading dropdown
+router.get('/zones/:zone/levels', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { zone } = req.params;
+    
+    const sql = `
+      SELECT 
+        z as level,
+        COUNT(*) as location_count
+      FROM storage_locations
+      WHERE zone = ? AND status = 'active'
+      GROUP BY z
+      ORDER BY z
+    `;
+    
+    const levels = await db.all(sql, [zone]);
+    
+    res.json({
+      zone: zone,
+      levels: levels,
+      data_source: 'SQL Database'
+    });
+    
+  } catch (error) {
+    console.error('Get levels by zone error:', error);
+    res.status(500).json({ error: 'Failed to get levels by zone' });
+  }
+});
+
+// Get locations by zone and level for cascading dropdown
+router.get('/zones/:zone/levels/:level/locations', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { zone, level } = req.params;
+    
+    const sql = `
+      SELECT 
+        id,
+        location_code,
+        x,
+        y,
+        z,
+        zone,
+        capacity,
+        current_occupancy,
+        status
+      FROM storage_locations
+      WHERE zone = ? AND z = ? AND status = 'active'
+      ORDER BY location_code
+    `;
+    
+    const locations = await db.all(sql, [zone, parseInt(level)]);
+    
+    res.json({
+      zone: zone,
+      level: parseInt(level),
+      locations: locations,
+      data_source: 'SQL Database'
+    });
+    
+  } catch (error) {
+    console.error('Get locations by zone and level error:', error);
+    res.status(500).json({ error: 'Failed to get locations by zone and level' });
+  }
+});
+
+// Get specific location details
+router.get('/:locationCode', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { locationCode } = req.params;
+    
+    const sql = `
+      SELECT 
+        id,
+        location_code,
+        x,
+        y,
+        z,
+        zone,
+        capacity,
+        current_occupancy,
+        status,
+        created_at,
+        updated_at
+      FROM storage_locations
+      WHERE location_code = ?
+    `;
+    
+    const location = await db.get(sql, [locationCode]);
+    
     if (!location) {
       return res.status(404).json({ error: 'Location not found' });
     }
-
-    // Get inventory for this location
-    const inventory = await db.getInventoryByLocation(req.params.id);
+    
+    // Get inventory at this location
+    const inventorySql = `
+      SELECT 
+        i.id,
+        i.product_reference,
+        i.quantity,
+        i.reserved_quantity,
+        i.slot_position,
+        p.abc_code,
+        p.sector,
+        p.description as product_description,
+        p.unit_price
+      FROM inventory i
+      JOIN products p ON i.product_reference = p.reference
+      WHERE i.location_code = ?
+      ORDER BY p.reference
+    `;
+    
+    const inventory = await db.all(inventorySql, [locationCode]);
+    
+    // Calculate occupancy
+    const totalQuantity = inventory.reduce((sum, inv) => sum + inv.quantity, 0);
+    const occupancyPercentage = location.capacity > 0 ? (totalQuantity / location.capacity) * 100 : 0;
     
     res.json({
-      ...location,
-      inventory_items: inventory.length,
-      total_quantity: inventory.reduce((sum, inv) => sum + (inv.quantity || 0), 0),
-      occupancy_rate: location.capacity ? 
-        (inventory.reduce((sum, inv) => sum + (inv.quantity || 0), 0) / location.capacity * 100).toFixed(1) : 0
+      location: {
+        ...location,
+        occupancy_percentage: Math.round(occupancyPercentage * 10) / 10
+      },
+      inventory: inventory.map(inv => ({
+        id: inv.id,
+        product_reference: inv.product_reference,
+        quantity: inv.quantity,
+        reserved_quantity: inv.reserved_quantity,
+        slot_position: inv.slot_position,
+        product: {
+          reference: inv.product_reference,
+          abc_code: inv.abc_code,
+          sector: inv.sector,
+          description: inv.product_description,
+          unit_price: inv.unit_price
+        }
+      })),
+      summary: {
+        total_products: inventory.length,
+        total_quantity: totalQuantity,
+        total_reserved: inventory.reduce((sum, inv) => sum + inv.reserved_quantity, 0),
+        available_quantity: totalQuantity - inventory.reduce((sum, inv) => sum + inv.reserved_quantity, 0)
+      },
+      data_source: 'SQL Database'
     });
-  } catch (error) {
-    console.error('Get location error:', error);
-    res.status(500).json({ error: 'Failed to fetch location' });
-  }
-});
-
-// POST /api/locations - Create new location
-router.post('/', async (req, res) => {
-  try {
-    const { location_code, x, y, z, capacity, zone, aisle, level } = req.body;
-
-    // Validation
-    if (!location_code) {
-      return res.status(400).json({ 
-        error: 'Location code is required' 
-      });
-    }
-
-    // Validate location code format (A-14-11)
-    const locationPattern = /^[A-Z]-\d+-\d+$/;
-    if (!locationPattern.test(location_code)) {
-      return res.status(400).json({ 
-        error: 'Location code must follow format: A-14-11' 
-      });
-    }
-
-    // Check if location already exists
-    const existingLocation = await db.getStorageLocationByCode(location_code);
-    if (existingLocation) {
-      return res.status(409).json({ 
-        error: 'Location code already exists' 
-      });
-    }
-
-    // Parse location code to extract zone, aisle, level
-    const [parsedZone, parsedAisle, parsedLevel] = location_code.split('-');
-
-    const locationData = {
-      location_code: location_code.trim().toUpperCase(),
-      x: parseInt(x) || 0,
-      y: parseInt(y) || 0,
-      z: parseInt(z) || 1,
-      capacity: parseInt(capacity) || 100,
-      zone: zone || parsedZone,
-      aisle: aisle || parsedAisle,
-      level: level || parsedLevel,
-      status: 'active',
-      current_occupancy: 0
-    };
-
-    const newLocation = await db.create('storage_locations', locationData);
     
-    // Log activity
-    await db.createLog({
-      action: 'location_created',
-      entity_type: 'storage_location',
-      entity_id: newLocation.id,
-      details: { location_code: locationData.location_code },
-      user_id: req.user?.id || 'system'
-    });
-
-    res.status(201).json(newLocation);
   } catch (error) {
-    console.error('Create location error:', error);
-    res.status(500).json({ error: 'Failed to create location' });
+    console.error('Get location details error:', error);
+    res.status(500).json({ error: 'Failed to get location details' });
   }
 });
 
-// PUT /api/locations/:id - Update location
-router.put('/:id', async (req, res) => {
+// Update location
+router.put('/:locationCode', requireRole(['admin', 'manager']), async (req, res) => {
   try {
-    const { location_code, x, y, z, capacity, status } = req.body;
-
-    const existingLocation = await db.getStorageLocationById(req.params.id);
-    if (!existingLocation) {
+    const db = await getDatabase();
+    const { locationCode } = req.params;
+    const { capacity, status } = req.body;
+    
+    // Check if location exists
+    const existing = await db.get('SELECT * FROM storage_locations WHERE location_code = ?', [locationCode]);
+    if (!existing) {
       return res.status(404).json({ error: 'Location not found' });
     }
-
+    
+    // Update location
     const updateData = {};
-    if (location_code) {
-      // Validate format
-      const locationPattern = /^[A-Z]-\d+-\d+$/;
-      if (!locationPattern.test(location_code)) {
-        return res.status(400).json({ 
-          error: 'Location code must follow format: A-14-11' 
-        });
-      }
-      updateData.location_code = location_code.trim().toUpperCase();
-      
-      // Update zone, aisle, level from location code
-      const [zone, aisle, level] = location_code.split('-');
-      updateData.zone = zone;
-      updateData.aisle = aisle;
-      updateData.level = level;
+    if (capacity !== undefined) updateData.capacity = capacity;
+    if (status !== undefined) updateData.status = status;
+    
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
     }
     
-    if (x !== undefined) updateData.x = parseInt(x);
-    if (y !== undefined) updateData.y = parseInt(y);
-    if (z !== undefined) updateData.z = parseInt(z);
-    if (capacity !== undefined) updateData.capacity = parseInt(capacity);
-    if (status) updateData.status = status;
-
-    const updatedLocation = await db.updateStorageLocation(req.params.id, updateData);
+    await db.update('storage_locations', existing.id, updateData);
     
-    // Log activity
-    await db.createLog({
-      action: 'location_updated',
-      entity_type: 'storage_location',
-      entity_id: req.params.id,
-      details: { changes: updateData },
-      user_id: req.user?.id || 'system'
+    // Get updated location
+    const updated = await db.get('SELECT * FROM storage_locations WHERE location_code = ?', [locationCode]);
+    
+    res.json({
+      success: true,
+      location: updated,
+      data_source: 'SQL Database'
     });
-
-    res.json(updatedLocation);
+    
   } catch (error) {
     console.error('Update location error:', error);
     res.status(500).json({ error: 'Failed to update location' });
   }
 });
 
-// DELETE /api/locations/:id - Delete location
-router.delete('/:id', async (req, res) => {
+// Get location statistics
+router.get('/stats/summary', async (req, res) => {
   try {
-    const location = await db.getStorageLocationById(req.params.id);
-    if (!location) {
-      return res.status(404).json({ error: 'Location not found' });
-    }
-
-    // Check if location has inventory
-    const inventory = await db.getInventoryByLocation(req.params.id);
-    if (inventory.length > 0) {
-      return res.status(409).json({ 
-        error: 'Cannot delete location with existing inventory' 
-      });
-    }
-
-    await db.delete('storage_locations', req.params.id);
+    const db = await getDatabase();
     
-    // Log activity
-    await db.createLog({
-      action: 'location_deleted',
-      entity_type: 'storage_location',
-      entity_id: req.params.id,
-      details: { location_code: location.location_code },
-      user_id: req.user?.id || 'system'
-    });
-
-    res.json({ message: 'Location deleted successfully' });
-  } catch (error) {
-    console.error('Delete location error:', error);
-    res.status(500).json({ error: 'Failed to delete location' });
-  }
-});
-
-// GET /api/locations/stats - Get location statistics
-router.get('/stats', async (req, res) => {
-  try {
-    const locations = await db.getAllStorageLocations();
-    const inventory = await db.getAllInventory();
+    // Get total locations
+    const totalLocations = await db.get('SELECT COUNT(*) as count FROM storage_locations');
     
-    // Calculate occupancy
-    const locationOccupancy = {};
-    inventory.forEach(inv => {
-      if (!locationOccupancy[inv.location_id]) {
-        locationOccupancy[inv.location_id] = 0;
-      }
-      locationOccupancy[inv.location_id] += inv.quantity || 0;
-    });
-
-    const stats = {
-      total_locations: locations.length,
-      occupied_locations: Object.keys(locationOccupancy).length,
-      empty_locations: locations.length - Object.keys(locationOccupancy).length,
-      zone_distribution: {},
-      floor_distribution: {},
-      status_distribution: {},
-      capacity_utilization: 0
-    };
-
-    let totalCapacity = 0;
-    let totalOccupancy = 0;
-
-    locations.forEach(loc => {
-      // Zone distribution
-      const zone = loc.zone || 'Unknown';
-      stats.zone_distribution[zone] = (stats.zone_distribution[zone] || 0) + 1;
-      
-      // Floor distribution
-      const floor = loc.z || 1;
-      stats.floor_distribution[floor] = (stats.floor_distribution[floor] || 0) + 1;
-      
-      // Status distribution
-      const status = loc.status || 'active';
-      stats.status_distribution[status] = (stats.status_distribution[status] || 0) + 1;
-      
-      // Capacity calculation
-      totalCapacity += loc.capacity || 100;
-      totalOccupancy += locationOccupancy[loc.id] || 0;
-    });
-
-    stats.capacity_utilization = totalCapacity > 0 ? 
-      ((totalOccupancy / totalCapacity) * 100).toFixed(1) : 0;
-
-    res.json(stats);
-  } catch (error) {
-    console.error('Location stats error:', error);
-    res.status(500).json({ error: 'Failed to get location statistics' });
-  }
-});
-
-// GET /api/locations/layout - Get layout data for visualization
-router.get('/layout', async (req, res) => {
-  try {
-    const { floor = 1 } = req.query;
+    // Get locations by zone
+    const byZone = await db.all(`
+      SELECT 
+        zone,
+        COUNT(*) as location_count,
+        AVG(capacity) as avg_capacity,
+        SUM(current_occupancy) as total_occupancy
+      FROM storage_locations
+      GROUP BY zone
+      ORDER BY zone
+    `);
     
-    const locations = await db.getAllStorageLocations();
-    const inventory = await db.getAllInventory();
+    // Get locations by level
+    const byLevel = await db.all(`
+      SELECT 
+        z as level,
+        COUNT(*) as location_count,
+        AVG(capacity) as avg_capacity
+      FROM storage_locations
+      GROUP BY z
+      ORDER BY z
+    `);
     
-    // Filter by floor
-    const floorLocations = locations.filter(l => l.z === parseInt(floor));
-    
-    // Add inventory data to locations
-    const locationMap = new Map();
-    inventory.forEach(inv => {
-      if (!locationMap.has(inv.location_id)) {
-        locationMap.set(inv.location_id, { items: 0, quantity: 0 });
-      }
-      const data = locationMap.get(inv.location_id);
-      data.items += 1;
-      data.quantity += inv.quantity || 0;
-    });
-
-    const layoutData = floorLocations.map(loc => ({
-      id: loc.id,
-      location_code: loc.location_code,
-      x: loc.x,
-      y: loc.y,
-      z: loc.z,
-      zone: loc.zone,
-      capacity: loc.capacity || 100,
-      current_items: locationMap.get(loc.id)?.items || 0,
-      current_quantity: locationMap.get(loc.id)?.quantity || 0,
-      occupancy_rate: loc.capacity ? 
-        ((locationMap.get(loc.id)?.quantity || 0) / loc.capacity * 100).toFixed(1) : 0,
-      status: loc.status || 'active'
-    }));
-
-    // Calculate bounds for visualization
-    const xs = layoutData.map(l => l.x);
-    const ys = layoutData.map(l => l.y);
+    // Get occupancy statistics
+    const occupancyStats = await db.all(`
+      SELECT 
+        sl.zone,
+        sl.z as level,
+        COUNT(*) as location_count,
+        SUM(CASE WHEN i.location_code IS NOT NULL THEN 1 ELSE 0 END) as occupied_count,
+        SUM(COALESCE(i.quantity, 0)) as total_quantity
+      FROM storage_locations sl
+      LEFT JOIN (
+        SELECT location_code, SUM(quantity) as quantity
+        FROM inventory
+        GROUP BY location_code
+      ) i ON sl.location_code = i.location_code
+      GROUP BY sl.zone, sl.z
+      ORDER BY sl.zone, sl.z
+    `);
     
     res.json({
-      locations: layoutData,
-      bounds: {
-        min_x: Math.min(...xs),
-        max_x: Math.max(...xs),
-        min_y: Math.min(...ys),
-        max_y: Math.max(...ys)
-      },
-      floor: parseInt(floor),
-      total_locations: layoutData.length
+      total_locations: totalLocations.count,
+      by_zone: byZone.reduce((acc, zone) => {
+        acc[zone.zone] = {
+          location_count: zone.location_count,
+          avg_capacity: Math.round(zone.avg_capacity * 10) / 10,
+          total_occupancy: zone.total_occupancy
+        };
+        return acc;
+      }, {}),
+      by_level: byLevel.reduce((acc, level) => {
+        acc[`Level_${level.level}`] = {
+          location_count: level.location_count,
+          avg_capacity: Math.round(level.avg_capacity * 10) / 10
+        };
+        return acc;
+      }, {}),
+      occupancy_stats: occupancyStats.map(stat => ({
+        zone: stat.zone,
+        level: stat.level,
+        location_count: stat.location_count,
+        occupied_count: stat.occupied_count,
+        occupancy_rate: stat.location_count > 0 ? Math.round((stat.occupied_count / stat.location_count) * 100) : 0,
+        total_quantity: stat.total_quantity
+      })),
+      data_source: 'SQL Database'
     });
+    
   } catch (error) {
-    console.error('Layout data error:', error);
-    res.status(500).json({ error: 'Failed to get layout data' });
+    console.error('Get location statistics error:', error);
+    res.status(500).json({ error: 'Failed to get location statistics' });
   }
 });
 

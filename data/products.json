@@ -1,2082 +1,2082 @@
 [
   {
-    "id": "doc_1766907954237_qtddfhbl4",
+    "id": "doc_1766916165336_lrco7nqz7",
     "reference": "O9YFO8",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product O9YFO8",
-    "unit_price": 137,
-    "created_at": "2025-12-28T07:45:54.237Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 80,
+    "created_at": "2025-12-28T10:02:45.336Z",
+    "updated_at": "2025-12-28T10:02:45.336Z"
   },
   {
-    "id": "doc_1766907954238_zs8ri0478",
+    "id": "doc_1766916165337_uzve7bijk",
     "reference": "I1X92B",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product I1X92B",
-    "unit_price": 76,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 125,
+    "created_at": "2025-12-28T10:02:45.337Z",
+    "updated_at": "2025-12-28T10:02:45.337Z"
   },
   {
-    "id": "doc_1766907954238_oq5b8sn4r",
+    "id": "doc_1766916165337_dhfgl33gr",
     "reference": "HOUGRO",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product HOUGRO",
-    "unit_price": 87,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 93,
+    "created_at": "2025-12-28T10:02:45.337Z",
+    "updated_at": "2025-12-28T10:02:45.337Z"
   },
   {
-    "id": "doc_1766907954238_er9njv3wf",
+    "id": "doc_1766916165337_prdptj56t",
     "reference": "D05ZS7",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product D05ZS7",
-    "unit_price": 51,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 242,
+    "created_at": "2025-12-28T10:02:45.337Z",
+    "updated_at": "2025-12-28T10:02:45.337Z"
   },
   {
-    "id": "doc_1766907954238_nti8sm1sw",
+    "id": "doc_1766916165337_7kibpg687",
     "reference": "XSFSKX",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product XSFSKX",
-    "unit_price": 223,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 205,
+    "created_at": "2025-12-28T10:02:45.337Z",
+    "updated_at": "2025-12-28T10:02:45.337Z"
   },
   {
-    "id": "doc_1766907954238_culgtsc8j",
+    "id": "doc_1766916165338_e7n9var6f",
     "reference": "QOMHJ2",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product QOMHJ2",
-    "unit_price": 210,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 97,
+    "created_at": "2025-12-28T10:02:45.338Z",
+    "updated_at": "2025-12-28T10:02:45.338Z"
   },
   {
-    "id": "doc_1766907954238_2crz85hy8",
+    "id": "doc_1766916165338_tqu0kjlgl",
     "reference": "3LQL9L",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 3LQL9L",
-    "unit_price": 249,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 124,
+    "created_at": "2025-12-28T10:02:45.338Z",
+    "updated_at": "2025-12-28T10:02:45.338Z"
   },
   {
-    "id": "doc_1766907954238_xe2zpz05e",
+    "id": "doc_1766916165338_ood9rv1ai",
     "reference": "05W6TK",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 05W6TK",
-    "unit_price": 142,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 57,
+    "created_at": "2025-12-28T10:02:45.338Z",
+    "updated_at": "2025-12-28T10:02:45.338Z"
   },
   {
-    "id": "doc_1766907954238_uxtkrdpfd",
+    "id": "doc_1766916165338_np7hivhuf",
     "reference": "XPZSZ1",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product XPZSZ1",
-    "unit_price": 84,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 163,
+    "created_at": "2025-12-28T10:02:45.338Z",
+    "updated_at": "2025-12-28T10:02:45.338Z"
   },
   {
-    "id": "doc_1766907954238_q8rnnho8z",
+    "id": "doc_1766916165338_hi2tasch6",
     "reference": "IPGA7X",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product IPGA7X",
-    "unit_price": 149,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 233,
+    "created_at": "2025-12-28T10:02:45.339Z",
+    "updated_at": "2025-12-28T10:02:45.339Z"
   },
   {
-    "id": "doc_1766907954238_d4w8d3q8u",
+    "id": "doc_1766916165339_2r0s3jt96",
     "reference": "8BSFSA",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 8BSFSA",
-    "unit_price": 142,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 167,
+    "created_at": "2025-12-28T10:02:45.339Z",
+    "updated_at": "2025-12-28T10:02:45.339Z"
   },
   {
-    "id": "doc_1766907954238_vvcho09iz",
+    "id": "doc_1766916165339_8gnh6mpvb",
     "reference": "HOUJQN",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product HOUJQN",
-    "unit_price": 110,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 222,
+    "created_at": "2025-12-28T10:02:45.339Z",
+    "updated_at": "2025-12-28T10:02:45.339Z"
   },
   {
-    "id": "doc_1766907954238_l4m928j4a",
+    "id": "doc_1766916165339_2aafqh412",
     "reference": "X0HH8Y",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product X0HH8Y",
-    "unit_price": 204,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 185,
+    "created_at": "2025-12-28T10:02:45.339Z",
+    "updated_at": "2025-12-28T10:02:45.339Z"
   },
   {
-    "id": "doc_1766907954238_buulqpz6y",
+    "id": "doc_1766916165339_xcf08fxuu",
     "reference": "V6K6JX",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product V6K6JX",
-    "unit_price": 215,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 170,
+    "created_at": "2025-12-28T10:02:45.339Z",
+    "updated_at": "2025-12-28T10:02:45.339Z"
   },
   {
-    "id": "doc_1766907954238_xa5h9afp9",
+    "id": "doc_1766916165339_fyyzk9ar5",
     "reference": "EAJXUV",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product EAJXUV",
-    "unit_price": 148,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 206,
+    "created_at": "2025-12-28T10:02:45.339Z",
+    "updated_at": "2025-12-28T10:02:45.339Z"
   },
   {
-    "id": "doc_1766907954238_wpqkff9tj",
+    "id": "doc_1766916165340_qwimjcckg",
     "reference": "CVU3QV",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product CVU3QV",
-    "unit_price": 133,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 64,
+    "created_at": "2025-12-28T10:02:45.340Z",
+    "updated_at": "2025-12-28T10:02:45.340Z"
   },
   {
-    "id": "doc_1766907954238_1wp0q45xt",
+    "id": "doc_1766916165340_20joldwrq",
     "reference": "EYEOXS",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product EYEOXS",
-    "unit_price": 71,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 221,
+    "created_at": "2025-12-28T10:02:45.340Z",
+    "updated_at": "2025-12-28T10:02:45.340Z"
   },
   {
-    "id": "doc_1766907954238_jbug9g8ox",
+    "id": "doc_1766916165341_2knx6el80",
     "reference": "QXS5D1",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product QXS5D1",
-    "unit_price": 204,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 201,
+    "created_at": "2025-12-28T10:02:45.341Z",
+    "updated_at": "2025-12-28T10:02:45.341Z"
   },
   {
-    "id": "doc_1766907954238_ijpldh6di",
+    "id": "doc_1766916165342_ucsi4gms9",
     "reference": "ASG1IT",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product ASG1IT",
-    "unit_price": 246,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 157,
+    "created_at": "2025-12-28T10:02:45.342Z",
+    "updated_at": "2025-12-28T10:02:45.342Z"
   },
   {
-    "id": "doc_1766907954238_xu0kpqhgp",
+    "id": "doc_1766916165342_0dvynm0tu",
     "reference": "D8AMD3",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product D8AMD3",
-    "unit_price": 180,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 152,
+    "created_at": "2025-12-28T10:02:45.342Z",
+    "updated_at": "2025-12-28T10:02:45.342Z"
   },
   {
-    "id": "doc_1766907954238_k5xmad2u5",
+    "id": "doc_1766916165343_jodnqcx4x",
     "reference": "Z26SRT",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product Z26SRT",
-    "unit_price": 235,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 186,
+    "created_at": "2025-12-28T10:02:45.343Z",
+    "updated_at": "2025-12-28T10:02:45.343Z"
   },
   {
-    "id": "doc_1766907954238_kcg082n9u",
+    "id": "doc_1766916165343_ndurssla5",
     "reference": "GPBMZJ",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product GPBMZJ",
-    "unit_price": 62,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 113,
+    "created_at": "2025-12-28T10:02:45.343Z",
+    "updated_at": "2025-12-28T10:02:45.343Z"
   },
   {
-    "id": "doc_1766907954238_56v49tzym",
+    "id": "doc_1766916165343_p4wi1o6ab",
     "reference": "X31OGS",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product X31OGS",
-    "unit_price": 54,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 171,
+    "created_at": "2025-12-28T10:02:45.343Z",
+    "updated_at": "2025-12-28T10:02:45.343Z"
   },
   {
-    "id": "doc_1766907954238_cnnwjx485",
+    "id": "doc_1766916165344_pcpsgvxfn",
     "reference": "VWXLZJ",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product VWXLZJ",
-    "unit_price": 195,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 114,
+    "created_at": "2025-12-28T10:02:45.344Z",
+    "updated_at": "2025-12-28T10:02:45.344Z"
   },
   {
-    "id": "doc_1766907954238_6f8mkienm",
+    "id": "doc_1766916165344_ccwczg6om",
     "reference": "JCNON3",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product JCNON3",
-    "unit_price": 200,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 153,
+    "created_at": "2025-12-28T10:02:45.344Z",
+    "updated_at": "2025-12-28T10:02:45.344Z"
   },
   {
-    "id": "doc_1766907954238_1mk5kul22",
+    "id": "doc_1766916165345_t8cn33tpi",
     "reference": "J2URNJ",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product J2URNJ",
-    "unit_price": 171,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 201,
+    "created_at": "2025-12-28T10:02:45.345Z",
+    "updated_at": "2025-12-28T10:02:45.345Z"
   },
   {
-    "id": "doc_1766907954238_jbw5fcvsk",
+    "id": "doc_1766916165346_rxyj42f6g",
     "reference": "TQBVRI",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product TQBVRI",
-    "unit_price": 197,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 69,
+    "created_at": "2025-12-28T10:02:45.346Z",
+    "updated_at": "2025-12-28T10:02:45.346Z"
   },
   {
-    "id": "doc_1766907954238_9m5c9hq6k",
+    "id": "doc_1766916165346_xuh62sctv",
     "reference": "AX7BJ8",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product AX7BJ8",
-    "unit_price": 83,
-    "created_at": "2025-12-28T07:45:54.238Z",
-    "updated_at": "2025-12-28T07:45:54.238Z"
+    "unit_price": 158,
+    "created_at": "2025-12-28T10:02:45.346Z",
+    "updated_at": "2025-12-28T10:02:45.346Z"
   },
   {
-    "id": "doc_1766907954239_de824a6n9",
+    "id": "doc_1766916165347_2rv7t378g",
     "reference": "2Z7ZEP",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 2Z7ZEP",
-    "unit_price": 67,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 109,
+    "created_at": "2025-12-28T10:02:45.347Z",
+    "updated_at": "2025-12-28T10:02:45.347Z"
   },
   {
-    "id": "doc_1766907954239_sm8yn9bo9",
+    "id": "doc_1766916165347_tahe7hrap",
     "reference": "A7MDBC",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product A7MDBC",
-    "unit_price": 208,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 92,
+    "created_at": "2025-12-28T10:02:45.347Z",
+    "updated_at": "2025-12-28T10:02:45.347Z"
   },
   {
-    "id": "doc_1766907954239_iz94u3krw",
+    "id": "doc_1766916165347_6f26j83vo",
     "reference": "UU4A1K",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product UU4A1K",
-    "unit_price": 212,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 82,
+    "created_at": "2025-12-28T10:02:45.347Z",
+    "updated_at": "2025-12-28T10:02:45.347Z"
   },
   {
-    "id": "doc_1766907954239_f6vg85l57",
+    "id": "doc_1766916165348_b0qj9fvfj",
     "reference": "CST1KC",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product CST1KC",
-    "unit_price": 127,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 208,
+    "created_at": "2025-12-28T10:02:45.348Z",
+    "updated_at": "2025-12-28T10:02:45.348Z"
   },
   {
-    "id": "doc_1766907954239_n7twfcynd",
+    "id": "doc_1766916165348_yy6p1ps5b",
     "reference": "TAHFOD",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product TAHFOD",
-    "unit_price": 160,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 181,
+    "created_at": "2025-12-28T10:02:45.348Z",
+    "updated_at": "2025-12-28T10:02:45.348Z"
   },
   {
-    "id": "doc_1766907954239_2qrt0vyon",
+    "id": "doc_1766916165348_a4rzlro7a",
     "reference": "TB6WIP",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product TB6WIP",
-    "unit_price": 211,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 133,
+    "created_at": "2025-12-28T10:02:45.348Z",
+    "updated_at": "2025-12-28T10:02:45.348Z"
   },
   {
-    "id": "doc_1766907954239_wbi9rxwp0",
+    "id": "doc_1766916165349_hl3wskast",
     "reference": "M8W7TS",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product M8W7TS",
-    "unit_price": 50,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 86,
+    "created_at": "2025-12-28T10:02:45.349Z",
+    "updated_at": "2025-12-28T10:02:45.349Z"
   },
   {
-    "id": "doc_1766907954239_oc87gqo2w",
+    "id": "doc_1766916165349_49mqsv5h8",
     "reference": "EA91CP",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product EA91CP",
-    "unit_price": 134,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 216,
+    "created_at": "2025-12-28T10:02:45.349Z",
+    "updated_at": "2025-12-28T10:02:45.349Z"
   },
   {
-    "id": "doc_1766907954239_ey186zggz",
+    "id": "doc_1766916165349_shbuueg01",
     "reference": "TNZ1OO",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product TNZ1OO",
-    "unit_price": 127,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 142,
+    "created_at": "2025-12-28T10:02:45.349Z",
+    "updated_at": "2025-12-28T10:02:45.349Z"
   },
   {
-    "id": "doc_1766907954239_cp38ltszh",
+    "id": "doc_1766916165349_711050nv3",
     "reference": "ZX6MUV",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product ZX6MUV",
-    "unit_price": 165,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 222,
+    "created_at": "2025-12-28T10:02:45.349Z",
+    "updated_at": "2025-12-28T10:02:45.349Z"
   },
   {
-    "id": "doc_1766907954239_w883ro7ck",
+    "id": "doc_1766916165350_64cbudy9y",
     "reference": "UCRNWD",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product UCRNWD",
-    "unit_price": 171,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 234,
+    "created_at": "2025-12-28T10:02:45.350Z",
+    "updated_at": "2025-12-28T10:02:45.350Z"
   },
   {
-    "id": "doc_1766907954239_e9uxjlker",
+    "id": "doc_1766916165350_zb71x3df1",
     "reference": "02MRUH",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 02MRUH",
-    "unit_price": 101,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 241,
+    "created_at": "2025-12-28T10:02:45.350Z",
+    "updated_at": "2025-12-28T10:02:45.350Z"
   },
   {
-    "id": "doc_1766907954239_f2w8tt179",
+    "id": "doc_1766916165350_2vgusnywe",
     "reference": "122OKQ",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 122OKQ",
-    "unit_price": 56,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 231,
+    "created_at": "2025-12-28T10:02:45.350Z",
+    "updated_at": "2025-12-28T10:02:45.350Z"
   },
   {
-    "id": "doc_1766907954239_asfrfduvo",
+    "id": "doc_1766916165350_zbkgi4air",
     "reference": "M67GNC",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product M67GNC",
-    "unit_price": 65,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 138,
+    "created_at": "2025-12-28T10:02:45.350Z",
+    "updated_at": "2025-12-28T10:02:45.350Z"
   },
   {
-    "id": "doc_1766907954239_cxh6041y9",
+    "id": "doc_1766916165350_b5rbzkbqq",
     "reference": "ETU70R",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product ETU70R",
-    "unit_price": 106,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 149,
+    "created_at": "2025-12-28T10:02:45.350Z",
+    "updated_at": "2025-12-28T10:02:45.350Z"
   },
   {
-    "id": "doc_1766907954239_9dmx7gk62",
+    "id": "doc_1766916165351_ua2zokzds",
     "reference": "0SJH1Z",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 0SJH1Z",
     "unit_price": 224,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "created_at": "2025-12-28T10:02:45.351Z",
+    "updated_at": "2025-12-28T10:02:45.351Z"
   },
   {
-    "id": "doc_1766907954239_28oh1o2xr",
+    "id": "doc_1766916165351_t9zi3izac",
     "reference": "YKQY4X",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product YKQY4X",
-    "unit_price": 234,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 240,
+    "created_at": "2025-12-28T10:02:45.351Z",
+    "updated_at": "2025-12-28T10:02:45.351Z"
   },
   {
-    "id": "doc_1766907954239_fd5jh0bay",
+    "id": "doc_1766916165351_8w16ufo03",
     "reference": "DNLEH7",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product DNLEH7",
-    "unit_price": 162,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 193,
+    "created_at": "2025-12-28T10:02:45.351Z",
+    "updated_at": "2025-12-28T10:02:45.351Z"
   },
   {
-    "id": "doc_1766907954239_u3817ymcm",
+    "id": "doc_1766916165351_y36xn8b8l",
     "reference": "PZUF7K",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product PZUF7K",
-    "unit_price": 135,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 141,
+    "created_at": "2025-12-28T10:02:45.351Z",
+    "updated_at": "2025-12-28T10:02:45.351Z"
   },
   {
-    "id": "doc_1766907954239_5zjerv733",
+    "id": "doc_1766916165352_45umsyl1c",
     "reference": "JUUL5B",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product JUUL5B",
-    "unit_price": 249,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 115,
+    "created_at": "2025-12-28T10:02:45.352Z",
+    "updated_at": "2025-12-28T10:02:45.352Z"
   },
   {
-    "id": "doc_1766907954239_8rorflwzs",
+    "id": "doc_1766916165352_0it3vlc94",
     "reference": "YXGRMP",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product YXGRMP",
-    "unit_price": 126,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 187,
+    "created_at": "2025-12-28T10:02:45.352Z",
+    "updated_at": "2025-12-28T10:02:45.352Z"
   },
   {
-    "id": "doc_1766907954239_1vgshbqwo",
+    "id": "doc_1766916165352_mic11c059",
     "reference": "5P4LRT",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 5P4LRT",
-    "unit_price": 78,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 154,
+    "created_at": "2025-12-28T10:02:45.352Z",
+    "updated_at": "2025-12-28T10:02:45.352Z"
   },
   {
-    "id": "doc_1766907954239_50zfk5w9h",
+    "id": "doc_1766916165353_er413ly1e",
     "reference": "63KAC1",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 63KAC1",
-    "unit_price": 149,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 192,
+    "created_at": "2025-12-28T10:02:45.353Z",
+    "updated_at": "2025-12-28T10:02:45.353Z"
   },
   {
-    "id": "doc_1766907954239_cqisftmvb",
+    "id": "doc_1766916165355_3orm17zpu",
     "reference": "U8203G",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product U8203G",
-    "unit_price": 244,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 230,
+    "created_at": "2025-12-28T10:02:45.355Z",
+    "updated_at": "2025-12-28T10:02:45.355Z"
   },
   {
-    "id": "doc_1766907954239_crh6mj4xm",
+    "id": "doc_1766916165356_fm7ptt5hj",
     "reference": "84ABYS",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 84ABYS",
-    "unit_price": 155,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 179,
+    "created_at": "2025-12-28T10:02:45.356Z",
+    "updated_at": "2025-12-28T10:02:45.356Z"
   },
   {
-    "id": "doc_1766907954239_jcvubktwi",
+    "id": "doc_1766916165356_3n4icrhum",
     "reference": "MLV9BR",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product MLV9BR",
-    "unit_price": 249,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 171,
+    "created_at": "2025-12-28T10:02:45.356Z",
+    "updated_at": "2025-12-28T10:02:45.356Z"
   },
   {
-    "id": "doc_1766907954239_rrdcqz2ff",
+    "id": "doc_1766916165356_a18cgmb6s",
     "reference": "1D2ILZ",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 1D2ILZ",
-    "unit_price": 248,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 94,
+    "created_at": "2025-12-28T10:02:45.356Z",
+    "updated_at": "2025-12-28T10:02:45.356Z"
   },
   {
-    "id": "doc_1766907954239_v2j7dbzfi",
+    "id": "doc_1766916165356_ui66xmnu8",
     "reference": "HI2X6U",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product HI2X6U",
-    "unit_price": 125,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 198,
+    "created_at": "2025-12-28T10:02:45.356Z",
+    "updated_at": "2025-12-28T10:02:45.356Z"
   },
   {
-    "id": "doc_1766907954239_izjt0dure",
+    "id": "doc_1766916165357_4fjl3yw31",
     "reference": "YRRNGL",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product YRRNGL",
-    "unit_price": 121,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 181,
+    "created_at": "2025-12-28T10:02:45.357Z",
+    "updated_at": "2025-12-28T10:02:45.357Z"
   },
   {
-    "id": "doc_1766907954239_bmkbc6sjm",
+    "id": "doc_1766916165357_t4ypwoaf2",
     "reference": "W518XY",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product W518XY",
-    "unit_price": 209,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 163,
+    "created_at": "2025-12-28T10:02:45.357Z",
+    "updated_at": "2025-12-28T10:02:45.357Z"
   },
   {
-    "id": "doc_1766907954239_s10mkuu2w",
+    "id": "doc_1766916165357_zghxj0q8k",
     "reference": "5X8RAN",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 5X8RAN",
-    "unit_price": 227,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 236,
+    "created_at": "2025-12-28T10:02:45.357Z",
+    "updated_at": "2025-12-28T10:02:45.357Z"
   },
   {
-    "id": "doc_1766907954239_en95k8yy5",
+    "id": "doc_1766916165358_hq538zj5c",
     "reference": "BLJLMQ",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product BLJLMQ",
-    "unit_price": 196,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 89,
+    "created_at": "2025-12-28T10:02:45.358Z",
+    "updated_at": "2025-12-28T10:02:45.358Z"
   },
   {
-    "id": "doc_1766907954239_wyiotacao",
+    "id": "doc_1766916165358_t9xm11e0x",
     "reference": "1A6YTA",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 1A6YTA",
-    "unit_price": 165,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 111,
+    "created_at": "2025-12-28T10:02:45.358Z",
+    "updated_at": "2025-12-28T10:02:45.358Z"
   },
   {
-    "id": "doc_1766907954239_u6v9u72td",
+    "id": "doc_1766916165358_64ph4ado2",
     "reference": "AB9XBU",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product AB9XBU",
-    "unit_price": 56,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 90,
+    "created_at": "2025-12-28T10:02:45.358Z",
+    "updated_at": "2025-12-28T10:02:45.358Z"
   },
   {
-    "id": "doc_1766907954239_wqy3cc7c3",
+    "id": "doc_1766916165358_5gnt8l931",
     "reference": "2LPO6D",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 2LPO6D",
-    "unit_price": 183,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 161,
+    "created_at": "2025-12-28T10:02:45.358Z",
+    "updated_at": "2025-12-28T10:02:45.358Z"
   },
   {
-    "id": "doc_1766907954239_rh41ije45",
+    "id": "doc_1766916165359_yf76617xt",
     "reference": "4SD17H",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 4SD17H",
-    "unit_price": 229,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 142,
+    "created_at": "2025-12-28T10:02:45.359Z",
+    "updated_at": "2025-12-28T10:02:45.359Z"
   },
   {
-    "id": "doc_1766907954239_csjrm8j6d",
+    "id": "doc_1766916165359_617chkaj8",
     "reference": "F0P5OQ",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product F0P5OQ",
-    "unit_price": 84,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 190,
+    "created_at": "2025-12-28T10:02:45.359Z",
+    "updated_at": "2025-12-28T10:02:45.359Z"
   },
   {
-    "id": "doc_1766907954239_4c5xyi4z2",
+    "id": "doc_1766916165359_6rus8hrd3",
     "reference": "F29V5I",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product F29V5I",
-    "unit_price": 248,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 185,
+    "created_at": "2025-12-28T10:02:45.359Z",
+    "updated_at": "2025-12-28T10:02:45.359Z"
   },
   {
-    "id": "doc_1766907954239_ts73i1rvy",
+    "id": "doc_1766916165360_pkjk4cx61",
     "reference": "ZVUW6Z",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product ZVUW6Z",
-    "unit_price": 207,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 93,
+    "created_at": "2025-12-28T10:02:45.360Z",
+    "updated_at": "2025-12-28T10:02:45.360Z"
   },
   {
-    "id": "doc_1766907954239_84qabiujx",
+    "id": "doc_1766916165360_tu1hmcfu6",
     "reference": "F73ZE1",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product F73ZE1",
-    "unit_price": 105,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 158,
+    "created_at": "2025-12-28T10:02:45.360Z",
+    "updated_at": "2025-12-28T10:02:45.360Z"
   },
   {
-    "id": "doc_1766907954239_rd53k2qgk",
+    "id": "doc_1766916165360_1jr3s1uta",
     "reference": "Y813MQ",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product Y813MQ",
-    "unit_price": 96,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 144,
+    "created_at": "2025-12-28T10:02:45.360Z",
+    "updated_at": "2025-12-28T10:02:45.360Z"
   },
   {
-    "id": "doc_1766907954239_k92arxivn",
+    "id": "doc_1766916165360_ezz51g4fj",
     "reference": "JCIIEB",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product JCIIEB",
-    "unit_price": 191,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 241,
+    "created_at": "2025-12-28T10:02:45.360Z",
+    "updated_at": "2025-12-28T10:02:45.360Z"
   },
   {
-    "id": "doc_1766907954239_erc8j8412",
+    "id": "doc_1766916165361_2ht2rfkod",
     "reference": "HGXJD0",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product HGXJD0",
-    "unit_price": 196,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 244,
+    "created_at": "2025-12-28T10:02:45.361Z",
+    "updated_at": "2025-12-28T10:02:45.361Z"
   },
   {
-    "id": "doc_1766907954239_ltduoc6so",
+    "id": "doc_1766916165361_fr3jyb1bc",
     "reference": "O7TSVL",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product O7TSVL",
-    "unit_price": 234,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 63,
+    "created_at": "2025-12-28T10:02:45.361Z",
+    "updated_at": "2025-12-28T10:02:45.361Z"
   },
   {
-    "id": "doc_1766907954239_5pve7ccee",
+    "id": "doc_1766916165362_i8psbdcnb",
     "reference": "QTMT7N",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product QTMT7N",
-    "unit_price": 58,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 213,
+    "created_at": "2025-12-28T10:02:45.362Z",
+    "updated_at": "2025-12-28T10:02:45.362Z"
   },
   {
-    "id": "doc_1766907954239_cnaelralc",
+    "id": "doc_1766916165362_nfmk0r4xp",
     "reference": "ULG3QT",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product ULG3QT",
-    "unit_price": 90,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 95,
+    "created_at": "2025-12-28T10:02:45.362Z",
+    "updated_at": "2025-12-28T10:02:45.362Z"
   },
   {
-    "id": "doc_1766907954239_dobw9ghkf",
+    "id": "doc_1766916165362_je0susyek",
     "reference": "UNPPMJ",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product UNPPMJ",
-    "unit_price": 64,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 218,
+    "created_at": "2025-12-28T10:02:45.362Z",
+    "updated_at": "2025-12-28T10:02:45.362Z"
   },
   {
-    "id": "doc_1766907954239_ixot8igoe",
+    "id": "doc_1766916165363_50fbxz1vw",
     "reference": "XFQ9CP",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product XFQ9CP",
-    "unit_price": 132,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 134,
+    "created_at": "2025-12-28T10:02:45.363Z",
+    "updated_at": "2025-12-28T10:02:45.363Z"
   },
   {
-    "id": "doc_1766907954239_vp193eci7",
+    "id": "doc_1766916165363_yyfbxw8rz",
     "reference": "9KZ6W1",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 9KZ6W1",
-    "unit_price": 228,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 187,
+    "created_at": "2025-12-28T10:02:45.363Z",
+    "updated_at": "2025-12-28T10:02:45.363Z"
   },
   {
-    "id": "doc_1766907954239_7lff49icv",
+    "id": "doc_1766916165363_0a13ms9fi",
     "reference": "N6JU7C",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product N6JU7C",
-    "unit_price": 181,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 212,
+    "created_at": "2025-12-28T10:02:45.363Z",
+    "updated_at": "2025-12-28T10:02:45.363Z"
   },
   {
-    "id": "doc_1766907954239_0uqw29oc4",
+    "id": "doc_1766916165364_0835tef3l",
     "reference": "FQ53YY",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product FQ53YY",
-    "unit_price": 211,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 194,
+    "created_at": "2025-12-28T10:02:45.364Z",
+    "updated_at": "2025-12-28T10:02:45.364Z"
   },
   {
-    "id": "doc_1766907954239_nets9qydx",
+    "id": "doc_1766916165364_9xthhmhyj",
     "reference": "UDF17E",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product UDF17E",
-    "unit_price": 74,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 127,
+    "created_at": "2025-12-28T10:02:45.364Z",
+    "updated_at": "2025-12-28T10:02:45.364Z"
   },
   {
-    "id": "doc_1766907954239_l9vmqqkl8",
+    "id": "doc_1766916165364_7sd9wsbk7",
     "reference": "JEGRCL",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product JEGRCL",
-    "unit_price": 207,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 173,
+    "created_at": "2025-12-28T10:02:45.364Z",
+    "updated_at": "2025-12-28T10:02:45.364Z"
   },
   {
-    "id": "doc_1766907954239_d23djum9k",
+    "id": "doc_1766916165364_6d4bl0bx7",
     "reference": "TNAHD4",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product TNAHD4",
-    "unit_price": 148,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 169,
+    "created_at": "2025-12-28T10:02:45.364Z",
+    "updated_at": "2025-12-28T10:02:45.364Z"
   },
   {
-    "id": "doc_1766907954239_3ekxfb7k3",
+    "id": "doc_1766916165365_4xvq9bdxw",
     "reference": "WRRW1W",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product WRRW1W",
-    "unit_price": 103,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 80,
+    "created_at": "2025-12-28T10:02:45.365Z",
+    "updated_at": "2025-12-28T10:02:45.365Z"
   },
   {
-    "id": "doc_1766907954239_crl6ecgkn",
+    "id": "doc_1766916165365_hoqzug2h9",
     "reference": "QM2UH1",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product QM2UH1",
-    "unit_price": 215,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 55,
+    "created_at": "2025-12-28T10:02:45.365Z",
+    "updated_at": "2025-12-28T10:02:45.365Z"
   },
   {
-    "id": "doc_1766907954239_pbwxmb4k1",
+    "id": "doc_1766916165365_3wgx6lhft",
     "reference": "I1KDJ0",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product I1KDJ0",
-    "unit_price": 185,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 246,
+    "created_at": "2025-12-28T10:02:45.365Z",
+    "updated_at": "2025-12-28T10:02:45.365Z"
   },
   {
-    "id": "doc_1766907954239_258wj5ysm",
+    "id": "doc_1766916165366_g2pq50km1",
     "reference": "WGHG3L",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product WGHG3L",
-    "unit_price": 50,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 56,
+    "created_at": "2025-12-28T10:02:45.366Z",
+    "updated_at": "2025-12-28T10:02:45.366Z"
   },
   {
-    "id": "doc_1766907954239_hb2yo1sp6",
+    "id": "doc_1766916165366_c4lx94oup",
     "reference": "69L9MX",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 69L9MX",
-    "unit_price": 108,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 130,
+    "created_at": "2025-12-28T10:02:45.366Z",
+    "updated_at": "2025-12-28T10:02:45.366Z"
   },
   {
-    "id": "doc_1766907954239_exo9szeb5",
+    "id": "doc_1766916165366_g8f6qfdwy",
     "reference": "4E0KXI",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 4E0KXI",
-    "unit_price": 55,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 241,
+    "created_at": "2025-12-28T10:02:45.366Z",
+    "updated_at": "2025-12-28T10:02:45.366Z"
   },
   {
-    "id": "doc_1766907954239_9vhhgfyna",
+    "id": "doc_1766916165367_xakmjn2xi",
     "reference": "S90CD9",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product S90CD9",
-    "unit_price": 53,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 132,
+    "created_at": "2025-12-28T10:02:45.367Z",
+    "updated_at": "2025-12-28T10:02:45.367Z"
   },
   {
-    "id": "doc_1766907954239_4t56yqw1y",
+    "id": "doc_1766916165367_n5stmwhm8",
     "reference": "HLOISD",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product HLOISD",
-    "unit_price": 98,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 117,
+    "created_at": "2025-12-28T10:02:45.367Z",
+    "updated_at": "2025-12-28T10:02:45.367Z"
   },
   {
-    "id": "doc_1766907954239_56vn7l918",
+    "id": "doc_1766916165367_gc08jwscg",
     "reference": "EUMBM7",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product EUMBM7",
-    "unit_price": 221,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 212,
+    "created_at": "2025-12-28T10:02:45.367Z",
+    "updated_at": "2025-12-28T10:02:45.367Z"
   },
   {
-    "id": "doc_1766907954239_lwbulnba9",
+    "id": "doc_1766916165367_elbrmmfra",
     "reference": "RUUOCB",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product RUUOCB",
-    "unit_price": 228,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 70,
+    "created_at": "2025-12-28T10:02:45.367Z",
+    "updated_at": "2025-12-28T10:02:45.367Z"
   },
   {
-    "id": "doc_1766907954239_6c2vusg21",
+    "id": "doc_1766916165368_7nmaicp45",
     "reference": "EQQBND",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product EQQBND",
-    "unit_price": 237,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 170,
+    "created_at": "2025-12-28T10:02:45.368Z",
+    "updated_at": "2025-12-28T10:02:45.368Z"
   },
   {
-    "id": "doc_1766907954239_zxpnhegqk",
+    "id": "doc_1766916165368_y0z5b31js",
     "reference": "O7AXAK",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product O7AXAK",
-    "unit_price": 76,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 225,
+    "created_at": "2025-12-28T10:02:45.368Z",
+    "updated_at": "2025-12-28T10:02:45.368Z"
   },
   {
-    "id": "doc_1766907954239_9zx2mfhsc",
+    "id": "doc_1766916165368_elr61acno",
     "reference": "RN2DSQ",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product RN2DSQ",
-    "unit_price": 181,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 171,
+    "created_at": "2025-12-28T10:02:45.368Z",
+    "updated_at": "2025-12-28T10:02:45.368Z"
   },
   {
-    "id": "doc_1766907954239_msguk8c7g",
+    "id": "doc_1766916165369_gvsl0khr5",
     "reference": "800OVF",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 800OVF",
-    "unit_price": 124,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 220,
+    "created_at": "2025-12-28T10:02:45.369Z",
+    "updated_at": "2025-12-28T10:02:45.369Z"
   },
   {
-    "id": "doc_1766907954239_azmo4d1uf",
+    "id": "doc_1766916165369_trtg2e2ju",
     "reference": "QP56BU",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product QP56BU",
-    "unit_price": 85,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 246,
+    "created_at": "2025-12-28T10:02:45.369Z",
+    "updated_at": "2025-12-28T10:02:45.369Z"
   },
   {
-    "id": "doc_1766907954239_l2zc7tod0",
+    "id": "doc_1766916165369_nuy45e49g",
     "reference": "PC1PMV",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product PC1PMV",
-    "unit_price": 227,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 174,
+    "created_at": "2025-12-28T10:02:45.369Z",
+    "updated_at": "2025-12-28T10:02:45.369Z"
   },
   {
-    "id": "doc_1766907954239_909k13adm",
+    "id": "doc_1766916165369_g6j03rji3",
     "reference": "37VA62",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 37VA62",
-    "unit_price": 113,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 78,
+    "created_at": "2025-12-28T10:02:45.369Z",
+    "updated_at": "2025-12-28T10:02:45.369Z"
   },
   {
-    "id": "doc_1766907954239_lg9y5y9zn",
+    "id": "doc_1766916165370_esw532d80",
     "reference": "066BOU",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 066BOU",
-    "unit_price": 118,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 119,
+    "created_at": "2025-12-28T10:02:45.370Z",
+    "updated_at": "2025-12-28T10:02:45.370Z"
   },
   {
-    "id": "doc_1766907954239_74r6wkj26",
+    "id": "doc_1766916165371_dyespugxo",
     "reference": "6M2FJM",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 6M2FJM",
-    "unit_price": 219,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 157,
+    "created_at": "2025-12-28T10:02:45.371Z",
+    "updated_at": "2025-12-28T10:02:45.371Z"
   },
   {
-    "id": "doc_1766907954239_3ss04cu65",
+    "id": "doc_1766916165371_c8ziilsry",
     "reference": "G8ASPE",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product G8ASPE",
-    "unit_price": 112,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 191,
+    "created_at": "2025-12-28T10:02:45.371Z",
+    "updated_at": "2025-12-28T10:02:45.371Z"
   },
   {
-    "id": "doc_1766907954239_sfrvlqu8f",
+    "id": "doc_1766916165371_1b5gkjyp9",
     "reference": "6WT73N",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 6WT73N",
-    "unit_price": 204,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 59,
+    "created_at": "2025-12-28T10:02:45.371Z",
+    "updated_at": "2025-12-28T10:02:45.371Z"
   },
   {
-    "id": "doc_1766907954239_rtjjjhy2l",
+    "id": "doc_1766916165372_z1gonbh4k",
     "reference": "Z8KPP8",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product Z8KPP8",
-    "unit_price": 117,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 81,
+    "created_at": "2025-12-28T10:02:45.372Z",
+    "updated_at": "2025-12-28T10:02:45.372Z"
   },
   {
-    "id": "doc_1766907954239_u5zlh3oi5",
+    "id": "doc_1766916165372_lv7aykq2z",
     "reference": "70EPUK",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 70EPUK",
-    "unit_price": 244,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 137,
+    "created_at": "2025-12-28T10:02:45.372Z",
+    "updated_at": "2025-12-28T10:02:45.372Z"
   },
   {
-    "id": "doc_1766907954239_drb4vbqzo",
+    "id": "doc_1766916165372_im22tlhey",
     "reference": "32ZKOX",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 32ZKOX",
-    "unit_price": 93,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 121,
+    "created_at": "2025-12-28T10:02:45.372Z",
+    "updated_at": "2025-12-28T10:02:45.372Z"
   },
   {
-    "id": "doc_1766907954239_6nuqamznr",
+    "id": "doc_1766916165373_okq3kebf5",
     "reference": "YF0X2Z",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product YF0X2Z",
-    "unit_price": 120,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 162,
+    "created_at": "2025-12-28T10:02:45.373Z",
+    "updated_at": "2025-12-28T10:02:45.373Z"
   },
   {
-    "id": "doc_1766907954239_uuimm00iy",
+    "id": "doc_1766916165373_dmbo6fs1u",
     "reference": "TOENMT",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product TOENMT",
-    "unit_price": 72,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 219,
+    "created_at": "2025-12-28T10:02:45.373Z",
+    "updated_at": "2025-12-28T10:02:45.373Z"
   },
   {
-    "id": "doc_1766907954239_8wyg59ei4",
+    "id": "doc_1766916165373_7bur2tstj",
     "reference": "EBKM6C",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product EBKM6C",
-    "unit_price": 201,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 153,
+    "created_at": "2025-12-28T10:02:45.373Z",
+    "updated_at": "2025-12-28T10:02:45.373Z"
   },
   {
-    "id": "doc_1766907954239_mx0d0k281",
+    "id": "doc_1766916165374_ugoaclt5r",
     "reference": "ZGYCSW",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product ZGYCSW",
-    "unit_price": 129,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 74,
+    "created_at": "2025-12-28T10:02:45.374Z",
+    "updated_at": "2025-12-28T10:02:45.374Z"
   },
   {
-    "id": "doc_1766907954239_x4ts82hyr",
+    "id": "doc_1766916165374_0rix7u3hc",
     "reference": "YE890X",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product YE890X",
-    "unit_price": 207,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 94,
+    "created_at": "2025-12-28T10:02:45.374Z",
+    "updated_at": "2025-12-28T10:02:45.374Z"
   },
   {
-    "id": "doc_1766907954239_czskoozni",
+    "id": "doc_1766916165374_926ybubd9",
     "reference": "LXJQVG",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product LXJQVG",
-    "unit_price": 83,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 182,
+    "created_at": "2025-12-28T10:02:45.374Z",
+    "updated_at": "2025-12-28T10:02:45.374Z"
   },
   {
-    "id": "doc_1766907954239_rhcmavx2q",
+    "id": "doc_1766916165374_5jmbgtbe0",
     "reference": "AHR20O",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product AHR20O",
-    "unit_price": 140,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 61,
+    "created_at": "2025-12-28T10:02:45.374Z",
+    "updated_at": "2025-12-28T10:02:45.374Z"
   },
   {
-    "id": "doc_1766907954239_m34lhvnbe",
+    "id": "doc_1766916165375_iqicbr2wa",
     "reference": "5MNTT7",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 5MNTT7",
-    "unit_price": 165,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 98,
+    "created_at": "2025-12-28T10:02:45.375Z",
+    "updated_at": "2025-12-28T10:02:45.375Z"
   },
   {
-    "id": "doc_1766907954239_nkzbpnc7s",
+    "id": "doc_1766916165375_a88b1brzw",
     "reference": "DGAONE",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product DGAONE",
-    "unit_price": 133,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 168,
+    "created_at": "2025-12-28T10:02:45.375Z",
+    "updated_at": "2025-12-28T10:02:45.375Z"
   },
   {
-    "id": "doc_1766907954239_93o4vhhcs",
+    "id": "doc_1766916165375_kqz4qz5b7",
     "reference": "6NDM0O",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 6NDM0O",
-    "unit_price": 188,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 107,
+    "created_at": "2025-12-28T10:02:45.375Z",
+    "updated_at": "2025-12-28T10:02:45.375Z"
   },
   {
-    "id": "doc_1766907954239_5kyipqbor",
+    "id": "doc_1766916165376_tqdk7fpb7",
     "reference": "V7JUQL",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product V7JUQL",
-    "unit_price": 184,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 191,
+    "created_at": "2025-12-28T10:02:45.376Z",
+    "updated_at": "2025-12-28T10:02:45.376Z"
   },
   {
-    "id": "doc_1766907954239_f0syhhbdp",
+    "id": "doc_1766916165376_4cc7srnfs",
     "reference": "Q50W5L",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product Q50W5L",
-    "unit_price": 193,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 62,
+    "created_at": "2025-12-28T10:02:45.376Z",
+    "updated_at": "2025-12-28T10:02:45.376Z"
   },
   {
-    "id": "doc_1766907954239_i9y37d4v6",
+    "id": "doc_1766916165376_5rv07qyk2",
     "reference": "PP9DNA",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product PP9DNA",
-    "unit_price": 108,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 185,
+    "created_at": "2025-12-28T10:02:45.376Z",
+    "updated_at": "2025-12-28T10:02:45.376Z"
   },
   {
-    "id": "doc_1766907954239_inviczwtq",
+    "id": "doc_1766916165377_796i6fmx5",
     "reference": "SY1DDY",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product SY1DDY",
-    "unit_price": 189,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 50,
+    "created_at": "2025-12-28T10:02:45.377Z",
+    "updated_at": "2025-12-28T10:02:45.377Z"
   },
   {
-    "id": "doc_1766907954239_gf03qjkkw",
+    "id": "doc_1766916165377_6il4xzd0l",
     "reference": "ADT9MG",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product ADT9MG",
-    "unit_price": 84,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 197,
+    "created_at": "2025-12-28T10:02:45.377Z",
+    "updated_at": "2025-12-28T10:02:45.377Z"
   },
   {
-    "id": "doc_1766907954239_wam165bsx",
+    "id": "doc_1766916165377_etknmpvxn",
     "reference": "B24J86",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product B24J86",
-    "unit_price": 192,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 150,
+    "created_at": "2025-12-28T10:02:45.377Z",
+    "updated_at": "2025-12-28T10:02:45.377Z"
   },
   {
-    "id": "doc_1766907954239_2u92pxz92",
+    "id": "doc_1766916165378_o8tgt2ifv",
     "reference": "F7LULH",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product F7LULH",
-    "unit_price": 73,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 59,
+    "created_at": "2025-12-28T10:02:45.378Z",
+    "updated_at": "2025-12-28T10:02:45.378Z"
   },
   {
-    "id": "doc_1766907954239_3fbkocydp",
+    "id": "doc_1766916165378_icgdglzw6",
     "reference": "9VBE59",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 9VBE59",
-    "unit_price": 68,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 218,
+    "created_at": "2025-12-28T10:02:45.378Z",
+    "updated_at": "2025-12-28T10:02:45.378Z"
   },
   {
-    "id": "doc_1766907954239_o2fj0kn3b",
+    "id": "doc_1766916165379_7ubgaj8cs",
     "reference": "JHSQHS",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product JHSQHS",
-    "unit_price": 95,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 107,
+    "created_at": "2025-12-28T10:02:45.379Z",
+    "updated_at": "2025-12-28T10:02:45.379Z"
   },
   {
-    "id": "doc_1766907954239_u5fsh045v",
+    "id": "doc_1766916165379_vydvthfkx",
     "reference": "IYXV3Z",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product IYXV3Z",
-    "unit_price": 193,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 130,
+    "created_at": "2025-12-28T10:02:45.379Z",
+    "updated_at": "2025-12-28T10:02:45.379Z"
   },
   {
-    "id": "doc_1766907954239_cnb9zkurw",
+    "id": "doc_1766916165380_tqwqs8zyu",
     "reference": "9FWH2G",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 9FWH2G",
-    "unit_price": 121,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 223,
+    "created_at": "2025-12-28T10:02:45.380Z",
+    "updated_at": "2025-12-28T10:02:45.380Z"
   },
   {
-    "id": "doc_1766907954239_c3zld289u",
+    "id": "doc_1766916165380_k6m5gov0i",
     "reference": "IYLV38",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product IYLV38",
-    "unit_price": 66,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 206,
+    "created_at": "2025-12-28T10:02:45.380Z",
+    "updated_at": "2025-12-28T10:02:45.380Z"
   },
   {
-    "id": "doc_1766907954239_4scb6wq7g",
+    "id": "doc_1766916165381_bblm0dy7w",
     "reference": "0LNUOV",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 0LNUOV",
-    "unit_price": 156,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 113,
+    "created_at": "2025-12-28T10:02:45.381Z",
+    "updated_at": "2025-12-28T10:02:45.381Z"
   },
   {
-    "id": "doc_1766907954239_d4ctg6iq3",
+    "id": "doc_1766916165381_2zcf2f08r",
     "reference": "Q164T6",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product Q164T6",
-    "unit_price": 201,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 143,
+    "created_at": "2025-12-28T10:02:45.381Z",
+    "updated_at": "2025-12-28T10:02:45.381Z"
   },
   {
-    "id": "doc_1766907954239_93cj9o7yi",
+    "id": "doc_1766916165381_tgffrwlrn",
     "reference": "KZ5VR3",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product KZ5VR3",
-    "unit_price": 131,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 203,
+    "created_at": "2025-12-28T10:02:45.381Z",
+    "updated_at": "2025-12-28T10:02:45.381Z"
   },
   {
-    "id": "doc_1766907954239_xjxem83ga",
+    "id": "doc_1766916165382_iplp2pfrr",
     "reference": "F98BNI",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product F98BNI",
-    "unit_price": 143,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 199,
+    "created_at": "2025-12-28T10:02:45.382Z",
+    "updated_at": "2025-12-28T10:02:45.382Z"
   },
   {
-    "id": "doc_1766907954239_1cbvyi695",
+    "id": "doc_1766916165382_povchj5xy",
     "reference": "9S4AF8",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 9S4AF8",
-    "unit_price": 104,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 218,
+    "created_at": "2025-12-28T10:02:45.382Z",
+    "updated_at": "2025-12-28T10:02:45.382Z"
   },
   {
-    "id": "doc_1766907954239_hn7vyf7v5",
+    "id": "doc_1766916165383_ny23td3vf",
     "reference": "8D9SAW",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 8D9SAW",
-    "unit_price": 193,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 82,
+    "created_at": "2025-12-28T10:02:45.383Z",
+    "updated_at": "2025-12-28T10:02:45.383Z"
   },
   {
-    "id": "doc_1766907954239_912go4imz",
+    "id": "doc_1766916165383_gajcg0xv0",
     "reference": "AKP0A7",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product AKP0A7",
-    "unit_price": 237,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 172,
+    "created_at": "2025-12-28T10:02:45.383Z",
+    "updated_at": "2025-12-28T10:02:45.383Z"
   },
   {
-    "id": "doc_1766907954239_krxxjb7g0",
+    "id": "doc_1766916165383_r87vfk90j",
     "reference": "1ENECA",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 1ENECA",
-    "unit_price": 139,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 146,
+    "created_at": "2025-12-28T10:02:45.383Z",
+    "updated_at": "2025-12-28T10:02:45.383Z"
   },
   {
-    "id": "doc_1766907954239_0p4lwqjcy",
+    "id": "doc_1766916165384_t9jrogopw",
     "reference": "XLTRGL",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product XLTRGL",
-    "unit_price": 193,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 53,
+    "created_at": "2025-12-28T10:02:45.384Z",
+    "updated_at": "2025-12-28T10:02:45.384Z"
   },
   {
-    "id": "doc_1766907954239_rclii49ni",
+    "id": "doc_1766916165385_325gexu0w",
     "reference": "KTDZY0",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product KTDZY0",
-    "unit_price": 180,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 134,
+    "created_at": "2025-12-28T10:02:45.385Z",
+    "updated_at": "2025-12-28T10:02:45.385Z"
   },
   {
-    "id": "doc_1766907954239_uubycq7cv",
+    "id": "doc_1766916165386_vcli4gpqv",
     "reference": "SSQFQA",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product SSQFQA",
-    "unit_price": 82,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 139,
+    "created_at": "2025-12-28T10:02:45.386Z",
+    "updated_at": "2025-12-28T10:02:45.386Z"
   },
   {
-    "id": "doc_1766907954239_689y06dzv",
+    "id": "doc_1766916165386_5pzi2ngcf",
     "reference": "UHYJ3A",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product UHYJ3A",
-    "unit_price": 95,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 165,
+    "created_at": "2025-12-28T10:02:45.386Z",
+    "updated_at": "2025-12-28T10:02:45.386Z"
   },
   {
-    "id": "doc_1766907954239_j5sl7r1v8",
+    "id": "doc_1766916165387_n8q6bz67r",
     "reference": "5P2MVG",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 5P2MVG",
-    "unit_price": 166,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 123,
+    "created_at": "2025-12-28T10:02:45.387Z",
+    "updated_at": "2025-12-28T10:02:45.387Z"
   },
   {
-    "id": "doc_1766907954239_hhlzlgq1k",
+    "id": "doc_1766916165387_pxy882lf3",
     "reference": "SWN7AU",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product SWN7AU",
-    "unit_price": 86,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 168,
+    "created_at": "2025-12-28T10:02:45.387Z",
+    "updated_at": "2025-12-28T10:02:45.387Z"
   },
   {
-    "id": "doc_1766907954239_q8gdiot8r",
+    "id": "doc_1766916165388_osg7ge2uv",
     "reference": "W25EZN",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product W25EZN",
-    "unit_price": 168,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 163,
+    "created_at": "2025-12-28T10:02:45.388Z",
+    "updated_at": "2025-12-28T10:02:45.388Z"
   },
   {
-    "id": "doc_1766907954239_8p6g7gvan",
+    "id": "doc_1766916165388_7th7hsebq",
     "reference": "IA7X1P",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product IA7X1P",
-    "unit_price": 111,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 144,
+    "created_at": "2025-12-28T10:02:45.388Z",
+    "updated_at": "2025-12-28T10:02:45.388Z"
   },
   {
-    "id": "doc_1766907954239_ad1diy1jl",
+    "id": "doc_1766916165388_s4s82shw6",
     "reference": "NISP6K",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product NISP6K",
-    "unit_price": 54,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 161,
+    "created_at": "2025-12-28T10:02:45.388Z",
+    "updated_at": "2025-12-28T10:02:45.388Z"
   },
   {
-    "id": "doc_1766907954239_0udfnkvic",
+    "id": "doc_1766916165389_1od0mfqm2",
     "reference": "IJBSQT",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product IJBSQT",
-    "unit_price": 204,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 94,
+    "created_at": "2025-12-28T10:02:45.389Z",
+    "updated_at": "2025-12-28T10:02:45.389Z"
   },
   {
-    "id": "doc_1766907954239_4j70ivtnk",
+    "id": "doc_1766916165389_yxayhfhz3",
     "reference": "NM6C73",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product NM6C73",
-    "unit_price": 220,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 135,
+    "created_at": "2025-12-28T10:02:45.389Z",
+    "updated_at": "2025-12-28T10:02:45.389Z"
   },
   {
-    "id": "doc_1766907954239_zrb93rodk",
+    "id": "doc_1766916165390_f3qmiomc3",
     "reference": "RBKNR4",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product RBKNR4",
-    "unit_price": 169,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 128,
+    "created_at": "2025-12-28T10:02:45.390Z",
+    "updated_at": "2025-12-28T10:02:45.390Z"
   },
   {
-    "id": "doc_1766907954239_ec5cve1k0",
+    "id": "doc_1766916165390_7s8p5ymet",
     "reference": "YN8OHN",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product YN8OHN",
-    "unit_price": 193,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 166,
+    "created_at": "2025-12-28T10:02:45.390Z",
+    "updated_at": "2025-12-28T10:02:45.390Z"
   },
   {
-    "id": "doc_1766907954239_1i19jxt73",
+    "id": "doc_1766916165390_wirsp3sg4",
     "reference": "JWTWL1",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product JWTWL1",
-    "unit_price": 64,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 170,
+    "created_at": "2025-12-28T10:02:45.390Z",
+    "updated_at": "2025-12-28T10:02:45.390Z"
   },
   {
-    "id": "doc_1766907954239_oy6x8ue78",
+    "id": "doc_1766916165391_7r7zbrqdn",
     "reference": "4ILN0A",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 4ILN0A",
-    "unit_price": 165,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 177,
+    "created_at": "2025-12-28T10:02:45.391Z",
+    "updated_at": "2025-12-28T10:02:45.391Z"
   },
   {
-    "id": "doc_1766907954239_gxwosjeio",
+    "id": "doc_1766916165391_dqy5f3bmp",
     "reference": "APQKWK",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product APQKWK",
-    "unit_price": 218,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 213,
+    "created_at": "2025-12-28T10:02:45.391Z",
+    "updated_at": "2025-12-28T10:02:45.391Z"
   },
   {
-    "id": "doc_1766907954239_0tmwulizl",
+    "id": "doc_1766916165392_1lrx4ibwp",
     "reference": "6MKIC6",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 6MKIC6",
-    "unit_price": 240,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 191,
+    "created_at": "2025-12-28T10:02:45.392Z",
+    "updated_at": "2025-12-28T10:02:45.392Z"
   },
   {
-    "id": "doc_1766907954239_vws1m8s68",
+    "id": "doc_1766916165392_jaqoi0tos",
     "reference": "JGP0ID",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product JGP0ID",
-    "unit_price": 112,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 54,
+    "created_at": "2025-12-28T10:02:45.392Z",
+    "updated_at": "2025-12-28T10:02:45.392Z"
   },
   {
-    "id": "doc_1766907954239_oxw5hxevf",
+    "id": "doc_1766916165392_u2cu6h3hq",
     "reference": "H51IVV",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product H51IVV",
-    "unit_price": 137,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 193,
+    "created_at": "2025-12-28T10:02:45.392Z",
+    "updated_at": "2025-12-28T10:02:45.392Z"
   },
   {
-    "id": "doc_1766907954239_lzdomuv4m",
+    "id": "doc_1766916165393_tsjma4jto",
     "reference": "YMN5EM",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product YMN5EM",
-    "unit_price": 106,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 199,
+    "created_at": "2025-12-28T10:02:45.393Z",
+    "updated_at": "2025-12-28T10:02:45.393Z"
   },
   {
-    "id": "doc_1766907954239_rq5i1vu81",
+    "id": "doc_1766916165393_4ehia7sfy",
     "reference": "A19092",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product A19092",
-    "unit_price": 113,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 164,
+    "created_at": "2025-12-28T10:02:45.393Z",
+    "updated_at": "2025-12-28T10:02:45.393Z"
   },
   {
-    "id": "doc_1766907954239_b9pvlsbra",
+    "id": "doc_1766916165393_d0nd5ejbn",
     "reference": "SVJZKL",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product SVJZKL",
-    "unit_price": 247,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 222,
+    "created_at": "2025-12-28T10:02:45.393Z",
+    "updated_at": "2025-12-28T10:02:45.393Z"
   },
   {
-    "id": "doc_1766907954239_hiby4yi7c",
+    "id": "doc_1766916165394_nid14oqz7",
     "reference": "ODZZLY",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product ODZZLY",
-    "unit_price": 104,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 248,
+    "created_at": "2025-12-28T10:02:45.394Z",
+    "updated_at": "2025-12-28T10:02:45.394Z"
   },
   {
-    "id": "doc_1766907954239_jnsscmght",
+    "id": "doc_1766916165394_yx0kthmem",
     "reference": "T3NVTG",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product T3NVTG",
-    "unit_price": 214,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 104,
+    "created_at": "2025-12-28T10:02:45.394Z",
+    "updated_at": "2025-12-28T10:02:45.394Z"
   },
   {
-    "id": "doc_1766907954239_em3buzlyg",
+    "id": "doc_1766916165395_vx9uo8e2d",
     "reference": "I2B1FH",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product I2B1FH",
-    "unit_price": 93,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 68,
+    "created_at": "2025-12-28T10:02:45.395Z",
+    "updated_at": "2025-12-28T10:02:45.395Z"
   },
   {
-    "id": "doc_1766907954239_lh9zofb8t",
+    "id": "doc_1766916165395_qwny94yf0",
     "reference": "5HQR89",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 5HQR89",
-    "unit_price": 127,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 129,
+    "created_at": "2025-12-28T10:02:45.395Z",
+    "updated_at": "2025-12-28T10:02:45.395Z"
   },
   {
-    "id": "doc_1766907954239_yi0qb2ywv",
+    "id": "doc_1766916165396_6ayog2tj9",
     "reference": "HA0BOB",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product HA0BOB",
-    "unit_price": 133,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 237,
+    "created_at": "2025-12-28T10:02:45.396Z",
+    "updated_at": "2025-12-28T10:02:45.396Z"
   },
   {
-    "id": "doc_1766907954239_ep0yoosm5",
+    "id": "doc_1766916165396_kpsp5j0y6",
     "reference": "ZRCYSH",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product ZRCYSH",
-    "unit_price": 78,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 240,
+    "created_at": "2025-12-28T10:02:45.396Z",
+    "updated_at": "2025-12-28T10:02:45.396Z"
   },
   {
-    "id": "doc_1766907954239_xt6f4pzqm",
+    "id": "doc_1766916165397_450xdt7f5",
     "reference": "1JT1XB",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 1JT1XB",
-    "unit_price": 64,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 84,
+    "created_at": "2025-12-28T10:02:45.397Z",
+    "updated_at": "2025-12-28T10:02:45.397Z"
   },
   {
-    "id": "doc_1766907954239_bj7bnhg2d",
+    "id": "doc_1766916165397_mi87wdkkv",
     "reference": "QVFB0Q",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product QVFB0Q",
-    "unit_price": 176,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 190,
+    "created_at": "2025-12-28T10:02:45.397Z",
+    "updated_at": "2025-12-28T10:02:45.397Z"
   },
   {
-    "id": "doc_1766907954239_on5gukrsz",
+    "id": "doc_1766916165397_3h3qeaqtx",
     "reference": "CD1NU9",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product CD1NU9",
-    "unit_price": 122,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 233,
+    "created_at": "2025-12-28T10:02:45.397Z",
+    "updated_at": "2025-12-28T10:02:45.397Z"
   },
   {
-    "id": "doc_1766907954239_9f8u0t541",
+    "id": "doc_1766916165398_4pv70numo",
     "reference": "NJVZEL",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product NJVZEL",
-    "unit_price": 92,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 173,
+    "created_at": "2025-12-28T10:02:45.398Z",
+    "updated_at": "2025-12-28T10:02:45.398Z"
   },
   {
-    "id": "doc_1766907954239_391zzaacv",
+    "id": "doc_1766916165398_6sdv8cya4",
     "reference": "U95NWB",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product U95NWB",
-    "unit_price": 79,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 50,
+    "created_at": "2025-12-28T10:02:45.398Z",
+    "updated_at": "2025-12-28T10:02:45.398Z"
   },
   {
-    "id": "doc_1766907954239_9d164yh74",
+    "id": "doc_1766916165399_nbbee652f",
     "reference": "56TC1Z",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product 56TC1Z",
-    "unit_price": 191,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 236,
+    "created_at": "2025-12-28T10:02:45.399Z",
+    "updated_at": "2025-12-28T10:02:45.399Z"
   },
   {
-    "id": "doc_1766907954239_wv6vq8u97",
+    "id": "doc_1766916165399_geyo7brny",
     "reference": "2T1DJM",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 2T1DJM",
-    "unit_price": 211,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 176,
+    "created_at": "2025-12-28T10:02:45.399Z",
+    "updated_at": "2025-12-28T10:02:45.399Z"
   },
   {
-    "id": "doc_1766907954239_y3s6ngy51",
+    "id": "doc_1766916165399_e4vf6c3si",
     "reference": "J3FI7N",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product J3FI7N",
-    "unit_price": 142,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 115,
+    "created_at": "2025-12-28T10:02:45.399Z",
+    "updated_at": "2025-12-28T10:02:45.399Z"
   },
   {
-    "id": "doc_1766907954239_ix4kmi1y9",
+    "id": "doc_1766916165400_61jhfk0on",
     "reference": "TBCCF7",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product TBCCF7",
-    "unit_price": 141,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 188,
+    "created_at": "2025-12-28T10:02:45.400Z",
+    "updated_at": "2025-12-28T10:02:45.400Z"
   },
   {
-    "id": "doc_1766907954239_lejotbls6",
+    "id": "doc_1766916165400_h38jr4xmj",
     "reference": "E2ES5Z",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product E2ES5Z",
-    "unit_price": 132,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 137,
+    "created_at": "2025-12-28T10:02:45.400Z",
+    "updated_at": "2025-12-28T10:02:45.400Z"
   },
   {
-    "id": "doc_1766907954239_iqe8vgwuv",
+    "id": "doc_1766916165401_zekcst750",
     "reference": "RAUDQ6",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product RAUDQ6",
-    "unit_price": 89,
-    "created_at": "2025-12-28T07:45:54.239Z",
-    "updated_at": "2025-12-28T07:45:54.239Z"
+    "unit_price": 84,
+    "created_at": "2025-12-28T10:02:45.401Z",
+    "updated_at": "2025-12-28T10:02:45.401Z"
   },
   {
-    "id": "doc_1766907954240_egfgw1gco",
+    "id": "doc_1766916165401_fpq6bpl35",
     "reference": "IAKTYD",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product IAKTYD",
-    "unit_price": 241,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 217,
+    "created_at": "2025-12-28T10:02:45.401Z",
+    "updated_at": "2025-12-28T10:02:45.401Z"
   },
   {
-    "id": "doc_1766907954240_9hlw3nii2",
+    "id": "doc_1766916165401_ro3n3br5n",
     "reference": "8N10W9",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 8N10W9",
-    "unit_price": 246,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 103,
+    "created_at": "2025-12-28T10:02:45.401Z",
+    "updated_at": "2025-12-28T10:02:45.401Z"
   },
   {
-    "id": "doc_1766907954240_3gmwicpkh",
+    "id": "doc_1766916165402_e1em4fewa",
     "reference": "KUFVRI",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product KUFVRI",
-    "unit_price": 72,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 246,
+    "created_at": "2025-12-28T10:02:45.402Z",
+    "updated_at": "2025-12-28T10:02:45.402Z"
   },
   {
-    "id": "doc_1766907954240_05dr2jfrv",
+    "id": "doc_1766916165402_87jujeal8",
     "reference": "6N3PKW",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 6N3PKW",
-    "unit_price": 162,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 249,
+    "created_at": "2025-12-28T10:02:45.402Z",
+    "updated_at": "2025-12-28T10:02:45.402Z"
   },
   {
-    "id": "doc_1766907954240_wi7g0ma5o",
+    "id": "doc_1766916165403_fk6i2p48c",
     "reference": "9KHDG3",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 9KHDG3",
-    "unit_price": 100,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 242,
+    "created_at": "2025-12-28T10:02:45.403Z",
+    "updated_at": "2025-12-28T10:02:45.403Z"
   },
   {
-    "id": "doc_1766907954240_9ttikeb43",
+    "id": "doc_1766916165404_1hbz8c88z",
     "reference": "K3YA1X",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product K3YA1X",
-    "unit_price": 97,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 239,
+    "created_at": "2025-12-28T10:02:45.404Z",
+    "updated_at": "2025-12-28T10:02:45.404Z"
   },
   {
-    "id": "doc_1766907954240_gcjqb2vwu",
+    "id": "doc_1766916165404_xujpauh3t",
     "reference": "5IXVJ1",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 5IXVJ1",
-    "unit_price": 148,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 208,
+    "created_at": "2025-12-28T10:02:45.404Z",
+    "updated_at": "2025-12-28T10:02:45.404Z"
   },
   {
-    "id": "doc_1766907954240_tee5932qr",
+    "id": "doc_1766916165405_0hyv9dac2",
     "reference": "FJ25W1",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product FJ25W1",
-    "unit_price": 55,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 161,
+    "created_at": "2025-12-28T10:02:45.405Z",
+    "updated_at": "2025-12-28T10:02:45.405Z"
   },
   {
-    "id": "doc_1766907954240_emh8b2e1d",
+    "id": "doc_1766916165405_psbjltj9c",
     "reference": "SVFO5S",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product SVFO5S",
-    "unit_price": 120,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 123,
+    "created_at": "2025-12-28T10:02:45.405Z",
+    "updated_at": "2025-12-28T10:02:45.405Z"
   },
   {
-    "id": "doc_1766907954240_nm49yo5pi",
+    "id": "doc_1766916165405_7kk4b2z49",
     "reference": "AHSNWF",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product AHSNWF",
-    "unit_price": 162,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 111,
+    "created_at": "2025-12-28T10:02:45.405Z",
+    "updated_at": "2025-12-28T10:02:45.405Z"
   },
   {
-    "id": "doc_1766907954240_6s2brwfa4",
+    "id": "doc_1766916165406_r4cvtl587",
     "reference": "IYV9SV",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product IYV9SV",
-    "unit_price": 208,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 63,
+    "created_at": "2025-12-28T10:02:45.406Z",
+    "updated_at": "2025-12-28T10:02:45.406Z"
   },
   {
-    "id": "doc_1766907954240_av7gkys10",
+    "id": "doc_1766916165406_rdrhd10jc",
     "reference": "HXQR4L",
     "abc_code": "A",
     "sector": "PF      ",
     "description": "Footwear Product HXQR4L",
-    "unit_price": 247,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 78,
+    "created_at": "2025-12-28T10:02:45.406Z",
+    "updated_at": "2025-12-28T10:02:45.406Z"
   },
   {
-    "id": "doc_1766907954240_053yeomdd",
+    "id": "doc_1766916165407_f6445isb1",
     "reference": "SMMRK3",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product SMMRK3",
-    "unit_price": 200,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 248,
+    "created_at": "2025-12-28T10:02:45.407Z",
+    "updated_at": "2025-12-28T10:02:45.407Z"
   },
   {
-    "id": "doc_1766907954240_grg80uygr",
+    "id": "doc_1766916165407_ecwfj3urs",
     "reference": "2OAVPY",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 2OAVPY",
-    "unit_price": 56,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 234,
+    "created_at": "2025-12-28T10:02:45.407Z",
+    "updated_at": "2025-12-28T10:02:45.407Z"
   },
   {
-    "id": "doc_1766907954240_1ruqtsgo7",
+    "id": "doc_1766916165408_4tltsvzh1",
     "reference": "WH1BJI",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product WH1BJI",
-    "unit_price": 82,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 203,
+    "created_at": "2025-12-28T10:02:45.408Z",
+    "updated_at": "2025-12-28T10:02:45.408Z"
   },
   {
-    "id": "doc_1766907954240_y7s4wbf6w",
+    "id": "doc_1766916165408_62aa5sz0n",
     "reference": "XUZJ74",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product XUZJ74",
-    "unit_price": 108,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 81,
+    "created_at": "2025-12-28T10:02:45.408Z",
+    "updated_at": "2025-12-28T10:02:45.408Z"
   },
   {
-    "id": "doc_1766907954240_gxnrb3ltf",
+    "id": "doc_1766916165408_q9do11ddu",
     "reference": "8E9F1P",
     "abc_code": "B",
     "sector": "PF      ",
     "description": "Footwear Product 8E9F1P",
-    "unit_price": 54,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 115,
+    "created_at": "2025-12-28T10:02:45.408Z",
+    "updated_at": "2025-12-28T10:02:45.408Z"
   },
   {
-    "id": "doc_1766907954240_aavrdabau",
+    "id": "doc_1766916165409_4c51jo7uj",
     "reference": "CU53FM",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product CU53FM",
-    "unit_price": 123,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 174,
+    "created_at": "2025-12-28T10:02:45.409Z",
+    "updated_at": "2025-12-28T10:02:45.409Z"
   },
   {
-    "id": "doc_1766907954240_ahqntstqv",
+    "id": "doc_1766916165409_o9bek4cwy",
     "reference": "E5CISL",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product E5CISL",
-    "unit_price": 133,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 144,
+    "created_at": "2025-12-28T10:02:45.409Z",
+    "updated_at": "2025-12-28T10:02:45.409Z"
   },
   {
-    "id": "doc_1766907954240_n5tzxwdt4",
+    "id": "doc_1766916165410_l35fi4awz",
     "reference": "7BU1V7",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 7BU1V7",
-    "unit_price": 198,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 232,
+    "created_at": "2025-12-28T10:02:45.410Z",
+    "updated_at": "2025-12-28T10:02:45.410Z"
   },
   {
-    "id": "doc_1766907954240_87e8m2xmn",
+    "id": "doc_1766916165410_uq19wfdqr",
     "reference": "DF3KQM",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product DF3KQM",
-    "unit_price": 120,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 66,
+    "created_at": "2025-12-28T10:02:45.410Z",
+    "updated_at": "2025-12-28T10:02:45.410Z"
   },
   {
-    "id": "doc_1766907954240_mgwiso68d",
+    "id": "doc_1766916165410_rcjq93jfb",
     "reference": "PY5UPB",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product PY5UPB",
-    "unit_price": 160,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 210,
+    "created_at": "2025-12-28T10:02:45.410Z",
+    "updated_at": "2025-12-28T10:02:45.410Z"
   },
   {
-    "id": "doc_1766907954240_se96ttn20",
+    "id": "doc_1766916165411_pp4q86jz6",
     "reference": "7GC57K",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 7GC57K",
-    "unit_price": 115,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 172,
+    "created_at": "2025-12-28T10:02:45.411Z",
+    "updated_at": "2025-12-28T10:02:45.411Z"
   },
   {
-    "id": "doc_1766907954240_dfp4zjhp3",
+    "id": "doc_1766916165412_8xurbm2st",
     "reference": "C5O9C9",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product C5O9C9",
-    "unit_price": 175,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 239,
+    "created_at": "2025-12-28T10:02:45.412Z",
+    "updated_at": "2025-12-28T10:02:45.412Z"
   },
   {
-    "id": "doc_1766907954240_eid4ob7ex",
+    "id": "doc_1766916165413_uunyk0525",
     "reference": "TLFT43",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product TLFT43",
-    "unit_price": 220,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 100,
+    "created_at": "2025-12-28T10:02:45.413Z",
+    "updated_at": "2025-12-28T10:02:45.413Z"
   },
   {
-    "id": "doc_1766907954240_euf9y6mjr",
+    "id": "doc_1766916165413_wdbddla2a",
     "reference": "VHQ356",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product VHQ356",
-    "unit_price": 238,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 96,
+    "created_at": "2025-12-28T10:02:45.413Z",
+    "updated_at": "2025-12-28T10:02:45.413Z"
   },
   {
-    "id": "doc_1766907954240_saqekpyj0",
+    "id": "doc_1766916165414_14nlvan56",
     "reference": "HCMI82",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product HCMI82",
-    "unit_price": 229,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 132,
+    "created_at": "2025-12-28T10:02:45.414Z",
+    "updated_at": "2025-12-28T10:02:45.414Z"
   },
   {
-    "id": "doc_1766907954240_5wgrdd506",
+    "id": "doc_1766916165414_ekyf1tod7",
     "reference": "EO69NY",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product EO69NY",
-    "unit_price": 197,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 237,
+    "created_at": "2025-12-28T10:02:45.414Z",
+    "updated_at": "2025-12-28T10:02:45.414Z"
   },
   {
-    "id": "doc_1766907954240_5836o8fk0",
+    "id": "doc_1766916165414_l6eq129bg",
     "reference": "JU0ODD",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product JU0ODD",
-    "unit_price": 97,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 215,
+    "created_at": "2025-12-28T10:02:45.414Z",
+    "updated_at": "2025-12-28T10:02:45.414Z"
   },
   {
-    "id": "doc_1766907954240_mjy0scvaz",
+    "id": "doc_1766916165415_votrlb0xy",
     "reference": "DSQXYR",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product DSQXYR",
-    "unit_price": 118,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 69,
+    "created_at": "2025-12-28T10:02:45.415Z",
+    "updated_at": "2025-12-28T10:02:45.415Z"
   },
   {
-    "id": "doc_1766907954240_5dquyugnj",
+    "id": "doc_1766916165415_7uyo9jyxa",
     "reference": "H1I7JZ",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product H1I7JZ",
-    "unit_price": 222,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 241,
+    "created_at": "2025-12-28T10:02:45.415Z",
+    "updated_at": "2025-12-28T10:02:45.415Z"
   },
   {
-    "id": "doc_1766907954240_zmclgb2dv",
+    "id": "doc_1766916165416_j9dk79w2f",
     "reference": "4E1WTK",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product 4E1WTK",
-    "unit_price": 156,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 166,
+    "created_at": "2025-12-28T10:02:45.416Z",
+    "updated_at": "2025-12-28T10:02:45.416Z"
   },
   {
-    "id": "doc_1766907954240_ov2cwaxd3",
+    "id": "doc_1766916165416_r1c2unqts",
     "reference": "UMKYTJ",
     "abc_code": "C",
     "sector": "PF      ",
     "description": "Footwear Product UMKYTJ",
-    "unit_price": 133,
-    "created_at": "2025-12-28T07:45:54.240Z",
-    "updated_at": "2025-12-28T07:45:54.240Z"
+    "unit_price": 100,
+    "created_at": "2025-12-28T10:02:45.416Z",
+    "updated_at": "2025-12-28T10:02:45.416Z"
   }
 ]

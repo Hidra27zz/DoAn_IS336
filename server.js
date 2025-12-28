@@ -30,7 +30,7 @@ const { authMiddleware } = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
 
 // Import database
-const db = require('./database/firebase-connection');
+const { getDatabase } = require('./config/database');
 
 const app = express();
 const server = http.createServer(app);
@@ -1207,7 +1207,7 @@ app.use('*', (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 // Initialize and start server
-db.initialize().then(() => {
+getDatabase().then((db) => {
   server.listen(PORT, () => {
     console.log('========================================');
     console.log('  Warehouse Management System');
@@ -1215,7 +1215,7 @@ db.initialize().then(() => {
     console.log('========================================');
     console.log(`  Server: http://localhost:${PORT}`);
     console.log(`  API: http://localhost:${PORT}/api`);
-    console.log(`  Database: Firebase Firestore`);
+    console.log(`  Database: SQLite (warehouse.db)`);
     console.log('========================================');
   });
 }).catch(err => {

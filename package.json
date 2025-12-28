@@ -1,17 +1,17 @@
 {
-  "name": "enterprise-wms",
-  "version": "1.0.0",
-  "description": "Enterprise Warehouse Management System with AI Integration",
+  "name": "warehouse-management-system",
+  "version": "2.0.0",
+  "description": "AI-Powered Warehouse Management System with SQLite Database",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed": "node scripts/seed-firebase.js",
-    "reimport": "node scripts/reimport-data.js",
+    "import-data": "node scripts/import-to-sql.js",
+    "test-db": "node test-sql-database.js",
     "test": "jest",
-    "quick-start": "node scripts/quick-start.js",
-    "auto-test": "node scripts/quick-start.js",
-    "system-test": "node scripts/test-system.js"
+    "backup-db": "cp warehouse.db warehouse_backup_$(date +%Y%m%d_%H%M%S).db",
+    "restore-db": "cp warehouse_backup_*.db warehouse.db",
+    "clean-db": "rm -f warehouse.db && node scripts/import-to-sql.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -21,14 +21,13 @@
     "exceljs": "^4.4.0",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
-    "firebase": "^12.6.0",
-    "firebase-admin": "^12.7.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
     "pdfkit": "^0.15.2",
-    "socket.io": "^4.7.4"
+    "socket.io": "^4.7.4",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "jest": "^29.7.0",
@@ -41,10 +40,24 @@
     "ai",
     "logistics",
     "inventory",
-    "firebase",
+    "sqlite",
     "clustering",
-    "genetic-algorithm"
+    "genetic-algorithm",
+    "route-optimization",
+    "anomaly-detection"
   ],
-  "author": "Enterprise WMS Team",
-  "license": "MIT"
+  "author": "Warehouse WMS Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/warehouse-management-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/warehouse-management-system/issues"
+  },
+  "homepage": "https://github.com/your-org/warehouse-management-system#readme"
 }
