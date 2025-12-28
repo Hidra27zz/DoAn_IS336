@@ -44,7 +44,7 @@ window.addOrderItem = function() {
     newItem.innerHTML = `
       <input type="text" placeholder="SKU" class="item-sku">
       <input type="number" placeholder="Số lượng" class="item-qty">
-      <button type="button" onclick="removeOrderItem(this)">❌</button>
+      <button type="button" onclick="removeOrderItem(this)">Remove</button>
     `;
     container.appendChild(newItem);
   }
@@ -369,7 +369,7 @@ window.optimizeWave = function(waveId) {
 
 // Inventory functions
 window.adjustStock = function(inventoryId) {
-  console.log('🔧 Adjusting stock for:', inventoryId);
+  console.log('Adjusting stock for:', inventoryId);
   
   if (!inventoryId) {
     alert('Error: No inventory ID provided');
@@ -384,7 +384,7 @@ window.adjustStock = function(inventoryId) {
   
   const reason = prompt('Enter reason for adjustment:') || 'Manual adjustment';
   
-  console.log('📤 Sending request to adjust inventory...');
+  console.log('Sending request to adjust inventory...');
   
   // Use authToken from localStorage (same as app.js)
   const token = localStorage.getItem('authToken');
@@ -401,11 +401,11 @@ window.adjustStock = function(inventoryId) {
     })
   })
   .then(response => {
-    console.log('📥 Response status:', response.status);
+    console.log('Response status:', response.status);
     return response.json();
   })
   .then(data => {
-    console.log('✅ Stock adjusted successfully:', data);
+    console.log('Stock adjusted successfully:', data);
     alert(`Stock adjusted successfully!\nOld: ${data.old_quantity}\nNew: ${data.new_quantity}\nDifference: ${data.difference}`);
     
     // Refresh inventory data instead of full page reload
@@ -417,7 +417,7 @@ window.adjustStock = function(inventoryId) {
     }
   })
   .catch(error => {
-    console.error('❌ Error adjusting stock:', error);
+    console.error('Error adjusting stock:', error);
     alert('Error adjusting stock: ' + error.message);
   });
 };
@@ -436,7 +436,7 @@ window.reserveStock = function(inventoryId) {
     return;
   }
   
-  console.log('📤 Sending request to reserve stock...');
+  console.log('Sending request to reserve stock...');
   
   // Use authToken from localStorage (same as app.js)
   const token = localStorage.getItem('authToken');
@@ -450,11 +450,11 @@ window.reserveStock = function(inventoryId) {
     body: JSON.stringify({ quantity: parseInt(quantity) })
   })
   .then(response => {
-    console.log('📥 Response status:', response.status);
+    console.log('Response status:', response.status);
     return response.json();
   })
   .then(data => {
-    console.log('✅ Stock reserved successfully:', data);
+    console.log('Stock reserved successfully:', data);
     alert(`Stock reserved successfully!\nReserved: ${data.reserved_quantity}\nTotal reserved: ${data.new_reserved_total}`);
     
     // Refresh inventory data instead of full page reload
@@ -466,7 +466,7 @@ window.reserveStock = function(inventoryId) {
     }
   })
   .catch(error => {
-    console.error('❌ Error reserving stock:', error);
+    console.error('Error reserving stock:', error);
     alert('Error reserving stock: ' + error.message);
   });
 };
@@ -617,15 +617,15 @@ window.testAdjustStock = function() {
     })
   })
   .then(response => {
-    console.log('📥 Response status:', response.status);
+    console.log('Response status:', response.status);
     return response.json();
   })
   .then(data => {
-    console.log('✅ Test adjust result:', data);
+    console.log('Test adjust result:', data);
     alert(`Test successful!\nOld: ${data.old_quantity}\nNew: ${data.new_quantity}`);
   })
   .catch(error => {
-    console.error('❌ Test failed:', error);
+    console.error('Test failed:', error);
     alert('Test failed: ' + error.message);
   });
 };
@@ -656,14 +656,14 @@ window.testAdjustModal = function() {
     console.log('openAdjustModal function exists');
     openAdjustModal('inventory_1', 100);
   } else {
-    console.log('❌ openAdjustModal function not found');
+    console.log('openAdjustModal function not found');
   }
   
   // Check if handleAdjust function exists
   if (typeof handleAdjust === 'function') {
     console.log('handleAdjust function exists');
   } else {
-    console.log('❌ handleAdjust function not found');
+    console.log('handleAdjust function not found');
   }
 };
 
@@ -673,4 +673,4 @@ console.log('  - testInventoryFunctions()');
 console.log('  - checkAuth()');
 console.log('  - testAdjustStock()');
 console.log('  - testAdjustModal()');
-console.log('📋 Inventory functions available: adjustStock(id), reserveStock(id)');
+console.log('Inventory functions available: adjustStock(id), reserveStock(id)');

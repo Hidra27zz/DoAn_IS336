@@ -67,12 +67,12 @@
       try {
         const response = await fetch('/api/health');
         if (response.ok) {
-          html += '<div class="status success">✅ Server is running</div>';
+          html += '<div class="status success">Server is running</div>';
         } else {
-          html += '<div class="status error">❌ Server responded with error</div>';
+          html += '<div class="status error">Server responded with error</div>';
         }
       } catch (error) {
-        html += '<div class="status error">❌ Cannot connect to server</div>';
+        html += '<div class="status error">Cannot connect to server</div>';
       }
       
       // Check authentication endpoint
@@ -84,24 +84,24 @@
         });
         const result = await response.json();
         if (response.ok || result.error) {
-          html += '<div class="status success">✅ Authentication endpoint working</div>';
+          html += '<div class="status success">Authentication endpoint working</div>';
         } else {
-          html += '<div class="status error">❌ Authentication endpoint error</div>';
+          html += '<div class="status error">Authentication endpoint error</div>';
         }
       } catch (error) {
-        html += '<div class="status error">❌ Authentication endpoint failed: ' + error.message + '</div>';
+        html += '<div class="status error">Authentication endpoint failed: ' + error.message + '</div>';
       }
       
       // Check database connection
       try {
         const response = await fetch('/api/inventory?limit=1');
         if (response.ok) {
-          html += '<div class="status success">✅ Database connection working</div>';
+          html += '<div class="status success">Database connection working</div>';
         } else {
-          html += '<div class="status error">❌ Database connection failed</div>';
+          html += '<div class="status error">Database connection failed</div>';
         }
       } catch (error) {
-        html += '<div class="status error">❌ Database connection error: ' + error.message + '</div>';
+        html += '<div class="status error">Database connection error: ' + error.message + '</div>';
       }
       
       // Check metrics calculation
@@ -109,14 +109,14 @@
         const response = await fetch('/api/metrics/real-time');
         const result = await response.json();
         if (result.success) {
-          html += '<div class="status success">✅ Metrics calculation working</div>';
-          html += '<div class="status info">📊 Total Products: ' + (result.data.totalProducts || 0) + '</div>';
-          html += '<div class="status info">📊 Space Utilization: ' + (result.data.spaceUtilization || 0) + '%</div>';
+          html += '<div class="status success">Metrics calculation working</div>';
+          html += '<div class="status info">Total Products: ' + (result.data.totalProducts || 0) + '</div>';
+          html += '<div class="status info">Space Utilization: ' + (result.data.spaceUtilization || 0) + '%</div>';
         } else {
-          html += '<div class="status error">❌ Metrics calculation failed</div>';
+          html += '<div class="status error">Metrics calculation failed</div>';
         }
       } catch (error) {
-        html += '<div class="status error">❌ Metrics endpoint error: ' + error.message + '</div>';
+        html += '<div class="status error">Metrics endpoint error: ' + error.message + '</div>';
       }
       
       // Check local storage
@@ -124,15 +124,15 @@
       const user = localStorage.getItem('currentUser');
       
       if (token && user) {
-        html += '<div class="status success">✅ User session found in storage</div>';
+        html += '<div class="status success">User session found in storage</div>';
         try {
           const userData = JSON.parse(user);
-          html += '<div class="status info">👤 Logged in as: ' + userData.username + ' (' + userData.role + ')</div>';
+          html += '<div class="status info">Logged in as: ' + userData.username + ' (' + userData.role + ')</div>';
         } catch (e) {
-          html += '<div class="status error">❌ Invalid user data in storage</div>';
+          html += '<div class="status error">Invalid user data in storage</div>';
         }
       } else {
-        html += '<div class="status info">ℹ️ No user session found</div>';
+        html += '<div class="status info">No user session found</div>';
       }
       
       results.innerHTML = html;
@@ -156,19 +156,19 @@
           localStorage.setItem('currentUser', JSON.stringify(result.user));
           
           results.innerHTML = `
-            <div class="status success">✅ Login successful!</div>
-            <div class="status info">👤 User: ${result.user.username} (${result.user.role})</div>
-            <div class="status info">🔑 Token stored in localStorage</div>
+            <div class="status success">Login successful!</div>
+            <div class="status info">User: ${result.user.username} (${result.user.role})</div>
+            <div class="status info">Token stored in localStorage</div>
             <div class="status info">You can now open the main app and should be logged in automatically.</div>
           `;
         } else {
           results.innerHTML = `
-            <div class="status error">❌ Login failed: ${result.error}</div>
+            <div class="status error">Login failed: ${result.error}</div>
           `;
         }
       } catch (error) {
         results.innerHTML = `
-          <div class="status error">❌ Login error: ${error.message}</div>
+          <div class="status error">Login error: ${error.message}</div>
         `;
       }
     }
@@ -176,7 +176,7 @@
     function clearStorage() {
       localStorage.removeItem('authToken');
       localStorage.removeItem('currentUser');
-      document.getElementById('results').innerHTML = '<div class="status info">✅ Storage cleared</div>';
+      document.getElementById('results').innerHTML = '<div class="status info">Storage cleared</div>';
     }
     
     // Run initial check

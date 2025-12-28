@@ -10,7 +10,25 @@ let charts = {};
 // Initialize application
 document.addEventListener('DOMContentLoaded', function() {
   console.log('WMS Application initializing...');
+  console.log('Current URL:', window.location.href);
+  console.log('Document ready state:', document.readyState);
   
+  // Wait for Chart.js to load
+  function waitForChart() {
+    if (typeof Chart !== 'undefined') {
+      console.log('Chart.js loaded, version:', Chart.version || 'Unknown');
+      console.log('Chart constructor available:', typeof Chart);
+      initializeApp();
+    } else {
+      console.log('Waiting for Chart.js to load...');
+      setTimeout(waitForChart, 100);
+    }
+  }
+  
+  waitForChart();
+});
+
+function initializeApp() {
   // Add a small delay to ensure DOM is fully loaded
   setTimeout(() => {
     console.log('Starting authentication check...');
@@ -27,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Application initialization complete. Use debugApp() to check system status.');
   }, 100);
-});
+}
 
 // Check authentication status from localStorage
 function checkAuthStatus() {
@@ -364,144 +382,363 @@ function loadSectionData(section) {
 // Dashboard
 async function loadDashboardData() {
   console.log('Loading dashboard data...');
+  
+  let inventorySummary = null;
+  let orderStats = null;
+  let pickingPerf = null;
+  
   try {
-    // Try authenticated API first, fallback to demo data
-    let [inventorySummary, orderStats, pickingPerf] = await Promise.all([
+    // Try authenticated API first
+    console.log('Attempting authenticated API calls...');
+    [inventorySummary, orderStats, pickingPerf] = await Promise.all([
       apiCall('/inventory/summary'),
       apiCall('/orders/stats/summary'),
       apiCall('/picking/performance')
     ]);
     
-    console.log('API responses:', { inventorySummary, orderStats, pickingPerf });
+    console.log('API responses received:', { 
+      inventorySummary: !!inventorySummary, 
+      orderStats: !!orderStats, 
+      pickingPerf: !!pickingPerf 
+    });
     
-    // If auth fails, use demo data
-    if (!inventorySummary) {
-      console.log('Using demo data...');
-      [inventorySummary, orderStats, pickingPerf] = await Promise.all([
-        fetch('/api/demo/inventory/summary').then(r => r.json()).catch(() => null),
-        fetch('/api/demo/orders/stats/summary').then(r => r.json()).catch(() => null),
-        fetch('/api/demo/picking/performance').then(r => r.json()).catch(() => null)
-      ]);
+    // If auth fails, try demo endpoints
+    if (!inventorySummary || !orderStats) {
+      console.log('Authenticated API failed, trying demo endpoints...');
+      const demoPromises = [];
+      
+      if (!inventorySummary) {
+        demoPromises.push(
+          fetch('/api/demo/inventory/summary')
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+        );
+      } else {
+        demoPromises.push(Promise.resolve(inventorySummary));
+      }
+      
+      if (!orderStats) {
+        demoPromises.push(
+          fetch('/api/demo/orders/stats/summary')
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+        );
+      } else {
+        demoPromises.push(Promise.resolve(orderStats));
+      }
+      
+      if (!pickingPerf) {
+        demoPromises.push(
+          fetch('/api/demo/picking/performance')
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+        );
+      } else {
+        demoPromises.push(Promise.resolve(pickingPerf));
+      }
+      
+      const demoResults = await Promise.all(demoPromises);
+      if (!inventorySummary) inventorySummary = demoResults[0];
+      if (!orderStats) orderStats = demoResults[1];
+      if (!pickingPerf) pickingPerf = demoResults[2];
     }
     
-    // Update stats with fallback values
-    document.getElementById('stat-inventory').textContent = inventorySummary?.total_products || '0';
-    document.getElementById('stat-orders').textContent = orderStats?.pending || '0';
-    document.getElementById('stat-picks').textContent = pickingPerf?.total_picks || '0';
+    console.log('Final data status:', {
+      inventorySummary: !!inventorySummary,
+      orderStats: !!orderStats,
+      pickingPerf: !!pickingPerf
+    });
     
-    console.log('Dashboard data loaded successfully');
+    // Update stats with fallback values
+    const statInventory = document.getElementById('stat-inventory');
+    const statOrders = document.getElementById('stat-orders');
+    const statPicks = document.getElementById('stat-picks');
+    
+    if (statInventory) {
+      statInventory.textContent = inventorySummary?.total_products || '0';
+    }
+    if (statOrders) {
+      statOrders.textContent = orderStats?.pending || '0';
+    }
+    if (statPicks) {
+      statPicks.textContent = pickingPerf?.total_picks || '0';
+    }
+    
+    console.log('Dashboard stats updated');
+    
   } catch (error) {
     console.error('Error loading dashboard data:', error);
+    
     // Set default values on error
-    document.getElementById('stat-inventory').textContent = '0';
-    document.getElementById('stat-orders').textContent = '0';
-    document.getElementById('stat-picks').textContent = '0';
+    const statInventory = document.getElementById('stat-inventory');
+    const statOrders = document.getElementById('stat-orders');
+    const statPicks = document.getElementById('stat-picks');
+    
+    if (statInventory) statInventory.textContent = '0';
+    if (statOrders) statOrders.textContent = '0';
+    if (statPicks) statPicks.textContent = '0';
   }
   
-  let waves = await apiCall('/picking/waves?status=in_progress');
-  if (!waves) {
-    waves = await fetch('/api/demo/picking/waves').then(r => r.json());
-  }
-  if (waves) {
-    const activeWaves = waves.waves?.filter(w => w.status === 'in_progress') || [];
-    document.getElementById('stat-waves').textContent = activeWaves.length;
+  // Load active waves
+  try {
+    let waves = await apiCall('/picking/waves?status=in_progress');
+    if (!waves) {
+      waves = await fetch('/api/demo/picking/waves').then(r => r.ok ? r.json() : null);
+    }
+    if (waves) {
+      const activeWaves = waves.waves?.filter(w => w.status === 'in_progress') || [];
+      const statWaves = document.getElementById('stat-waves');
+      if (statWaves) {
+        statWaves.textContent = activeWaves.length;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading waves data:', error);
+    const statWaves = document.getElementById('stat-waves');
+    if (statWaves) statWaves.textContent = '0';
   }
   
-  renderDashboardCharts(inventorySummary, orderStats);
+  // Render charts with a delay to ensure DOM is ready
+  console.log('Preparing to render charts...');
+  setTimeout(() => {
+    renderDashboardCharts(inventorySummary, orderStats);
+  }, 200);
 }
 
 function renderDashboardCharts(inventorySummary, orderStats) {
   console.log('Rendering dashboard charts...');
+  console.log('Chart.js available:', typeof Chart !== 'undefined');
   console.log('Inventory summary:', inventorySummary);
   console.log('Order stats:', orderStats);
   
-  // Inventory by Zone Chart
+  // Check if Chart.js is available
+  if (typeof Chart === 'undefined') {
+    console.error('Chart.js is not loaded!');
+    showChartFallback('inventory-chart', 'Chart.js not loaded');
+    showChartFallback('orders-chart', 'Chart.js not loaded');
+    return;
+  }
+  
+  // Wait a bit more for DOM to be ready
+  setTimeout(() => {
+    renderInventoryChart(inventorySummary);
+    renderOrdersChart(orderStats);
+  }, 100);
+}
+
+function renderInventoryChart(inventorySummary) {
   const inventoryCtx = document.getElementById('inventory-chart');
   console.log('Inventory canvas element:', inventoryCtx);
   
-  if (inventoryCtx && inventorySummary?.by_zone) {
-    console.log('Creating inventory chart with zones:', Object.keys(inventorySummary.by_zone));
+  if (!inventoryCtx) {
+    console.error('Inventory chart canvas not found');
+    return;
+  }
+  
+  if (!inventorySummary?.by_zone) {
+    console.log('No inventory zone data available');
+    showChartFallback('inventory-chart', 'No inventory data available');
+    return;
+  }
+  
+  console.log('Creating inventory chart with zones:', Object.keys(inventorySummary.by_zone));
+  
+  // Destroy existing chart
+  if (charts.inventory) {
+    console.log('Destroying existing inventory chart');
+    charts.inventory.destroy();
+  }
+  
+  const zones = Object.keys(inventorySummary.by_zone);
+  const quantities = zones.map(z => inventorySummary.by_zone[z].total_quantity);
+  
+  console.log('Zone data:', zones, quantities);
+  
+  try {
+    // Ensure canvas is visible and has proper dimensions
+    inventoryCtx.style.display = 'block';
+    inventoryCtx.width = inventoryCtx.parentElement.clientWidth - 48; // Account for padding
+    inventoryCtx.height = 280;
     
-    if (charts.inventory) {
-      console.log('Destroying existing inventory chart');
-      charts.inventory.destroy();
-    }
-    
-    const zones = Object.keys(inventorySummary.by_zone);
-    const quantities = zones.map(z => inventorySummary.by_zone[z].total_quantity);
-    
-    console.log('Zone data:', zones, quantities);
-    
-    try {
-      charts.inventory = new Chart(inventoryCtx, {
-        type: 'bar',
-        data: {
-          labels: zones.map(z => `Zone ${z}`),
-          datasets: [{
-            label: 'Quantity',
-            data: quantities,
-            backgroundColor: ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1']
-          }]
+    charts.inventory = new Chart(inventoryCtx, {
+      type: 'bar',
+      data: {
+        labels: zones.map(z => `Zone ${z}`),
+        datasets: [{
+          label: 'Quantity',
+          data: quantities,
+          backgroundColor: [
+            '#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', 
+            '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1',
+            '#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#22c55e',
+            '#3b82f6', '#f97316', '#ec4899'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          title: {
+            display: true,
+            text: 'Inventory Distribution by Zone'
+          }
         },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: {
-              beginAtZero: true
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Quantity'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Zones'
             }
           }
         }
-      });
-      console.log('Inventory chart created successfully');
-    } catch (error) {
-      console.error('Error creating inventory chart:', error);
-    }
-  } else {
-    console.log('Cannot create inventory chart - missing canvas or data');
+      }
+    });
+    console.log('Inventory chart created successfully');
+  } catch (error) {
+    console.error('Error creating inventory chart:', error);
+    showChartFallback('inventory-chart', `Chart error: ${error.message}`, {
+      zones: zones.length,
+      totalItems: quantities.reduce((a,b) => a+b, 0)
+    });
   }
-  
-  // Order Status Chart
+}
+
+function renderOrdersChart(orderStats) {
   const ordersCtx = document.getElementById('orders-chart');
   console.log('Orders canvas element:', ordersCtx);
   
-  if (ordersCtx && orderStats) {
-    console.log('Creating orders chart with stats:', orderStats);
+  if (!ordersCtx) {
+    console.error('Orders chart canvas not found');
+    return;
+  }
+  
+  if (!orderStats) {
+    console.log('No order stats available');
+    showChartFallback('orders-chart', 'No order data available');
+    return;
+  }
+  
+  console.log('Creating orders chart with stats:', orderStats);
+  
+  // Destroy existing chart
+  if (charts.orders) {
+    console.log('Destroying existing orders chart');
+    charts.orders.destroy();
+  }
+  
+  const orderData = [
+    orderStats.pending || 0,
+    orderStats.assigned || 0,
+    orderStats.picking || 0,
+    orderStats.picked || 0,
+    orderStats.shipped || 0
+  ];
+  
+  console.log('Order data:', orderData);
+  
+  try {
+    // Ensure canvas is visible and has proper dimensions
+    ordersCtx.style.display = 'block';
+    ordersCtx.width = ordersCtx.parentElement.clientWidth - 48;
+    ordersCtx.height = 280;
     
-    if (charts.orders) {
-      console.log('Destroying existing orders chart');
-      charts.orders.destroy();
-    }
-    
-    try {
-      charts.orders = new Chart(ordersCtx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Pending', 'Assigned', 'Picking', 'Picked', 'Shipped'],
-          datasets: [{
-            data: [
-              orderStats.pending || 0,
-              orderStats.assigned || 0,
-              orderStats.picking || 0,
-              orderStats.picked || 0,
-              orderStats.shipped || 0
-            ],
-            backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#22c55e', '#10b981']
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom' } }
+    charts.orders = new Chart(ordersCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Pending', 'Assigned', 'Picking', 'Picked', 'Shipped'],
+        datasets: [{
+          data: orderData,
+          backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#22c55e', '#10b981'],
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { 
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true
+            }
+          },
+          title: {
+            display: true,
+            text: 'Order Status Distribution'
+          }
         }
-      });
-      console.log('Orders chart created successfully');
-    } catch (error) {
-      console.error('Error creating orders chart:', error);
-    }
-  } else {
-    console.log('Cannot create orders chart - missing canvas or data');
+      }
+    });
+    console.log('Orders chart created successfully');
+  } catch (error) {
+    console.error('Error creating orders chart:', error);
+    showChartFallback('orders-chart', `Chart error: ${error.message}`, {
+      totalOrders: orderStats.total_orders || 0,
+      pending: orderStats.pending || 0
+    });
   }
 }
+
+function showChartFallback(canvasId, message, data = null) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  
+  const container = canvas.parentElement;
+  const title = canvasId === 'inventory-chart' ? 'Inventory by Zone' : 'Order Status';
+  
+  let dataInfo = '';
+  if (data) {
+    if (canvasId === 'inventory-chart') {
+      dataInfo = `<p>${data.zones} zones with ${data.totalItems} total items</p>`;
+    } else {
+      dataInfo = `<p>Total: ${data.totalOrders} orders</p><p>Pending: ${data.pending}</p>`;
+    }
+  }
+  
+  container.innerHTML = `
+    <h3>${title}</h3>
+    <div style="padding: 20px; text-align: center; color: #666; border: 1px dashed #ccc; border-radius: 8px;">
+      <p>${message}</p>
+      ${dataInfo}
+      <button onclick="retryChart('${canvasId}')" style="margin-top: 10px; padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Retry Chart
+      </button>
+    </div>
+  `;
+}
+
+// Add retry function
+window.retryChart = function(canvasId) {
+  console.log('Retrying chart:', canvasId);
+  
+  // Restore canvas element
+  const container = document.querySelector(`#${canvasId}`).parentElement || 
+                   document.querySelector(`[data-chart="${canvasId}"]`);
+  
+  if (container) {
+    const title = canvasId === 'inventory-chart' ? 'Inventory by Zone' : 'Order Status';
+    container.innerHTML = `
+      <h3>${title}</h3>
+      <canvas id="${canvasId}"></canvas>
+    `;
+    
+    // Reload dashboard data
+    setTimeout(() => {
+      loadDashboardData();
+    }, 100);
+  }
+};
 
 // Inventory
 async function loadInventoryData() {
@@ -637,118 +874,246 @@ async function startWave(waveId) {
 
 // Warehouse
 async function loadWarehouseData() {
-  const data = await apiCall('/warehouse/layout');
+  console.log('Loading warehouse data...');
   
-  if (data) {
-    document.getElementById('warehouse-locations').textContent = data.total_locations || 0;
+  try {
+    // Load warehouse layout data
+    const data = await apiCall('/warehouse/layout');
     
-    const totalCapacity = data.zone_summary?.reduce((sum, z) => sum + z.total_capacity, 0) || 0;
-    document.getElementById('warehouse-capacity').textContent = totalCapacity;
-    
-    const totalOccupancy = data.zone_summary?.reduce((sum, z) => sum + z.total_occupancy, 0) || 0;
-    const utilization = totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
-    document.getElementById('warehouse-utilization').textContent = `${utilization}%`;
-    
-    renderZoneChart(data.zone_summary);
-    loadWarehouseLayout();
-  }
-}
-
-// Load warehouse layout visualization
-function loadWarehouseLayout() {
-  const layoutContainer = document.querySelector('.warehouse-map-container');
-  if (layoutContainer) {
-    // Add zone selector
-    const zoneSelector = document.createElement('div');
-    zoneSelector.innerHTML = `
-      <h4>Warehouse Layout</h4>
-      <div class="layout-controls">
-        <label>Select Zone:</label>
-        <select id="zone-selector" onchange="showZoneLayout(this.value)">
-          <option value="Z1">Zone 1</option>
-          <option value="Z2">Zone 2</option>
-          <option value="Z3">Zone 3</option>
-          <option value="Z4">Zone 4</option>
-        </select>
-      </div>
-      <div id="layout-display"></div>
-    `;
-    layoutContainer.innerHTML = '';
-    layoutContainer.appendChild(zoneSelector);
-    
-    // Load default zone
-    showZoneLayout('Z1');
-  }
-}
-
-// Show specific zone layout
-function showZoneLayout(zone) {
-  const layoutDisplay = document.getElementById('layout-display');
-  if (layoutDisplay) {
-    layoutDisplay.innerHTML = `
-      <div class="layout-viewer">
-        <h5>Zone ${zone.replace('Z', '')} Layout</h5>
-        <div class="layout-options">
-          <button onclick="showLayoutFile('${zone}', 'svg')" class="btn btn-secondary">SVG View</button>
-          <button onclick="showLayoutFile('${zone}', 'pdf')" class="btn btn-secondary">PDF View</button>
-        </div>
-        <div id="layout-content-${zone}" class="layout-content"></div>
-      </div>
-    `;
-  }
-}
-
-// Show layout file
-function showLayoutFile(zone, type) {
-  const contentDiv = document.getElementById(`layout-content-${zone}`);
-  if (contentDiv) {
-    if (type === 'svg') {
-      contentDiv.innerHTML = `
-        <div class="svg-container">
-          <object data="/layouts/Layout_${zone}.0.svg" type="image/svg+xml" width="100%" height="600">
-            <p>Your browser does not support SVG. <a href="/layouts/Layout_${zone}.0.pdf">View PDF instead</a></p>
-          </object>
-        </div>
-      `;
-    } else if (type === 'pdf') {
-      contentDiv.innerHTML = `
-        <div class="pdf-container">
-          <embed src="/layouts/Layout_${zone}.0.pdf" type="application/pdf" width="100%" height="600">
-          <p>If PDF doesn't load, <a href="/layouts/Layout_${zone}.0.pdf" target="_blank">click here to open in new tab</a></p>
-        </div>
-      `;
+    if (data) {
+      // Update basic stats
+      document.getElementById('warehouse-locations').textContent = data.total_locations || 0;
+      
+      const totalCapacity = data.zone_summary?.reduce((sum, z) => sum + z.total_capacity, 0) || 0;
+      document.getElementById('warehouse-capacity').textContent = totalCapacity;
+      
+      const totalOccupancy = data.zone_summary?.reduce((sum, z) => sum + z.total_occupancy, 0) || 0;
+      const utilization = totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
+      document.getElementById('warehouse-utilization').textContent = `${utilization}%`;
+      
+      // Update zone summary
+      updateZoneSummary(data.zone_summary);
     }
+    
+    // Load today's movements
+    const movements = await apiCall('/warehouse/movements?date=today');
+    if (movements) {
+      document.getElementById('warehouse-movements').textContent = movements.total_movements || 0;
+    }
+    
+    // Load storage locations
+    loadStorageLocations();
+    
+    // Load 2D warehouse map
+    loadWarehouse2D();
+    
+  } catch (error) {
+    console.error('Error loading warehouse data:', error);
+    // Set default values on error
+    document.getElementById('warehouse-locations').textContent = '0';
+    document.getElementById('warehouse-capacity').textContent = '0';
+    document.getElementById('warehouse-utilization').textContent = '0%';
+    document.getElementById('warehouse-movements').textContent = '0';
   }
 }
 
-function renderZoneChart(zoneSummary) {
-  const ctx = document.getElementById('zone-chart');
-  if (!ctx || !zoneSummary) return;
+// Load storage locations table
+async function loadStorageLocations() {
+  const zone = document.getElementById('location-zone-filter')?.value || '';
+  const status = document.getElementById('location-status-filter')?.value || '';
   
-  if (charts.zone) charts.zone.destroy();
+  let url = '/warehouse/locations?limit=100';
+  if (zone) url += `&zone=${zone}`;
+  if (status) url += `&status=${status}`;
   
-  charts.zone = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: zoneSummary.map(z => `Zone ${z.zone}`),
-      datasets: [
-        {
-          label: 'Capacity',
-          data: zoneSummary.map(z => z.total_capacity),
-          backgroundColor: '#e2e8f0'
-        },
-        {
-          label: 'Occupancy',
-          data: zoneSummary.map(z => z.total_occupancy),
-          backgroundColor: '#2563eb'
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom' } }
+  const data = await apiCall(url);
+  
+  if (data?.locations) {
+    const tbody = document.querySelector('#storage-locations-table tbody');
+    tbody.innerHTML = data.locations.map(location => {
+      const utilization = location.capacity > 0 ? 
+        Math.round((location.current_occupancy / location.capacity) * 100) : 0;
+      
+      let statusClass = 'empty';
+      let statusText = 'Empty';
+      if (utilization >= 100) {
+        statusClass = 'full';
+        statusText = 'Full';
+      } else if (utilization > 0) {
+        statusClass = 'occupied';
+        statusText = 'Occupied';
+      }
+      
+      return `
+        <tr>
+          <td><strong>${location.location_code}</strong></td>
+          <td><span class="zone-badge zone-${location.zone.toLowerCase()}">${location.zone}</span></td>
+          <td>${location.capacity || 0}</td>
+          <td>${location.current_occupancy || 0}</td>
+          <td>
+            <div class="utilization-bar">
+              <div class="utilization-fill" style="width: ${utilization}%"></div>
+              <span class="utilization-text">${utilization}%</span>
+            </div>
+          </td>
+          <td>${location.product_reference || '-'}</td>
+          <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
+          <td class="table-actions">
+            <button class="btn btn-small btn-secondary" onclick="viewLocationDetails('${location.id}')">
+              View
+            </button>
+            <button class="btn btn-small btn-primary" onclick="showLocationModal('${location.id}')">
+              Manage
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+    // Update zone filter options
+    const zones = [...new Set(data.locations.map(l => l.zone))].sort();
+    const zoneFilter = document.getElementById('location-zone-filter');
+    const currentZone = zoneFilter.value;
+    zoneFilter.innerHTML = '<option value="">All Zones</option>' +
+      zones.map(z => `<option value="${z}">Zone ${z}</option>`).join('');
+    zoneFilter.value = currentZone;
+  }
+}
+
+// Update zone summary cards
+function updateZoneSummary(zoneSummary) {
+  if (!zoneSummary) return;
+  
+  const zones = ['A', 'B', 'C', 'D'];
+  
+  zones.forEach(zone => {
+    const zoneData = zoneSummary.find(z => z.zone === zone);
+    
+    const locationsElement = document.getElementById(`zone-${zone.toLowerCase()}-locations`);
+    const utilElement = document.getElementById(`zone-${zone.toLowerCase()}-util`);
+    
+    if (zoneData) {
+      if (locationsElement) {
+        locationsElement.textContent = zoneData.total_locations || 0;
+      }
+      if (utilElement) {
+        const util = zoneData.total_capacity > 0 ? 
+          Math.round((zoneData.total_occupancy / zoneData.total_capacity) * 100) : 0;
+        utilElement.textContent = `${util}%`;
+      }
+    } else {
+      if (locationsElement) locationsElement.textContent = '0';
+      if (utilElement) utilElement.textContent = '0%';
     }
   });
+}
+
+// Refresh storage locations
+async function refreshStorageLocations() {
+  console.log('Refreshing storage locations...');
+  await loadStorageLocations();
+  showToast('Storage locations refreshed', 'success');
+}
+
+// View location details
+async function viewLocationDetails(locationId) {
+  const data = await apiCall(`/warehouse/locations/${locationId}`);
+  if (data?.location) {
+    const location = data.location;
+    const utilization = location.capacity > 0 ? 
+      Math.round((location.current_occupancy / location.capacity) * 100) : 0;
+    
+    alert(`Location Details:
+Location: ${location.location_code}
+Zone: ${location.zone}
+Capacity: ${location.capacity}
+Current Stock: ${location.current_occupancy}
+Utilization: ${utilization}%
+Product: ${location.product_reference || 'None'}
+Position: (${location.x}, ${location.y}, ${location.z})`);
+  }
+}
+
+// Show location management modal
+function showLocationDetails() {
+  const selectedLocation = prompt('Enter location code to view details:');
+  if (selectedLocation) {
+    // Find location in current table
+    const rows = document.querySelectorAll('#storage-locations-table tbody tr');
+    let found = false;
+    
+    rows.forEach(row => {
+      const locationCode = row.cells[0].textContent.trim();
+      if (locationCode.toLowerCase() === selectedLocation.toLowerCase()) {
+        const zone = row.cells[1].textContent.trim();
+        const capacity = row.cells[2].textContent.trim();
+        const stock = row.cells[3].textContent.trim();
+        const utilization = row.cells[4].textContent.trim();
+        const product = row.cells[5].textContent.trim();
+        const status = row.cells[6].textContent.trim();
+        
+        alert(`Location Details:
+Location: ${locationCode}
+Zone: ${zone}
+Capacity: ${capacity}
+Current Stock: ${stock}
+Utilization: ${utilization}
+Product: ${product}
+Status: ${status}`);
+        found = true;
+      }
+    });
+    
+    if (!found) {
+      showToast('Location not found in current view', 'error');
+    }
+  }
+}
+
+// Generate warehouse report
+async function generateWarehouseReport() {
+  console.log('Generating warehouse report...');
+  
+  try {
+    const data = await apiCall('/warehouse/report');
+    
+    if (data) {
+      const report = `
+WAREHOUSE REPORT - ${new Date().toLocaleDateString()}
+================================================
+
+SUMMARY:
+- Total Locations: ${data.total_locations || 0}
+- Total Capacity: ${data.total_capacity || 0}
+- Current Occupancy: ${data.total_occupancy || 0}
+- Overall Utilization: ${data.utilization_percentage || 0}%
+
+ZONE BREAKDOWN:
+${data.zones?.map(z => `- Zone ${z.zone}: ${z.locations} locations, ${z.utilization}% utilized`).join('\n') || 'No zone data'}
+
+MOVEMENTS TODAY:
+- Inbound: ${data.movements?.inbound || 0}
+- Outbound: ${data.movements?.outbound || 0}
+- Transfers: ${data.movements?.transfers || 0}
+      `;
+      
+      // Create and download report
+      const blob = new Blob([report], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `warehouse-report-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      showToast('Warehouse report generated and downloaded', 'success');
+    }
+  } catch (error) {
+    console.error('Error generating warehouse report:', error);
+    showToast('Failed to generate warehouse report', 'error');
+  }
 }
 
 // AI Optimization
@@ -1436,13 +1801,12 @@ window.updateOrderStatus = updateOrderStatus;
 window.cancelOrder = cancelOrder;
 window.showMovementHistory = showMovementHistory;
 window.showPickingTaskModal = showPickingTaskModal;
-window.loadWarehouseVisualization = loadWarehouseVisualization;
-window.showZoneLayout = showZoneLayout;
-window.showLayoutFile = showLayoutFile;
-window.visualizePickingRoute = visualizePickingRoute;
-window.loadInventoryTimeline = loadInventoryTimeline;
-window.loadDailySummary = loadDailySummary;
+window.showLocationDetails = showLocationDetails;
+window.refreshStorageLocations = refreshStorageLocations;
+window.viewLocationDetails = viewLocationDetails;
+window.generateWarehouseReport = generateWarehouseReport;
 window.showProductTimeline = showProductTimeline;
+window.loadWarehouse2D = loadWarehouse2D;
 
 // Make data loading functions available for refresh after operations
 window.loadInventoryData = loadInventoryData;
@@ -1471,6 +1835,15 @@ window.debugFunctions = function() {
   console.log('logout-btn:', !!document.getElementById('logout-btn'));
   console.log('nav-items count:', document.querySelectorAll('.nav-item').length);
   console.log('content-sections count:', document.querySelectorAll('.content-section').length);
+  console.log('inventory-chart canvas:', !!document.getElementById('inventory-chart'));
+  console.log('orders-chart canvas:', !!document.getElementById('orders-chart'));
+  
+  // Test Chart.js
+  console.log('=== CHART.JS CHECK ===');
+  console.log('Chart.js available:', typeof Chart !== 'undefined');
+  if (typeof Chart !== 'undefined') {
+    console.log('Chart.js version:', Chart.version || 'Unknown');
+  }
   
   // Test a simple API call
   const token = localStorage.getItem('authToken');
@@ -1487,6 +1860,44 @@ window.debugFunctions = function() {
   }
 };
 
+// Add manual chart test function
+window.testCharts = async function() {
+  console.log('=== MANUAL CHART TEST ===');
+  
+  if (typeof Chart === 'undefined') {
+    console.error('Chart.js not available');
+    return;
+  }
+  
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    console.error('No auth token available');
+    return;
+  }
+  
+  try {
+    // Get fresh data
+    const inventoryResponse = await fetch('/api/inventory/summary', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const inventoryData = await inventoryResponse.json();
+    
+    const ordersResponse = await fetch('/api/orders/stats/summary', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const ordersData = await ordersResponse.json();
+    
+    console.log('Data received:', { inventoryData, ordersData });
+    
+    // Test chart creation
+    renderDashboardCharts(inventoryData, ordersData);
+    
+    console.log('Manual chart test completed');
+  } catch (error) {
+    console.error('Manual chart test failed:', error);
+  }
+};
+
 // Close modal when clicking outside
 document.addEventListener('click', function(e) {
   if (e.target.classList.contains('modal')) {
@@ -1495,335 +1906,284 @@ document.addEventListener('click', function(e) {
 });
 
 
-// Warehouse Visualization
+// 2D Warehouse Map Functions
 let warehouseLocations = [];
 let canvasScale = 1;
 let canvasOffsetX = 50;
 let canvasOffsetY = 50;
 
-async function loadWarehouseVisualization() {
-  const data = await apiCall('/warehouse/3d-layout');
-  if (!data?.locations) return;
+async function loadWarehouse2D() {
+  console.log('Loading 2D warehouse map...');
   
-  warehouseLocations = data.locations;
-  const colorBy = document.getElementById('viz-color-by').value;
-  
-  drawWarehouseMap(warehouseLocations, colorBy);
-  updateLegend(colorBy);
-  loadWavesForRouteViz();
+  try {
+    const data = await apiCall('/warehouse/locations?include_coordinates=true');
+    
+    if (data?.locations) {
+      warehouseLocations = data.locations;
+      const colorBy = document.getElementById('viz-color-by')?.value || 'zone';
+      
+      drawWarehouse2D(warehouseLocations, colorBy);
+      updateMapLegend(colorBy);
+      
+      console.log(`Loaded ${warehouseLocations.length} locations for 2D map`);
+    } else {
+      console.log('No location data available for 2D map');
+      showEmptyMap();
+    }
+  } catch (error) {
+    console.error('Error loading 2D warehouse map:', error);
+    showEmptyMap();
+  }
 }
 
-function drawWarehouseMap(locations, colorBy = 'zone') {
+function drawWarehouse2D(locations, colorBy = 'zone') {
   const canvas = document.getElementById('warehouse-canvas');
-  const ctx = canvas.getContext('2d');
-  
-  // Clear canvas
-  ctx.fillStyle = '#f8f9fa';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  if (locations.length === 0) {
-    ctx.fillStyle = '#666';
-    ctx.font = '16px Inter';
-    ctx.textAlign = 'center';
-    ctx.fillText('No location data available', canvas.width / 2, canvas.height / 2);
+  if (!canvas) {
+    console.error('Warehouse canvas not found');
     return;
   }
   
+  const ctx = canvas.getContext('2d');
+  
+  // Clear canvas
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  if (locations.length === 0) {
+    showEmptyMap();
+    return;
+  }
+  
+  // Generate coordinates if not available
+  const locationsWithCoords = locations.map((loc, index) => {
+    if (!loc.x || !loc.y) {
+      // Generate grid-based coordinates
+      const cols = Math.ceil(Math.sqrt(locations.length));
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+      
+      return {
+        ...loc,
+        x: col * 40 + 50,
+        y: row * 30 + 50
+      };
+    }
+    return loc;
+  });
+  
   // Calculate scale
-  const maxX = Math.max(...locations.map(l => l.x || 0));
-  const maxY = Math.max(...locations.map(l => l.y || 0));
-  const minX = Math.min(...locations.map(l => l.x || 0));
-  const minY = Math.min(...locations.map(l => l.y || 0));
+  const maxX = Math.max(...locationsWithCoords.map(l => l.x));
+  const maxY = Math.max(...locationsWithCoords.map(l => l.y));
+  const minX = Math.min(...locationsWithCoords.map(l => l.x));
+  const minY = Math.min(...locationsWithCoords.map(l => l.y));
   
   const rangeX = maxX - minX || 1;
   const rangeY = maxY - minY || 1;
   
-  canvasScale = Math.min((canvas.width - 100) / rangeX, (canvas.height - 100) / rangeY);
+  canvasScale = Math.min((canvas.width - 100) / rangeX, (canvas.height - 100) / rangeY, 2);
   canvasOffsetX = 50 - minX * canvasScale;
   canvasOffsetY = 50 - minY * canvasScale;
   
   // Draw grid
-  ctx.strokeStyle = '#e0e0e0';
+  ctx.strokeStyle = '#e2e8f0';
   ctx.lineWidth = 0.5;
-  for (let i = 0; i <= canvas.width; i += 50) {
+  for (let i = 0; i <= canvas.width; i += 40) {
     ctx.beginPath();
     ctx.moveTo(i, 0);
     ctx.lineTo(i, canvas.height);
     ctx.stroke();
   }
-  for (let i = 0; i <= canvas.height; i += 50) {
+  for (let i = 0; i <= canvas.height; i += 30) {
     ctx.beginPath();
     ctx.moveTo(0, i);
     ctx.lineTo(canvas.width, i);
     ctx.stroke();
   }
   
-  // Draw entrance
-  ctx.fillStyle = '#22c55e';
-  ctx.beginPath();
-  ctx.arc(canvasOffsetX, canvasOffsetY, 10, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#000';
-  ctx.font = '11px Inter';
-  ctx.fillText('Entrance', canvasOffsetX - 20, canvasOffsetY + 25);
-  
   // Draw locations
-  locations.forEach(loc => {
+  locationsWithCoords.forEach(loc => {
     const x = loc.x * canvasScale + canvasOffsetX;
     const y = loc.y * canvasScale + canvasOffsetY;
     
-    let color = getLocationColor(loc, colorBy);
+    const color = getLocationColor(loc, colorBy);
+    const size = Math.max(8, Math.min(16, canvasScale * 10));
     
+    // Draw location rectangle
     ctx.fillStyle = color;
-    ctx.fillRect(x - 6, y - 6, 12, 12);
+    ctx.fillRect(x - size/2, y - size/2, size, size);
     
-    ctx.strokeStyle = '#333';
+    // Draw border
+    ctx.strokeStyle = '#1f2937';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x - 6, y - 6, 12, 12);
+    ctx.strokeRect(x - size/2, y - size/2, size, size);
+    
+    // Draw location code if scale is large enough
+    if (canvasScale > 1) {
+      ctx.fillStyle = '#1f2937';
+      ctx.font = '10px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText(loc.location_code, x, y + size/2 + 12);
+    }
   });
   
   // Draw zone labels
-  const zones = [...new Set(locations.map(l => l.zone))];
+  const zones = [...new Set(locationsWithCoords.map(l => l.zone))];
   zones.forEach(zone => {
-    const zoneLocs = locations.filter(l => l.zone === zone);
+    const zoneLocs = locationsWithCoords.filter(l => l.zone === zone);
     if (zoneLocs.length > 0) {
       const avgX = zoneLocs.reduce((s, l) => s + l.x, 0) / zoneLocs.length;
       const avgY = zoneLocs.reduce((s, l) => s + l.y, 0) / zoneLocs.length;
       const x = avgX * canvasScale + canvasOffsetX;
       const y = avgY * canvasScale + canvasOffsetY;
       
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
       ctx.font = 'bold 14px Inter';
       ctx.textAlign = 'center';
-      ctx.fillText(`Zone ${zone}`, x, y - 20);
+      ctx.fillText(`Zone ${zone}`, x, y - 30);
     }
   });
+  
+  // Update stored locations for tooltip
+  warehouseLocations = locationsWithCoords;
 }
 
 function getLocationColor(loc, colorBy) {
   const zoneColors = {
     'A': '#ef4444', 'B': '#f59e0b', 'C': '#22c55e', 
-    'H': '#3b82f6', 'S': '#8b5cf6', 'D': '#ec4899'
+    'D': '#3b82f6', 'E': '#8b5cf6', 'F': '#ec4899',
+    'G': '#06b6d4', 'H': '#84cc16', 'I': '#f97316',
+    'J': '#6366f1', 'K': '#14b8a6', 'L': '#f59e0b',
+    'M': '#8b5cf6', 'N': '#ef4444', 'O': '#22c55e',
+    'P': '#3b82f6', 'Q': '#ec4899', 'R': '#06b6d4'
   };
   
   if (colorBy === 'zone') {
     return zoneColors[loc.zone] || '#94a3b8';
   } else if (colorBy === 'utilization') {
-    const util = loc.capacity > 0 ? loc.current_occupancy / loc.capacity : 0;
+    const util = loc.capacity > 0 ? (loc.current_occupancy || 0) / loc.capacity : 0;
     if (util > 0.8) return '#ef4444';
     if (util > 0.5) return '#f59e0b';
     if (util > 0.2) return '#22c55e';
     return '#94a3b8';
   } else if (colorBy === 'abc') {
-    // Based on pick frequency
-    if (loc.pick_frequency > 10) return '#ef4444';
-    if (loc.pick_frequency > 5) return '#f59e0b';
-    if (loc.pick_frequency > 0) return '#22c55e';
+    // Based on product ABC classification
+    if (loc.product_abc === 'A') return '#ef4444';
+    if (loc.product_abc === 'B') return '#f59e0b';
+    if (loc.product_abc === 'C') return '#22c55e';
     return '#94a3b8';
   }
   return '#94a3b8';
 }
 
-function updateLegend(colorBy) {
-  const legend = document.getElementById('viz-legend');
+function updateMapLegend(colorBy) {
+  const legend = document.getElementById('map-legend');
+  if (!legend) return;
   
   if (colorBy === 'zone') {
     legend.innerHTML = `
-      <div class="legend-item"><span class="legend-color" style="background:#ef4444"></span> Zone A</div>
-      <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span> Zone B</div>
-      <div class="legend-item"><span class="legend-color" style="background:#22c55e"></span> Zone C</div>
-      <div class="legend-item"><span class="legend-color" style="background:#3b82f6"></span> Zone H</div>
-      <div class="legend-item"><span class="legend-color" style="background:#8b5cf6"></span> Zone S</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>Zone A</div>
+      <div class="legend-item"><div class="legend-color" style="background:#f59e0b"></div>Zone B</div>
+      <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div>Zone C</div>
+      <div class="legend-item"><div class="legend-color" style="background:#3b82f6"></div>Zone D</div>
+      <div class="legend-item"><div class="legend-color" style="background:#8b5cf6"></div>Other Zones</div>
     `;
   } else if (colorBy === 'utilization') {
     legend.innerHTML = `
-      <div class="legend-item"><span class="legend-color" style="background:#ef4444"></span> High (>80%)</div>
-      <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span> Medium (50-80%)</div>
-      <div class="legend-item"><span class="legend-color" style="background:#22c55e"></span> Low (20-50%)</div>
-      <div class="legend-item"><span class="legend-color" style="background:#94a3b8"></span> Empty (<20%)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>High (>80%)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#f59e0b"></div>Medium (50-80%)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div>Low (20-50%)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#94a3b8"></div>Empty (<20%)</div>
     `;
   } else if (colorBy === 'abc') {
     legend.innerHTML = `
-      <div class="legend-item"><span class="legend-color" style="background:#ef4444"></span> Class A (High freq)</div>
-      <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span> Class B (Medium)</div>
-      <div class="legend-item"><span class="legend-color" style="background:#22c55e"></span> Class C (Low)</div>
-      <div class="legend-item"><span class="legend-color" style="background:#94a3b8"></span> No picks</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>Class A (High)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#f59e0b"></div>Class B (Medium)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div>Class C (Low)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#94a3b8"></div>No Product</div>
     `;
   }
 }
 
+function showEmptyMap() {
+  const canvas = document.getElementById('warehouse-canvas');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '16px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText('No warehouse location data available', canvas.width / 2, canvas.height / 2);
+  ctx.fillText('Click "Refresh Map" to reload', canvas.width / 2, canvas.height / 2 + 25);
+}
+
 // Canvas hover tooltip
-document.getElementById('warehouse-canvas')?.addEventListener('mousemove', function(e) {
-  const rect = this.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  
-  const tooltip = document.getElementById('location-tooltip');
-  let found = false;
-  
-  for (const loc of warehouseLocations) {
-    const x = loc.x * canvasScale + canvasOffsetX;
-    const y = loc.y * canvasScale + canvasOffsetY;
+document.addEventListener('DOMContentLoaded', function() {
+  const canvas = document.getElementById('warehouse-canvas');
+  if (canvas) {
+    canvas.addEventListener('mousemove', function(e) {
+      const rect = this.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const tooltip = document.getElementById('location-tooltip');
+      if (!tooltip) return;
+      
+      let found = false;
+      
+      for (const loc of warehouseLocations) {
+        const x = loc.x * canvasScale + canvasOffsetX;
+        const y = loc.y * canvasScale + canvasOffsetY;
+        const size = Math.max(8, Math.min(16, canvasScale * 10));
+        
+        if (Math.abs(mouseX - x) < size && Math.abs(mouseY - y) < size) {
+          const utilization = loc.capacity > 0 ? 
+            Math.round(((loc.current_occupancy || 0) / loc.capacity) * 100) : 0;
+          
+          tooltip.innerHTML = `
+            <strong>${loc.location_code}</strong><br>
+            Zone: ${loc.zone}<br>
+            Capacity: ${loc.capacity || 0}<br>
+            Stock: ${loc.current_occupancy || 0}<br>
+            Utilization: ${utilization}%<br>
+            Product: ${loc.product_reference || 'Empty'}
+          `;
+          tooltip.style.left = (e.clientX + 15) + 'px';
+          tooltip.style.top = (e.clientY + 15) + 'px';
+          tooltip.style.display = 'block';
+          found = true;
+          break;
+        }
+      }
+      
+      if (!found) {
+        tooltip.style.display = 'none';
+      }
+    });
     
-    if (Math.abs(mouseX - x) < 10 && Math.abs(mouseY - y) < 10) {
-      tooltip.innerHTML = `
-        <strong>${loc.location_code}</strong><br>
-        Zone: ${loc.zone}<br>
-        Position: (${loc.x}, ${loc.y}, ${loc.z})<br>
-        Capacity: ${loc.current_occupancy || 0}/${loc.capacity || 100}<br>
-        Pick Frequency: ${loc.pick_frequency || 0}
-      `;
-      tooltip.style.left = (e.clientX + 15) + 'px';
-      tooltip.style.top = (e.clientY + 15) + 'px';
-      tooltip.classList.add('visible');
-      found = true;
-      break;
-    }
-  }
-  
-  if (!found) {
-    tooltip.classList.remove('visible');
+    canvas.addEventListener('mouseleave', function() {
+      const tooltip = document.getElementById('location-tooltip');
+      if (tooltip) {
+        tooltip.style.display = 'none';
+      }
+    });
   }
 });
 
-// Picking Route Visualization
-async function loadWavesForRouteViz() {
-  const data = await apiCall('/picking/waves?limit=20');
-  const select = document.getElementById('route-viz-wave');
-  
-  if (data?.waves) {
-    select.innerHTML = '<option value="">Select Wave</option>' +
-      data.waves.map(w => `<option value="${w.id}">Wave #${w.wave_number} (${w.status})</option>`).join('');
+// Color by change handler
+document.addEventListener('DOMContentLoaded', function() {
+  const colorBySelect = document.getElementById('viz-color-by');
+  if (colorBySelect) {
+    colorBySelect.addEventListener('change', function() {
+      if (warehouseLocations.length > 0) {
+        drawWarehouse2D(warehouseLocations, this.value);
+        updateMapLegend(this.value);
+      }
+    });
   }
-}
-
-async function visualizePickingRoute() {
-  const waveId = document.getElementById('route-viz-wave').value;
-  if (!waveId) {
-    showToast('Please select a wave', 'error');
-    return;
-  }
-  
-  const data = await apiCall(`/ai/route/visualization/${waveId}`);
-  if (!data?.success) {
-    showToast('Failed to get route data', 'error');
-    return;
-  }
-  
-  drawPickingRoute(data.data);
-  showRouteInfo(data.data);
-}
-
-function drawPickingRoute(routeData) {
-  const canvas = document.getElementById('route-canvas');
-  const ctx = canvas.getContext('2d');
-  
-  // Clear
-  ctx.fillStyle = '#f8f9fa';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  const viz = routeData.visualization;
-  if (!viz?.path || viz.path.length === 0) {
-    ctx.fillStyle = '#666';
-    ctx.font = '16px Inter';
-    ctx.textAlign = 'center';
-    ctx.fillText('No route data', canvas.width / 2, canvas.height / 2);
-    return;
-  }
-  
-  // Calculate scale
-  const points = viz.path;
-  const maxX = Math.max(...points.map(p => p.x || 0));
-  const maxY = Math.max(...points.map(p => p.y || 0));
-  const minX = Math.min(...points.map(p => p.x || 0));
-  const minY = Math.min(...points.map(p => p.y || 0));
-  
-  const rangeX = maxX - minX || 1;
-  const rangeY = maxY - minY || 1;
-  
-  const scale = Math.min((canvas.width - 100) / rangeX, (canvas.height - 100) / rangeY);
-  const offsetX = 50 - minX * scale;
-  const offsetY = 50 - minY * scale;
-  
-  // Draw path lines
-  ctx.strokeStyle = '#3b82f6';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([5, 5]);
-  ctx.beginPath();
-  
-  points.forEach((point, i) => {
-    const x = point.x * scale + offsetX;
-    const y = point.y * scale + offsetY;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-  ctx.setLineDash([]);
-  
-  // Draw points
-  points.forEach((point, i) => {
-    const x = point.x * scale + offsetX;
-    const y = point.y * scale + offsetY;
-    
-    // Circle
-    ctx.beginPath();
-    if (i === 0 || i === points.length - 1) {
-      ctx.fillStyle = '#22c55e';
-      ctx.arc(x, y, 12, 0, Math.PI * 2);
-    } else {
-      ctx.fillStyle = '#3b82f6';
-      ctx.arc(x, y, 10, 0, Math.PI * 2);
-    }
-    ctx.fill();
-    
-    // Number
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 10px Inter';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(point.sequence.toString(), x, y);
-    
-    // Label
-    ctx.fillStyle = '#333';
-    ctx.font = '11px Inter';
-    ctx.textBaseline = 'top';
-    ctx.fillText(point.label, x, y + 15);
-  });
-}
-
-function showRouteInfo(routeData) {
-  const info = document.getElementById('route-info');
-  const opt = routeData.optimization;
-  const viz = routeData.visualization;
-  
-  info.innerHTML = `
-    <h4>Route Optimization Results</h4>
-    <p><strong>Original Distance:</strong> ${opt.original_distance?.toFixed(2) || 0} m</p>
-    <p><strong>Optimized Distance:</strong> ${opt.optimized_distance?.toFixed(2) || 0} m</p>
-    <p><strong>Improvement:</strong> ${opt.improvement_percentage?.toFixed(2) || 0}%</p>
-    <p><strong>Estimated Time:</strong> ${opt.estimated_time_minutes || 0} minutes</p>
-    <hr>
-    <h4>Route Steps</h4>
-    <div class="route-steps">
-      ${viz?.path?.map((p, i) => `
-        <div class="route-step">
-          <span class="step-number">${p.sequence}</span>
-          <div class="step-info">
-            <div class="step-location">${p.label}</div>
-            <div class="step-product">Position: (${p.x}, ${p.y})</div>
-          </div>
-        </div>
-      `).join('') || 'No steps'}
-    </div>
-  `;
-}
-
-// Update loadWarehouseData to also load visualization
-const originalLoadWarehouseData = loadWarehouseData;
-loadWarehouseData = async function() {
-  await originalLoadWarehouseData();
-  loadWarehouseVisualization();
-};
+});
 
 // Timeline Functions
 async function loadInventoryTimeline() {

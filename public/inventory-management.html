@@ -92,6 +92,11 @@
       border-radius: 5px;
       font-size: 0.9em;
     }
+    .control-group select:disabled {
+      background-color: #f5f5f5;
+      color: #999;
+      cursor: not-allowed;
+    }
     .btn {
       padding: 8px 16px;
       border: none;
@@ -177,6 +182,14 @@
       border-radius: 4px;
       font-size: 0.8em;
       background: #3498db;
+      color: white;
+    }
+    
+    .level-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      background: #9b59b6;
       color: white;
     }
     
@@ -331,9 +344,25 @@
           <input type="text" id="searchInput" placeholder="Nhập mã sản phẩm...">
         </div>
         <div class="control-group">
-          <label>Khu vực</label>
-          <select id="zoneFilter">
-            <option value="">Tất cả khu vực</option>
+          <label>Tầng (Level)</label>
+          <select id="levelFilter">
+            <option value="">Chọn tầng</option>
+            <option value="1">Tầng 1</option>
+            <option value="2">Tầng 2</option>
+            <option value="3">Tầng 3</option>
+            <option value="4">Tầng 4</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Khu vực (Zone)</label>
+          <select id="zoneFilter" disabled>
+            <option value="">Chọn tầng trước</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Vị trí cụ thể</label>
+          <select id="locationFilter" disabled>
+            <option value="">Chọn zone trước</option>
           </select>
         </div>
         <div class="control-group">
@@ -383,6 +412,7 @@
             <th>ABC</th>
             <th>Vị trí</th>
             <th>Khu vực</th>
+            <th>Tầng</th>
             <th>Số lượng</th>
             <th>Đã đặt trước</th>
             <th>Có sẵn</th>
@@ -478,9 +508,92 @@
     // Load initial data
     document.addEventListener('DOMContentLoaded', function() {
       loadSummary();
-      loadZones();
       loadInventory();
+      setupCascadingDropdowns();
     });
+
+    // Setup cascading dropdowns for Level -> Zone -> Location
+    function setupCascadingDropdowns() {
+      const levelFilter = document.getElementById('levelFilter');
+      const zoneFilter = document.getElementById('zoneFilter');
+      const locationFilter = document.getElementById('locationFilter');
+
+      // When level changes, load zones for that level
+      levelFilter.addEventListener('change', async function() {
+        const selectedLevel = this.value;
+        
+        // Reset dependent dropdowns
+        zoneFilter.innerHTML = '<option value="">Chọn tầng trước</option>';
+        zoneFilter.disabled = true;
+        locationFilter.innerHTML = '<option value="">Chọn zone trước</option>';
+        locationFilter.disabled = true;
+
+        if (selectedLevel) {
+          try {
+            const response = await fetch('/api/locations');
+            const data = await response.json();
+            
+            // Filter locations by level and get unique zones
+            const zonesOnLevel = [...new Set(
+              data.locations
+                .filter(loc => loc.location_code && loc.location_code.endsWith(`-${selectedLevel}`))
+                .map(loc => loc.zone)
+                .filter(zone => zone)
+            )].sort();
+
+            if (zonesOnLevel.length > 0) {
+              zoneFilter.innerHTML = '<option value="">Chọn khu vực</option>' +
+                zonesOnLevel.map(zone => `<option value="${zone}">Khu vực ${zone}</option>`).join('');
+              zoneFilter.disabled = false;
+            } else {
+              zoneFilter.innerHTML = '<option value="">Không có khu vực nào</option>';
+            }
+          } catch (error) {
+            console.error('Error loading zones:', error);
+            zoneFilter.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+          }
+        }
+      });
+
+      // When zone changes, load specific locations
+      zoneFilter.addEventListener('change', async function() {
+        const selectedLevel = levelFilter.value;
+        const selectedZone = this.value;
+        
+        // Reset location dropdown
+        locationFilter.innerHTML = '<option value="">Chọn zone trước</option>';
+        locationFilter.disabled = true;
+
+        if (selectedLevel && selectedZone) {
+          try {
+            const response = await fetch('/api/locations');
+            const data = await response.json();
+            
+            // Filter locations by level and zone
+            const locationsInZoneLevel = data.locations
+              .filter(loc => 
+                loc.zone === selectedZone && 
+                loc.location_code && 
+                loc.location_code.endsWith(`-${selectedLevel}`)
+              )
+              .sort((a, b) => a.location_code.localeCompare(b.location_code));
+
+            if (locationsInZoneLevel.length > 0) {
+              locationFilter.innerHTML = '<option value="">Tất cả vị trí</option>' +
+                locationsInZoneLevel.map(loc => 
+                  `<option value="${loc.location_code}">${loc.location_code} (${loc.current_occupancy}/${loc.capacity})</option>`
+                ).join('');
+              locationFilter.disabled = false;
+            } else {
+              locationFilter.innerHTML = '<option value="">Không có vị trí nào</option>';
+            }
+          } catch (error) {
+            console.error('Error loading locations:', error);
+            locationFilter.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+          }
+        }
+      });
+    }
 
     // Load inventory summary
     async function loadSummary() {
@@ -497,26 +610,6 @@
       }
     }
 
-    // Load zones for filter
-    async function loadZones() {
-      try {
-        const response = await fetch('/api/locations');
-        const data = await response.json();
-        
-        const zones = [...new Set(data.locations.map(l => l.zone))].sort();
-        const zoneSelect = document.getElementById('zoneFilter');
-        
-        zones.forEach(zone => {
-          const option = document.createElement('option');
-          option.value = zone;
-          option.textContent = `Khu vực ${zone}`;
-          zoneSelect.appendChild(option);
-        });
-      } catch (error) {
-        console.error('Error loading zones:', error);
-      }
-    }
-
     // Load inventory data
     async function loadInventory(page = 1) {
       try {
@@ -527,10 +620,27 @@
         const params = new URLSearchParams({
           page: page,
           limit: 50,
-          zone: document.getElementById('zoneFilter').value,
           abc_code: document.getElementById('abcFilter').value,
           low_stock: document.getElementById('lowStockFilter').value
         });
+
+        // Add level filter
+        const level = document.getElementById('levelFilter').value;
+        if (level) {
+          params.append('level', level);
+        }
+
+        // Add zone filter
+        const zone = document.getElementById('zoneFilter').value;
+        if (zone) {
+          params.append('zone', zone);
+        }
+
+        // Add specific location filter
+        const location = document.getElementById('locationFilter').value;
+        if (location) {
+          params.append('location', location);
+        }
 
         const search = document.getElementById('searchInput').value.trim();
         if (search) {
@@ -565,19 +675,22 @@
       inventory.forEach(item => {
         const available = (item.quantity || 0) - (item.reserved_quantity || 0);
         const quantityClass = getQuantityClass(item.quantity);
+        const locationCode = item.location?.location_code || 'N/A';
+        const level = locationCode !== 'N/A' ? locationCode.split('-').pop() || 'N/A' : 'N/A';
         
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${item.product?.reference || 'N/A'}</td>
           <td><span class="abc-badge abc-${(item.product?.abc_code || 'c').toLowerCase()}">${item.product?.abc_code || 'C'}</span></td>
-          <td>${item.location?.location_id || 'N/A'}</td>
+          <td>${locationCode}</td>
           <td><span class="zone-badge">${item.location?.zone || 'N/A'}</span></td>
+          <td><span class="level-badge">Tầng ${level}</span></td>
           <td class="quantity-cell ${quantityClass}">${(item.quantity || 0).toLocaleString()}</td>
           <td>${(item.reserved_quantity || 0).toLocaleString()}</td>
           <td class="quantity-cell">${available.toLocaleString()}</td>
           <td>
-            <button class="btn btn-primary" onclick="openAdjustModal('${item.id}', '${item.product?.reference}', '${item.location?.location_id}', ${item.quantity || 0})" style="margin-right: 5px; font-size: 0.8em; padding: 4px 8px;">Điều chỉnh</button>
-            <button class="btn btn-success" onclick="openReserveModal('${item.id}', '${item.product?.reference}', '${item.location?.location_id}', ${available})" style="font-size: 0.8em; padding: 4px 8px;">Đặt trước</button>
+            <button class="btn btn-primary" onclick="openAdjustModal('${item.id}', '${item.product?.reference}', '${locationCode}', ${item.quantity || 0})" style="margin-right: 5px; font-size: 0.8em; padding: 4px 8px;">Điều chỉnh</button>
+            <button class="btn btn-success" onclick="openReserveModal('${item.id}', '${item.product?.reference}', '${locationCode}', ${available})" style="font-size: 0.8em; padding: 4px 8px;">Đặt trước</button>
           </td>
         `;
         tbody.appendChild(row);
@@ -739,11 +852,27 @@
     // Export inventory
     function exportInventory() {
       const params = new URLSearchParams({
-        zone: document.getElementById('zoneFilter').value,
         abc_code: document.getElementById('abcFilter').value,
-        low_stock: document.getElementById('lowStockFilter').value,
-        export: 'csv'
+        low_stock: document.getElementById('lowStockFilter').value
       });
+
+      // Add level filter
+      const level = document.getElementById('levelFilter').value;
+      if (level) {
+        params.append('level', level);
+      }
+
+      // Add zone filter
+      const zone = document.getElementById('zoneFilter').value;
+      if (zone) {
+        params.append('zone', zone);
+      }
+
+      // Add specific location filter
+      const location = document.getElementById('locationFilter').value;
+      if (location) {
+        params.append('location', location);
+      }
 
       const search = document.getElementById('searchInput').value.trim();
       if (search) {

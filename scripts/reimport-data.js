@@ -10,7 +10,7 @@ async function clearAndReimportData() {
     // await clearCollections();
     
     // Run the seed script with new path
-    console.log('📥 Importing data from datasets folder...');
+    console.log('Importing data from datasets folder...');
     require('./seed-firebase.js');
     
   } catch (error) {

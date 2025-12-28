@@ -8,7 +8,7 @@ const router = express.Router();
 // Get all inventory
 router.get('/', async (req, res) => {
   try {
-    const { zone, abc_code, low_stock, page = 1, limit = 50 } = req.query;
+    const { zone, abc_code, low_stock, level, location, page = 1, limit = 50 } = req.query;
     
     const inventory = await db.getAllInventory();
     const products = await db.getAllProducts();
@@ -23,6 +23,7 @@ router.get('/', async (req, res) => {
       location: locationMap.get(inv.location_id)
     })).filter(inv => inv.product && inv.location);
     
+    // Apply filters
     if (zone) {
       result = result.filter(inv => inv.location.zone === zone);
     }
@@ -31,6 +32,15 @@ router.get('/', async (req, res) => {
     }
     if (low_stock === 'true') {
       result = result.filter(inv => (inv.quantity || 0) < 20);
+    }
+    if (level) {
+      result = result.filter(inv => {
+        const locationCode = inv.location.location_code || '';
+        return locationCode.endsWith(`-${level}`);
+      });
+    }
+    if (location) {
+      result = result.filter(inv => inv.location.location_code === location);
     }
     
     const startIndex = (page - 1) * limit;
@@ -414,7 +424,7 @@ router.get('/alerts/low-stock', async (req, res) => {
 // Export inventory to CSV
 router.get('/export', async (req, res) => {
   try {
-    const { zone, abc_code, low_stock } = req.query;
+    const { zone, abc_code, low_stock, level, location } = req.query;
     
     const inventory = await db.getAllInventory();
     const products = await db.getAllProducts();
@@ -439,16 +449,29 @@ router.get('/export', async (req, res) => {
     if (low_stock === 'true') {
       result = result.filter(inv => (inv.quantity || 0) < 20);
     }
+    if (level) {
+      result = result.filter(inv => {
+        const locationCode = inv.location.location_code || '';
+        return locationCode.endsWith(`-${level}`);
+      });
+    }
+    if (location) {
+      result = result.filter(inv => inv.location.location_code === location);
+    }
     
     // Generate CSV
-    const csvHeader = 'Product Reference,ABC Code,Location,Zone,Quantity,Reserved,Available\n';
+    const csvHeader = 'Product Reference,ABC Code,Location,Zone,Level,Quantity,Reserved,Available\n';
     const csvRows = result.map(inv => {
       const available = (inv.quantity || 0) - (inv.reserved_quantity || 0);
+      const locationCode = inv.location.location_code || '';
+      const level = locationCode.split('-').pop() || '';
+      
       return [
         inv.product.reference,
         inv.product.abc_code || 'C',
-        inv.location.location_id,
+        inv.location.location_code,
         inv.location.zone || '',
+        level,
         inv.quantity || 0,
         inv.reserved_quantity || 0,
         available

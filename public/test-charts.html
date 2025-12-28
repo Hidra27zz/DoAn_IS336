@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chart Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .chart-container { width: 400px; height: 300px; margin: 20px; border: 1px solid #ccc; }
+    .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>Chart.js Test Page</h1>
+  
+  <div id="test-results"></div>
+  
+  <div class="chart-container">
+    <h3>Test Inventory Chart</h3>
+    <canvas id="test-inventory-chart"></canvas>
+  </div>
+  
+  <div class="chart-container">
+    <h3>Test Orders Chart</h3>
+    <canvas id="test-orders-chart"></canvas>
+  </div>
+  
+  <button onclick="testCharts()">Test Charts</button>
+  <button onclick="testAPI()">Test API Data</button>
+  
+  <script>
+    let testResults = document.getElementById('test-results');
+    
+    function addResult(message, isSuccess = true) {
+      const div = document.createElement('div');
+      div.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+      div.textContent = message;
+      testResults.appendChild(div);
+    }
+    
+    // Test Chart.js availability
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof Chart !== 'undefined') {
+        addResult('✅ Chart.js loaded successfully');
+        addResult(`✅ Chart.js version: ${Chart.version || 'Unknown'}`);
+      } else {
+        addResult('❌ Chart.js not loaded', false);
+      }
+      
+      // Test canvas elements
+      const inventoryCanvas = document.getElementById('test-inventory-chart');
+      const ordersCanvas = document.getElementById('test-orders-chart');
+      
+      if (inventoryCanvas) {
+        addResult('✅ Inventory canvas element found');
+      } else {
+        addResult('❌ Inventory canvas element not found', false);
+      }
+      
+      if (ordersCanvas) {
+        addResult('✅ Orders canvas element found');
+      } else {
+        addResult('❌ Orders canvas element not found', false);
+      }
+    });
+    
+    function testCharts() {
+      testResults.innerHTML = '';
+      
+      try {
+        // Test inventory chart
+        const inventoryCtx = document.getElementById('test-inventory-chart');
+        if (inventoryCtx) {
+          const inventoryChart = new Chart(inventoryCtx, {
+            type: 'bar',
+            data: {
+              labels: ['Zone A', 'Zone B', 'Zone C', 'Zone D'],
+              datasets: [{
+                label: 'Quantity',
+                data: [1865, 1424, 1474, 1298],
+                backgroundColor: ['#2563eb', '#22c55e', '#f59e0b', '#ef4444']
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } }
+            }
+          });
+          addResult('✅ Inventory chart created successfully');
+        }
+        
+        // Test orders chart
+        const ordersCtx = document.getElementById('test-orders-chart');
+        if (ordersCtx) {
+          const ordersChart = new Chart(ordersCtx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Pending', 'Assigned', 'Picking', 'Picked', 'Shipped'],
+              datasets: [{
+                data: [32634, 0, 0, 0, 0],
+                backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#22c55e', '#10b981']
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+          addResult('✅ Orders chart created successfully');
+        }
+        
+      } catch (error) {
+        addResult(`❌ Chart creation failed: ${error.message}`, false);
+        console.error('Chart error:', error);
+      }
+    }
+    
+    async function testAPI() {
+      try {
+        // Test login
+        const loginResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'admin', password: 'admin123' })
+        });
+        
+        const loginResult = await loginResponse.json();
+        if (loginResult.token) {
+          addResult('✅ Login API working');
+          
+          // Test inventory summary
+          const inventoryResponse = await fetch('/api/inventory/summary', {
+            headers: { 'Authorization': `Bearer ${loginResult.token}` }
+          });
+          
+          const inventoryData = await inventoryResponse.json();
+          if (inventoryData.by_zone) {
+            addResult(`✅ Inventory API working - ${Object.keys(inventoryData.by_zone).length} zones`);
+          } else {
+            addResult('❌ Inventory API - no zone data', false);
+          }
+          
+          // Test orders stats
+          const ordersResponse = await fetch('/api/orders/stats/summary', {
+            headers: { 'Authorization': `Bearer ${loginResult.token}` }
+          });
+          
+          const ordersData = await ordersResponse.json();
+          if (ordersData.pending !== undefined) {
+            addResult(`✅ Orders API working - ${ordersData.total_orders} orders`);
+          } else {
+            addResult('❌ Orders API - no data', false);
+          }
+          
+        } else {
+          addResult('❌ Login failed', false);
+        }
+        
+      } catch (error) {
+        addResult(`❌ API test failed: ${error.message}`, false);
+      }
+    }
+  </script>
+</body>
+</html>

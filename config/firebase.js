@@ -48,7 +48,7 @@ try {
         credential: admin.credential.cert(serviceAccount),
         projectId: firebaseConfig.projectId
       });
-      console.log('✅ Firebase Admin initialized with service account');
+      console.log('Firebase Admin initialized with service account');
       db = admin.firestore();
       initialized = true;
     } else {
@@ -56,7 +56,7 @@ try {
     }
   }
 } catch (error) {
-  console.log('⚠️ Firebase Admin initialization failed, will use local database:', error.message);
+  console.log('WARNING: Firebase Admin initialization failed, will use local database:', error.message);
   initialized = false;
 }
 
@@ -119,7 +119,7 @@ const FirebaseDB = {
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
       // If Firebase fails, switch to local DB
-      console.log('⚠️ Firebase query failed, switching to local database');
+      console.log('WARNING: Firebase query failed, switching to local database');
       useLocalDB = true;
       if (!localDB) localDB = new LocalDB();
       return await localDB.getAll(collectionName, filters);
