@@ -1483,15 +1483,76 @@ function closeModal(modalId) {
   document.getElementById(modalId).classList.remove('active');
 }
 
-function showToast(message, type = 'info') {
+// Toast notification function - Improved version
+function showToast(message, type = 'info', duration = 4000) {
+  // Remove any existing toast
+  const existingToast = document.getElementById('toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  // Create new toast element
   const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
+  toast.id = 'toast';
+  toast.className = `toast toast-${type}`;
   toast.textContent = message;
+  
+  // Add to DOM
   document.body.appendChild(toast);
   
+  // Trigger show animation
   setTimeout(() => {
-    toast.remove();
-  }, 3000);
+    toast.classList.add('show');
+  }, 10);
+  
+  // Auto remove after duration
+  setTimeout(() => {
+    if (toast && toast.parentNode) {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        if (toast && toast.parentNode) {
+          toast.remove();
+        }
+      }, 300); // Wait for animation to complete
+    }
+  }, duration);
+  
+  // Add click to dismiss
+  toast.addEventListener('click', () => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toast && toast.parentNode) {
+        toast.remove();
+      }
+    }, 300);
+  });
+  
+  // Add close button for better UX
+  const closeBtn = document.createElement('span');
+  closeBtn.innerHTML = '×';
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 0.7;
+    line-height: 1;
+  `;
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toast && toast.parentNode) {
+        toast.remove();
+      }
+    }, 300);
+  });
+  
+  toast.style.position = 'relative';
+  toast.style.paddingRight = '40px';
+  toast.appendChild(closeBtn);
 }
 
 // Inbound - Nhap Kho
@@ -2663,23 +2724,76 @@ function getPerformanceClass(score) {
   return 'poor';
 }
 
-// Toast notification function
-function showToast(message, type = 'info') {
-  // Create toast element if it doesn't exist
-  let toast = document.getElementById('toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.className = 'toast';
-    document.body.appendChild(toast);
+// Toast notification function - Improved version  
+function showToast(message, type = 'info', duration = 4000) {
+  // Remove any existing toast
+  const existingToast = document.getElementById('toast');
+  if (existingToast) {
+    existingToast.remove();
   }
   
+  // Create new toast element
+  const toast = document.createElement('div');
+  toast.id = 'toast';
+  toast.className = `toast toast-${type}`;
   toast.textContent = message;
-  toast.className = `toast toast-${type} show`;
   
+  // Add to DOM
+  document.body.appendChild(toast);
+  
+  // Trigger show animation
   setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+  
+  // Auto remove after duration
+  setTimeout(() => {
+    if (toast && toast.parentNode) {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        if (toast && toast.parentNode) {
+          toast.remove();
+        }
+      }, 300); // Wait for animation to complete
+    }
+  }, duration);
+  
+  // Add click to dismiss
+  toast.addEventListener('click', () => {
     toast.classList.remove('show');
-  }, 3000);
+    setTimeout(() => {
+      if (toast && toast.parentNode) {
+        toast.remove();
+      }
+    }, 300);
+  });
+  
+  // Add close button for better UX
+  const closeBtn = document.createElement('span');
+  closeBtn.innerHTML = '×';
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 0.7;
+    line-height: 1;
+  `;
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toast && toast.parentNode) {
+        toast.remove();
+      }
+    }, 300);
+  });
+  
+  toast.style.position = 'relative';
+  toast.style.paddingRight = '40px';
+  toast.appendChild(closeBtn);
 }
 
 // Initialize URL handling on page load

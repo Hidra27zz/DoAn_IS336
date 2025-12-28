@@ -74,6 +74,9 @@ class SQLDatabase {
         customer_name TEXT,
         status TEXT DEFAULT 'pending',
         priority INTEGER DEFAULT 1,
+        wave_number TEXT,
+        operator TEXT,
+        creation_date TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
@@ -82,12 +85,55 @@ class SQLDatabase {
       `CREATE TABLE IF NOT EXISTS order_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_id INTEGER,
-        product_id INTEGER,
+        product_reference TEXT,
         quantity INTEGER,
         picked_quantity INTEGER DEFAULT 0,
+        size TEXT,
+        order_to_collect TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (order_id) REFERENCES orders (id),
-        FOREIGN KEY (product_id) REFERENCES products (id)
+        FOREIGN KEY (product_reference) REFERENCES products (reference)
+      )`,
+
+      // Picking tasks table
+      `CREATE TABLE IF NOT EXISTS picking_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        wave_number TEXT,
+        product_reference TEXT,
+        location_code TEXT,
+        quantity_to_pick REAL,
+        quantity_picked REAL DEFAULT 0,
+        operator TEXT,
+        size TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_reference) REFERENCES products (reference),
+        FOREIGN KEY (location_code) REFERENCES storage_locations (location_code)
+      )`,
+
+      // Storage strategies table
+      `CREATE TABLE IF NOT EXISTS storage_strategies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        location_code TEXT,
+        strategy_type TEXT,
+        products TEXT,
+        product_count INTEGER,
+        total_quantity REAL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (location_code) REFERENCES storage_locations (location_code)
+      )`,
+
+      // Navigation points table
+      `CREATE TABLE IF NOT EXISTS navigation_points (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        label TEXT UNIQUE,
+        x REAL,
+        y REAL,
+        z REAL,
+        point_type TEXT,
+        coordinates TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
 
       // Users table
@@ -122,7 +168,15 @@ class SQLDatabase {
       'CREATE INDEX IF NOT EXISTS idx_inventory_product ON inventory (product_reference)',
       'CREATE INDEX IF NOT EXISTS idx_inventory_location ON inventory (location_code)',
       'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status)',
-      'CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id)'
+      'CREATE INDEX IF NOT EXISTS idx_orders_wave ON orders (wave_number)',
+      'CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id)',
+      'CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items (product_reference)',
+      'CREATE INDEX IF NOT EXISTS idx_picking_tasks_wave ON picking_tasks (wave_number)',
+      'CREATE INDEX IF NOT EXISTS idx_picking_tasks_status ON picking_tasks (status)',
+      'CREATE INDEX IF NOT EXISTS idx_storage_strategies_type ON storage_strategies (strategy_type)',
+      'CREATE INDEX IF NOT EXISTS idx_storage_strategies_location ON storage_strategies (location_code)',
+      'CREATE INDEX IF NOT EXISTS idx_navigation_points_label ON navigation_points (label)',
+      'CREATE INDEX IF NOT EXISTS idx_navigation_points_type ON navigation_points (point_type)'
     ];
 
     try {

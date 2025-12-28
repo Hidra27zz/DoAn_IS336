@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Toast Notifications</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 40px;
+            background: #f8fafc;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 30px;
+        }
+        
+        .test-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-error {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .btn-info {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .description {
+            color: #64748b;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .feature-list {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .feature-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .feature-list li {
+            margin: 8px 0;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎉 Test Toast Notifications</h1>
+        <p class="description">
+            Kiểm tra hệ thống thông báo mới đã được cải thiện với thiết kế đẹp hơn, 
+            animation mượt mà và không còn bị lỗi hiển thị.
+        </p>
+        
+        <div class="feature-list">
+            <h3>✨ Tính năng mới:</h3>
+            <ul>
+                <li>Thiết kế gradient đẹp mắt với backdrop blur</li>
+                <li>Animation mượt mà với cubic-bezier</li>
+                <li>Nút đóng (×) để tắt thông báo</li>
+                <li>Click để đóng thông báo</li>
+                <li>Responsive trên mobile</li>
+                <li>Tự động ẩn sau 4 giây</li>
+                <li>Không còn bị lỗi chiếm hết màn hình</li>
+            </ul>
+        </div>
+        
+        <div class="test-buttons">
+            <button class="test-btn btn-success" onclick="testSuccess()">
+                ✅ Thành công
+            </button>
+            
+            <button class="test-btn btn-error" onclick="testError()">
+                ❌ Lỗi
+            </button>
+            
+            <button class="test-btn btn-warning" onclick="testWarning()">
+                ⚠️ Cảnh báo
+            </button>
+            
+            <button class="test-btn btn-info" onclick="testInfo()">
+                ℹ️ Thông tin
+            </button>
+            
+            <button class="test-btn btn-success" onclick="testLongMessage()">
+                📝 Tin nhắn dài
+            </button>
+            
+            <button class="test-btn btn-info" onclick="testMultiple()">
+                🔄 Nhiều thông báo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Toast notification function - Improved version  
+        function showToast(message, type = 'info', duration = 4000) {
+          // Remove any existing toast
+          const existingToast = document.getElementById('toast');
+          if (existingToast) {
+            existingToast.remove();
+          }
+          
+          // Create new toast element
+          const toast = document.createElement('div');
+          toast.id = 'toast';
+          toast.className = `toast toast-${type}`;
+          toast.textContent = message;
+          
+          // Add to DOM
+          document.body.appendChild(toast);
+          
+          // Trigger show animation
+          setTimeout(() => {
+            toast.classList.add('show');
+          }, 10);
+          
+          // Auto remove after duration
+          setTimeout(() => {
+            if (toast && toast.parentNode) {
+              toast.classList.remove('show');
+              setTimeout(() => {
+                if (toast && toast.parentNode) {
+                  toast.remove();
+                }
+              }, 300); // Wait for animation to complete
+            }
+          }, duration);
+          
+          // Add click to dismiss
+          toast.addEventListener('click', () => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+              if (toast && toast.parentNode) {
+                toast.remove();
+              }
+            }, 300);
+          });
+          
+          // Add close button for better UX
+          const closeBtn = document.createElement('span');
+          closeBtn.innerHTML = '×';
+          closeBtn.style.cssText = `
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0.7;
+            line-height: 1;
+          `;
+          closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toast.classList.remove('show');
+            setTimeout(() => {
+              if (toast && toast.parentNode) {
+                toast.remove();
+              }
+            }, 300);
+          });
+          
+          toast.style.position = 'relative';
+          toast.style.paddingRight = '40px';
+          toast.appendChild(closeBtn);
+        }
+
+        // Test functions
+        function testSuccess() {
+            showToast('✅ Thao tác thành công! Dữ liệu đã được lưu.', 'success');
+        }
+
+        function testError() {
+            showToast('❌ Có lỗi xảy ra! Vui lòng thử lại.', 'error');
+        }
+
+        function testWarning() {
+            showToast('⚠️ Cảnh báo: Hãy kiểm tra lại thông tin.', 'warning');
+        }
+
+        function testInfo() {
+            showToast('ℹ️ Thông tin: Hệ thống đang xử lý yêu cầu.', 'info');
+        }
+
+        function testLongMessage() {
+            showToast('📝 Đây là một thông báo dài để kiểm tra xem toast có hiển thị đúng không khi có nhiều text. Thông báo này sẽ tự động xuống dòng và không làm vỡ layout.', 'info', 6000);
+        }
+
+        function testMultiple() {
+            showToast('🔄 Thông báo đầu tiên', 'info', 2000);
+            setTimeout(() => {
+                showToast('🔄 Thông báo thứ hai (thay thế)', 'success', 2000);
+            }, 1000);
+            setTimeout(() => {
+                showToast('🔄 Thông báo cuối cùng', 'warning', 3000);
+            }, 2000);
+        }
+
+        // Auto demo on page load
+        setTimeout(() => {
+            showToast('🎉 Chào mừng! Toast notification đã được cải thiện.', 'success');
+        }, 500);
+    </script>
+</body>
+</html>

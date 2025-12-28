@@ -37,8 +37,16 @@ class SQLImporter {
       console.log('\n6. Importing inventory...');
       await this.importInventory();
       
+      // Import orders
+      console.log('\n7. Importing orders...');
+      await this.importOrders();
+      
+      // Import picking waves
+      console.log('\n8. Importing picking waves...');
+      await this.importPickingWaves();
+      
       // Create sample users
-      console.log('\n7. Creating sample users...');
+      console.log('\n9. Creating sample users...');
       await this.createSampleUsers();
       
       console.log('\n✅ SQL database import completed successfully!');
@@ -136,6 +144,201 @@ class SQLImporter {
     }
   }
 
+  async importOrders() {
+    try {
+      const fs = require('fs');
+      const csv = require('csv-parser');
+      const path = require('path');
+      
+      console.log('   Loading Customer_Order.csv...');
+      const orderCsvPath = path.join(__dirname, '../datasets/Customer_Order.csv');
+      
+      const orders = [];
+      const orderItems = [];
+      const orderMap = new Map();
+      
+      return new Promise((resolve, reject) => {
+        fs.createReadStream(orderCsvPath)
+          .pipe(csv({ separator: ';' }))
+          .on('data', (row) => {
+            const orderNumber = row.orderNumber?.trim();
+            const customerCode = row.codCustomer?.trim();
+            const productReference = row.Reference?.trim();
+            const quantity = parseInt(row['quantity (units)']) || 0;
+            const creationDate = row.creationDate?.trim();
+            const waveNumber = row.waveNumber?.trim();
+            const operator = row.operator?.trim();
+            
+            if (!orderNumber || !productReference) return;
+            
+            // Create order if not exists
+            if (!orderMap.has(orderNumber)) {
+              const order = {
+                order_number: orderNumber,
+                customer_name: customerCode || `Customer_${orderNumber}`,
+                status: 'pending',
+                priority: 1,
+                wave_number: waveNumber,
+                operator: operator,
+                creation_date: creationDate
+              };
+              orders.push(order);
+              orderMap.set(orderNumber, orders.length - 1);
+            }
+            
+            // Add order item
+            orderItems.push({
+              order_number: orderNumber,
+              product_reference: productReference,
+              quantity: quantity,
+              picked_quantity: 0,
+              size: row['Size (US)']?.trim() || '',
+              order_to_collect: row.orderToCollect?.trim() || ''
+            });
+          })
+          .on('end', async () => {
+            try {
+              console.log(`   Found ${orders.length} unique orders with ${orderItems.length} items`);
+              
+              // Import orders
+              if (orders.length > 0) {
+                await this.db.bulkInsert('orders', orders);
+                console.log(`   ✅ Imported ${orders.length} orders`);
+              }
+              
+              // Get order IDs and create order items with proper foreign keys
+              if (orderItems.length > 0) {
+                const dbOrders = await this.db.all('SELECT id, order_number FROM orders');
+                const orderIdMap = new Map();
+                dbOrders.forEach(order => {
+                  orderIdMap.set(order.order_number, order.id);
+                });
+                
+                const orderItemsWithIds = orderItems
+                  .filter(item => orderIdMap.has(item.order_number))
+                  .map(item => ({
+                    order_id: orderIdMap.get(item.order_number),
+                    product_reference: item.product_reference,
+                    quantity: item.quantity,
+                    picked_quantity: item.picked_quantity,
+                    size: item.size,
+                    order_to_collect: item.order_to_collect
+                  }));
+                
+                // Update order_items table schema to include new fields
+                await this.db.run(`
+                  CREATE TABLE IF NOT EXISTS order_items_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    order_id INTEGER,
+                    product_reference TEXT,
+                    quantity INTEGER,
+                    picked_quantity INTEGER DEFAULT 0,
+                    size TEXT,
+                    order_to_collect TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (order_id) REFERENCES orders (id),
+                    FOREIGN KEY (product_reference) REFERENCES products (reference)
+                  )
+                `);
+                
+                await this.db.run('DROP TABLE IF EXISTS order_items');
+                await this.db.run('ALTER TABLE order_items_new RENAME TO order_items');
+                
+                await this.db.bulkInsert('order_items', orderItemsWithIds);
+                console.log(`   ✅ Imported ${orderItemsWithIds.length} order items`);
+              }
+              
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          })
+          .on('error', reject);
+      });
+      
+    } catch (error) {
+      console.error('   ❌ Order import failed:', error);
+      throw error;
+    }
+  }
+
+  async importPickingWaves() {
+    try {
+      const fs = require('fs');
+      const csv = require('csv-parser');
+      const path = require('path');
+      
+      console.log('   Loading Picking_Wave.csv...');
+      const waveCsvPath = path.join(__dirname, '../datasets/Picking_Wave.csv');
+      
+      const pickingTasks = [];
+      
+      return new Promise((resolve, reject) => {
+        fs.createReadStream(waveCsvPath)
+          .pipe(csv({ separator: ';' }))
+          .on('data', (row) => {
+            const waveNumber = row.waveNumber?.trim();
+            const productReference = row.reference?.trim();
+            const locationCode = row.locations?.trim();
+            const quantity = parseInt(row['quantityToPick (units)']) || 0;
+            const operator = row.operator?.trim();
+            const size = row['Size (US)']?.trim();
+            
+            if (!waveNumber || !productReference || !locationCode) return;
+            
+            pickingTasks.push({
+              wave_number: waveNumber,
+              product_reference: productReference,
+              location_code: locationCode,
+              quantity_to_pick: quantity,
+              quantity_picked: 0,
+              operator: operator,
+              size: size,
+              status: 'pending'
+            });
+          })
+          .on('end', async () => {
+            try {
+              console.log(`   Found ${pickingTasks.length} picking tasks`);
+              
+              if (pickingTasks.length > 0) {
+                // Create picking_tasks table
+                await this.db.run(`
+                  CREATE TABLE IF NOT EXISTS picking_tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    wave_number TEXT,
+                    product_reference TEXT,
+                    location_code TEXT,
+                    quantity_to_pick INTEGER,
+                    quantity_picked INTEGER DEFAULT 0,
+                    operator TEXT,
+                    size TEXT,
+                    status TEXT DEFAULT 'pending',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (product_reference) REFERENCES products (reference),
+                    FOREIGN KEY (location_code) REFERENCES storage_locations (location_code)
+                  )
+                `);
+                
+                await this.db.bulkInsert('picking_tasks', pickingTasks);
+                console.log(`   ✅ Imported ${pickingTasks.length} picking tasks`);
+              }
+              
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          })
+          .on('error', reject);
+      });
+      
+    } catch (error) {
+      console.error('   ❌ Picking wave import failed:', error);
+      throw error;
+    }
+  }
+
   async createSampleUsers() {
     try {
       const users = [
@@ -175,16 +378,22 @@ class SQLImporter {
 
   async verifyImport() {
     try {
-      console.log('\n8. Verifying import...');
+      console.log('\n10. Verifying import...');
       
       const productCount = await this.db.count('products');
       const locationCount = await this.db.count('storage_locations');
       const inventoryCount = await this.db.count('inventory');
+      const orderCount = await this.db.count('orders');
+      const orderItemCount = await this.db.count('order_items');
+      const pickingTaskCount = await this.db.count('picking_tasks');
       const userCount = await this.db.count('users');
       
       console.log(`   Products in database: ${productCount}`);
       console.log(`   Locations in database: ${locationCount}`);
       console.log(`   Inventory in database: ${inventoryCount}`);
+      console.log(`   Orders in database: ${orderCount}`);
+      console.log(`   Order items in database: ${orderItemCount}`);
+      console.log(`   Picking tasks in database: ${pickingTaskCount}`);
       console.log(`   Users in database: ${userCount}`);
       
       // Show sample data
@@ -201,6 +410,41 @@ class SQLImporter {
       
       sampleInventory.forEach(inv => {
         console.log(`     ${inv.product_reference} at ${inv.location_code}: ${inv.quantity} units (${inv.reserved_quantity} reserved)`);
+      });
+      
+      // Show sample orders
+      console.log('\n   Sample orders:');
+      const sampleOrders = await this.db.all(`
+        SELECT 
+          order_number,
+          customer_name,
+          status,
+          wave_number,
+          operator
+        FROM orders
+        LIMIT 5
+      `);
+      
+      sampleOrders.forEach(order => {
+        console.log(`     Order ${order.order_number} - ${order.customer_name} (${order.status}) - Wave: ${order.wave_number}`);
+      });
+      
+      // Show sample picking tasks
+      console.log('\n   Sample picking tasks:');
+      const sampleTasks = await this.db.all(`
+        SELECT 
+          wave_number,
+          product_reference,
+          location_code,
+          quantity_to_pick,
+          operator,
+          status
+        FROM picking_tasks
+        LIMIT 5
+      `);
+      
+      sampleTasks.forEach(task => {
+        console.log(`     Wave ${task.wave_number}: Pick ${task.quantity_to_pick} of ${task.product_reference} from ${task.location_code} (${task.operator})`);
       });
       
       // Show inventory by zone
