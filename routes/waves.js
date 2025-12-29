@@ -1,59 +1,72 @@
-// Wave Management Routes - SQL Database
+// Picking Waves Routes - SQL Database
 const express = require('express');
-const router = express.Router();
 const { getDatabase } = require('../config/database');
 
-// GET /api/waves - Get all waves with filtering and pagination
+const router = express.Router();
+
+// GET /api/waves - Get all picking waves
 router.get('/', async (req, res) => {
   try {
-    // Mock wave data since we don't have waves table yet
-    const waves = [
-      {
-        id: 'wave-001',
-        wave_number: 'W001',
-        status: 'in_progress',
-        total_items: 25,
-        operator: 'John Doe',
-        created_at: new Date().toISOString()
-      },
-      {
-        id: 'wave-002',
-        wave_number: 'W002',
-        status: 'created',
-        total_items: 18,
-        operator: 'Jane Smith',
-        created_at: new Date().toISOString()
-      },
-      {
-        id: 'wave-003',
-        wave_number: 'W003',
-        status: 'completed',
-        total_items: 32,
-        operator: 'Mike Johnson',
-        created_at: new Date().toISOString()
-      }
-    ];
+    const db = await getDatabase();
+    const { status, limit = 50, page = 1 } = req.query;
 
-    const { status, page = 1, limit = 50 } = req.query;
+    let whereConditions = [];
+    let params = [];
 
-    let filteredWaves = waves;
     if (status) {
-      filteredWaves = waves.filter(wave => wave.status === status);
+      whereConditions.push('status = ?');
+      params.push(status);
     }
 
-    const total = filteredWaves.length;
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // Get total count of unique waves
+    const countResult = await db.get(`
+      SELECT COUNT(DISTINCT wave_number) as total 
+      FROM picking_tasks ${whereClause}
+    `, params);
+    const total = countResult?.total || 0;
+
+    // Get waves from picking_tasks grouped by wave_number
     const offset = (page - 1) * limit;
-    const paginatedWaves = filteredWaves.slice(offset, offset + parseInt(limit));
+    const waves = await db.all(`
+      SELECT 
+        wave_number,
+        MIN(id) as id,
+        operator,
+        status,
+        COUNT(*) as total_items,
+        SUM(quantity_to_pick) as total_quantity,
+        MIN(created_at) as created_at,
+        MAX(updated_at) as updated_at
+      FROM picking_tasks
+      ${whereClause}
+      GROUP BY wave_number
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, parseInt(limit), offset]);
+
+    // Format waves
+    const formattedWaves = waves.map(w => ({
+      id: w.id,
+      wave_number: w.wave_number,
+      status: w.status || 'created',
+      total_items: w.total_items,
+      total_quantity: w.total_quantity,
+      assigned_operator_id: w.operator,
+      created_at: w.created_at,
+      updated_at: w.updated_at
+    }));
 
     res.json({
-      waves: paginatedWaves,
+      waves: formattedWaves,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
         total: total,
         pages: Math.ceil(total / limit)
       },
-      data_source: 'SQL Database (Mock Data)'
+      data_source: 'SQL Database'
     });
 
   } catch (error) {
@@ -62,106 +75,64 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/waves/:id - Get specific wave
+// GET /api/waves/:id - Get single wave with tasks
 router.get('/:id', async (req, res) => {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
 
-    // Mock wave data
-    const wave = {
-      id: id,
-      wave_number: `W${id.slice(-3)}`,
-      status: 'in_progress',
-      total_items: 25,
-      operator: 'John Doe',
-      created_at: new Date().toISOString(),
-      tasks: [
-        {
-          product_reference: 'O9YFO8',
-          location_code: 'A-14-11',
-          quantity: 5,
-          status: 'pending'
-        },
-        {
-          product_reference: 'I1X92B',
-          location_code: 'A-14-12',
-          quantity: 3,
-          status: 'completed'
-        }
-      ]
-    };
+    // Get wave info
+    const wave = await db.get(`
+      SELECT 
+        wave_number,
+        MIN(id) as id,
+        operator,
+        status,
+        COUNT(*) as total_items,
+        SUM(quantity_to_pick) as total_quantity,
+        SUM(quantity_picked) as total_picked,
+        MIN(created_at) as created_at
+      FROM picking_tasks
+      WHERE id = ? OR wave_number = ?
+      GROUP BY wave_number
+    `, [id, id]);
+
+    if (!wave) {
+      return res.status(404).json({ error: 'Wave not found' });
+    }
+
+    // Get all tasks for this wave
+    const tasks = await db.all(`
+      SELECT 
+        pt.*,
+        p.description as product_description,
+        p.abc_code,
+        sl.zone
+      FROM picking_tasks pt
+      LEFT JOIN products p ON pt.product_reference = p.reference
+      LEFT JOIN storage_locations sl ON pt.location_code = sl.location_code
+      WHERE pt.wave_number = ?
+      ORDER BY sl.zone, pt.location_code
+    `, [wave.wave_number]);
 
     res.json({
-      wave: wave,
-      data_source: 'SQL Database (Mock Data)'
+      wave: {
+        id: wave.id,
+        wave_number: wave.wave_number,
+        status: wave.status || 'created',
+        total_items: wave.total_items,
+        total_quantity: wave.total_quantity,
+        total_picked: wave.total_picked || 0,
+        assigned_operator_id: wave.operator,
+        created_at: wave.created_at
+      },
+      tasks: tasks,
+      data_source: 'SQL Database'
     });
 
   } catch (error) {
     console.error('Get wave error:', error);
     res.status(500).json({ error: 'Failed to get wave' });
-  }
-});
-
-// POST /api/waves - Create new wave
-router.post('/', async (req, res) => {
-  try {
-    const { wave_number, operator, order_ids = [] } = req.body;
-
-    if (!wave_number || !operator) {
-      return res.status(400).json({ error: 'Wave number and operator are required' });
-    }
-
-    // Mock wave creation
-    const wave = {
-      id: 'wave-' + Date.now(),
-      wave_number,
-      operator,
-      status: 'created',
-      total_items: order_ids.length,
-      created_at: new Date().toISOString()
-    };
-
-    res.status(201).json({
-      success: true,
-      wave: wave,
-      data_source: 'SQL Database (Mock Data)'
-    });
-
-  } catch (error) {
-    console.error('Create wave error:', error);
-    res.status(500).json({ error: 'Failed to create wave' });
-  }
-});
-
-// PUT /api/waves/:id/status - Update wave status
-router.put('/:id/status', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!status) {
-      return res.status(400).json({ error: 'Status is required' });
-    }
-
-    // Mock status update
-    const wave = {
-      id: id,
-      wave_number: `W${id.slice(-3)}`,
-      status: status,
-      total_items: 25,
-      operator: 'John Doe',
-      updated_at: new Date().toISOString()
-    };
-
-    res.json({
-      success: true,
-      wave: wave,
-      data_source: 'SQL Database (Mock Data)'
-    });
-
-  } catch (error) {
-    console.error('Update wave status error:', error);
-    res.status(500).json({ error: 'Failed to update wave status' });
   }
 });
 

@@ -1,38 +1,45 @@
 // Error Handler Middleware
 const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err.message);
-  console.error('Stack:', err.stack);
+  console.error('Error:', err);
 
+  // Default error
+  let error = {
+    message: err.message || 'Internal Server Error',
+    status: err.status || 500
+  };
+
+  // Mongoose validation error
   if (err.name === 'ValidationError') {
-    return res.status(400).json({
-      error: 'Validation Error',
-      details: err.message
-    });
+    error.message = Object.values(err.errors).map(val => val.message).join(', ');
+    error.status = 400;
   }
 
-  if (err.name === 'CastError') {
-    return res.status(400).json({
-      error: 'Invalid ID format',
-      details: err.message
-    });
+  // Mongoose duplicate key error
+  if (err.code === 11000) {
+    error.message = 'Duplicate field value entered';
+    error.status = 400;
   }
 
-  if (err.code === 'ECONNREFUSED') {
-    return res.status(503).json({
-      error: 'Database connection failed',
-      details: 'Unable to connect to database'
-    });
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    error.message = 'Invalid token';
+    error.status = 401;
   }
 
-  if (err.name === 'FirebaseError') {
-    return res.status(500).json({
-      error: 'Database Error',
-      details: err.message
-    });
+  if (err.name === 'TokenExpiredError') {
+    error.message = 'Token expired';
+    error.status = 401;
   }
 
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error',
+  // SQLite errors
+  if (err.code === 'SQLITE_CONSTRAINT') {
+    error.message = 'Database constraint violation';
+    error.status = 400;
+  }
+
+  res.status(error.status).json({
+    success: false,
+    error: error.message,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 };

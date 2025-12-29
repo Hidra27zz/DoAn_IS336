@@ -2,7 +2,6 @@
 const express = require('express');
 const { getDatabase } = require('../config/database');
 const { requireRole } = require('../middleware/auth');
-
 const router = express.Router();
 
 // Get all inventory

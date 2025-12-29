@@ -1,253 +1,249 @@
 // AI Route Optimization Service - Genetic Algorithm Implementation
-// For optimizing warehouse picking routes
-
 class GeneticAlgorithm {
   constructor(options = {}) {
     this.populationSize = options.populationSize || 50;
     this.generations = options.generations || 100;
     this.mutationRate = options.mutationRate || 0.1;
+    this.elitismRate = options.elitismRate || 0.2;
     this.crossoverRate = options.crossoverRate || 0.8;
-    this.eliteSize = options.eliteSize || 5;
-    this.tournamentSize = options.tournamentSize || 5;
   }
 
-  // Calculate distance between two 3D points
+  // Calculate Euclidean distance between two 3D points
   calculateDistance(point1, point2) {
-    const dx = (point1.x || 0) - (point2.x || 0);
-    const dy = (point1.y || 0) - (point2.y || 0);
+    const dx = point1.x - point2.x;
+    const dy = point1.y - point2.y;
     const dz = (point1.z || 0) - (point2.z || 0);
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
-  // Calculate total route distance
-  calculateRouteDistance(route, distanceMatrix) {
+  // Calculate total distance for a route
+  calculateRouteDistance(route, locations) {
+    if (route.length < 2) return 0;
+    
     let totalDistance = 0;
     for (let i = 0; i < route.length - 1; i++) {
-      totalDistance += distanceMatrix[route[i]][route[i + 1]];
-    }
-    // Return to start
-    if (route.length > 0) {
-      totalDistance += distanceMatrix[route[route.length - 1]][route[0]];
+      const current = locations[route[i]];
+      const next = locations[route[i + 1]];
+      totalDistance += this.calculateDistance(current, next);
     }
     return totalDistance;
-  }
-
-  // Calculate fitness (inverse of distance)
-  calculateFitness(route, distanceMatrix) {
-    const distance = this.calculateRouteDistance(route, distanceMatrix);
-    return distance > 0 ? 1 / distance : Infinity;
-  }
-
-  // Create distance matrix from locations
-  createDistanceMatrix(locations) {
-    const n = locations.length;
-    const matrix = Array.from({ length: n }, () => new Array(n).fill(0));
-    
-    for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
-        const distance = this.calculateDistance(locations[i], locations[j]);
-        matrix[i][j] = distance;
-        matrix[j][i] = distance;
-      }
-    }
-    
-    return matrix;
   }
 
   // Generate random route
   generateRandomRoute(numLocations) {
     const route = Array.from({ length: numLocations }, (_, i) => i);
+    
     // Fisher-Yates shuffle
     for (let i = route.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [route[i], route[j]] = [route[j], route[i]];
     }
+    
     return route;
   }
 
-  // Initialize population
-  initializePopulation(numLocations) {
-    return Array.from({ length: this.populationSize }, () => 
-      this.generateRandomRoute(numLocations)
-    );
+  // Create initial population
+  createInitialPopulation(numLocations) {
+    const population = [];
+    
+    for (let i = 0; i < this.populationSize; i++) {
+      population.push(this.generateRandomRoute(numLocations));
+    }
+    
+    return population;
+  }
+
+  // Calculate fitness (inverse of distance - shorter routes have higher fitness)
+  calculateFitness(route, locations) {
+    const distance = this.calculateRouteDistance(route, locations);
+    return distance > 0 ? 1 / distance : 0;
   }
 
   // Tournament selection
-  tournamentSelection(population, fitnesses) {
-    const tournamentIndices = [];
-    for (let i = 0; i < this.tournamentSize; i++) {
-      tournamentIndices.push(Math.floor(Math.random() * population.length));
-    }
+  tournamentSelection(population, fitnesses, tournamentSize = 3) {
+    let best = null;
+    let bestFitness = -1;
     
-    let bestIndex = tournamentIndices[0];
-    let bestFitness = fitnesses[bestIndex];
-    
-    for (let i = 1; i < tournamentIndices.length; i++) {
-      if (fitnesses[tournamentIndices[i]] > bestFitness) {
-        bestIndex = tournamentIndices[i];
-        bestFitness = fitnesses[tournamentIndices[i]];
+    for (let i = 0; i < tournamentSize; i++) {
+      const randomIndex = Math.floor(Math.random() * population.length);
+      const fitness = fitnesses[randomIndex];
+      
+      if (fitness > bestFitness) {
+        bestFitness = fitness;
+        best = population[randomIndex];
       }
     }
     
-    return [...population[bestIndex]];
+    return [...best]; // Return copy
   }
 
   // Order crossover (OX)
-  crossover(parent1, parent2) {
-    if (Math.random() > this.crossoverRate) {
-      return [[...parent1], [...parent2]];
-    }
-    
+  orderCrossover(parent1, parent2) {
     const length = parent1.length;
     const start = Math.floor(Math.random() * length);
     const end = Math.floor(Math.random() * (length - start)) + start;
     
-    const child1 = new Array(length).fill(-1);
-    const child2 = new Array(length).fill(-1);
+    const child = new Array(length).fill(-1);
     
-    // Copy segment from parents
+    // Copy segment from parent1
     for (let i = start; i <= end; i++) {
-      child1[i] = parent1[i];
-      child2[i] = parent2[i];
+      child[i] = parent1[i];
     }
     
-    // Fill remaining positions
-    let pos1 = (end + 1) % length;
-    let pos2 = (end + 1) % length;
-    
+    // Fill remaining positions with parent2's order
+    let parent2Index = 0;
     for (let i = 0; i < length; i++) {
-      const idx = (end + 1 + i) % length;
-      
-      if (!child1.includes(parent2[idx])) {
-        child1[pos1] = parent2[idx];
-        pos1 = (pos1 + 1) % length;
-      }
-      
-      if (!child2.includes(parent1[idx])) {
-        child2[pos2] = parent1[idx];
-        pos2 = (pos2 + 1) % length;
+      if (child[i] === -1) {
+        while (child.includes(parent2[parent2Index])) {
+          parent2Index++;
+        }
+        child[i] = parent2[parent2Index];
+        parent2Index++;
       }
     }
     
-    return [child1, child2];
+    return child;
   }
 
   // Swap mutation
-  mutate(route) {
+  swapMutation(route) {
+    const mutated = [...route];
+    
     if (Math.random() < this.mutationRate) {
-      const i = Math.floor(Math.random() * route.length);
-      const j = Math.floor(Math.random() * route.length);
-      [route[i], route[j]] = [route[j], route[i]];
+      const i = Math.floor(Math.random() * mutated.length);
+      const j = Math.floor(Math.random() * mutated.length);
+      [mutated[i], mutated[j]] = [mutated[j], mutated[i]];
     }
-    return route;
+    
+    return mutated;
   }
 
   // 2-opt local optimization
-  twoOpt(route, distanceMatrix) {
-    let improved = true;
-    let bestRoute = [...route];
-    let bestDistance = this.calculateRouteDistance(bestRoute, distanceMatrix);
+  twoOptImprovement(route, locations) {
+    let improved = [...route];
+    let bestDistance = this.calculateRouteDistance(improved, locations);
+    let foundImprovement = true;
     
-    while (improved) {
-      improved = false;
-      for (let i = 0; i < route.length - 1; i++) {
-        for (let j = i + 2; j < route.length; j++) {
-          const newRoute = [...bestRoute];
-          // Reverse segment between i and j
-          const segment = newRoute.slice(i + 1, j + 1).reverse();
-          newRoute.splice(i + 1, segment.length, ...segment);
+    while (foundImprovement) {
+      foundImprovement = false;
+      
+      for (let i = 1; i < route.length - 2; i++) {
+        for (let j = i + 1; j < route.length; j++) {
+          if (j - i === 1) continue; // Skip adjacent edges
           
-          const newDistance = this.calculateRouteDistance(newRoute, distanceMatrix);
+          // Create new route by reversing segment between i and j
+          const newRoute = [...improved];
+          this.reverseSegment(newRoute, i, j);
+          
+          const newDistance = this.calculateRouteDistance(newRoute, locations);
+          
           if (newDistance < bestDistance) {
-            bestRoute = newRoute;
+            improved = newRoute;
             bestDistance = newDistance;
-            improved = true;
+            foundImprovement = true;
           }
         }
       }
     }
     
-    return bestRoute;
+    return improved;
+  }
+
+  // Reverse segment of route
+  reverseSegment(route, start, end) {
+    while (start < end) {
+      [route[start], route[end]] = [route[end], route[start]];
+      start++;
+      end--;
+    }
   }
 
   // Main optimization method
   optimize(locations) {
-    if (locations.length <= 2) {
+    if (locations.length < 2) {
       return {
-        route: locations.map((_, i) => i),
-        distance: locations.length === 2 ? this.calculateDistance(locations[0], locations[1]) : 0,
+        route: locations.length === 1 ? [0] : [],
+        distance: 0,
         generations: 0
       };
     }
-    
-    const distanceMatrix = this.createDistanceMatrix(locations);
-    let population = this.initializePopulation(locations.length);
-    
+
+    const numLocations = locations.length;
+    let population = this.createInitialPopulation(numLocations);
     let bestRoute = null;
     let bestDistance = Infinity;
-    let generationStats = [];
-    
-    for (let gen = 0; gen < this.generations; gen++) {
-      // Calculate fitness for all routes
+    let generationsWithoutImprovement = 0;
+    const maxGenerationsWithoutImprovement = 20;
+
+    for (let generation = 0; generation < this.generations; generation++) {
+      // Calculate fitness for all individuals
       const fitnesses = population.map(route => 
-        this.calculateFitness(route, distanceMatrix)
+        this.calculateFitness(route, locations)
       );
-      
+
       // Find best route in current generation
       const maxFitnessIndex = fitnesses.indexOf(Math.max(...fitnesses));
-      const currentBestDistance = this.calculateRouteDistance(population[maxFitnessIndex], distanceMatrix);
-      
+      const currentBestRoute = population[maxFitnessIndex];
+      const currentBestDistance = this.calculateRouteDistance(currentBestRoute, locations);
+
+      // Update global best
       if (currentBestDistance < bestDistance) {
         bestDistance = currentBestDistance;
-        bestRoute = [...population[maxFitnessIndex]];
+        bestRoute = [...currentBestRoute];
+        generationsWithoutImprovement = 0;
+      } else {
+        generationsWithoutImprovement++;
       }
-      
-      generationStats.push({
-        generation: gen,
-        bestDistance: currentBestDistance,
-        avgDistance: population.reduce((sum, route) => 
-          sum + this.calculateRouteDistance(route, distanceMatrix), 0) / population.length
-      });
-      
+
+      // Early termination if no improvement
+      if (generationsWithoutImprovement >= maxGenerationsWithoutImprovement) {
+        break;
+      }
+
       // Create new population
       const newPopulation = [];
-      
-      // Elitism - keep best routes
+      const eliteCount = Math.floor(this.populationSize * this.elitismRate);
+
+      // Elitism - keep best individuals
       const sortedIndices = fitnesses
-        .map((f, i) => ({ fitness: f, index: i }))
+        .map((fitness, index) => ({ fitness, index }))
         .sort((a, b) => b.fitness - a.fitness)
-        .slice(0, this.eliteSize)
+        .slice(0, eliteCount)
         .map(item => item.index);
-      
-      sortedIndices.forEach(i => {
-        newPopulation.push([...population[i]]);
+
+      sortedIndices.forEach(index => {
+        newPopulation.push([...population[index]]);
       });
-      
-      // Generate rest of population through selection, crossover, mutation
+
+      // Generate offspring
       while (newPopulation.length < this.populationSize) {
         const parent1 = this.tournamentSelection(population, fitnesses);
         const parent2 = this.tournamentSelection(population, fitnesses);
-        
-        const [child1, child2] = this.crossover(parent1, parent2);
-        
-        newPopulation.push(this.mutate(child1));
-        if (newPopulation.length < this.populationSize) {
-          newPopulation.push(this.mutate(child2));
+
+        let child;
+        if (Math.random() < this.crossoverRate) {
+          child = this.orderCrossover(parent1, parent2);
+        } else {
+          child = Math.random() < 0.5 ? [...parent1] : [...parent2];
         }
+
+        child = this.swapMutation(child);
+        newPopulation.push(child);
       }
-      
+
       population = newPopulation;
     }
-    
-    // Apply 2-opt local optimization to best route
-    bestRoute = this.twoOpt(bestRoute, distanceMatrix);
-    bestDistance = this.calculateRouteDistance(bestRoute, distanceMatrix);
-    
+
+    // Apply 2-opt improvement to best route
+    if (bestRoute && bestRoute.length > 3) {
+      bestRoute = this.twoOptImprovement(bestRoute, locations);
+      bestDistance = this.calculateRouteDistance(bestRoute, locations);
+    }
+
     return {
-      route: bestRoute,
+      route: bestRoute || [],
       distance: bestDistance,
-      generations: this.generations,
-      stats: generationStats
+      generations: Math.min(this.generations, generationsWithoutImprovement + 1)
     };
   }
 }
@@ -255,162 +251,54 @@ class GeneticAlgorithm {
 // Route Optimization Service
 class RouteOptimizationService {
   constructor() {
-    this.ga = null;
+    this.ga = new GeneticAlgorithm();
   }
 
-  // Optimize picking route for a wave
-  optimizePickingRoute(pickingTasks, storageLocations, options = {}) {
-    // Map tasks to locations with coordinates
+  optimizePickingRoute(pickingTasks, storageLocations) {
+    // Prepare location data
     const taskLocations = pickingTasks.map(task => {
-      const location = storageLocations.find(loc => loc.id === task.location_id);
+      const location = storageLocations.find(loc => loc.location_code === task.location_code);
       return {
-        task_id: task.id,
-        location_id: task.location_id,
-        location_code: location ? location.location_code : 'Unknown',
-        x: location ? (location.x_coordinate || location.x || 0) : 0,
-        y: location ? (location.y_coordinate || location.y || 0) : 0,
-        z: location ? (location.z_coordinate || location.z || 0) : 0,
-        quantity: task.quantity_to_pick || task.quantity || 0,
-        product_id: task.product_id
+        id: task.id,
+        location_code: task.location_code,
+        x: location?.x || 0,
+        y: location?.y || 0,
+        z: location?.z || 0,
+        quantity: task.quantity_to_pick
       };
     });
-    
-    if (taskLocations.length === 0) {
-      return {
-        optimized_route: [],
-        original_distance: 0,
-        optimized_distance: 0,
-        improvement_percentage: 0,
-        estimated_time_minutes: 0
-      };
-    }
-    
-    // Calculate original route distance (sequential order)
-    this.ga = new GeneticAlgorithm({
-      populationSize: options.populationSize || 50,
-      generations: options.generations || 100,
-      mutationRate: options.mutationRate || 0.1
-    });
-    
-    const originalRoute = taskLocations.map((_, i) => i);
-    const distanceMatrix = this.ga.createDistanceMatrix(taskLocations);
-    const originalDistance = this.ga.calculateRouteDistance(originalRoute, distanceMatrix);
-    
-    // Run genetic algorithm optimization
+
+    // Run genetic algorithm
     const result = this.ga.optimize(taskLocations);
-    
-    // Map optimized route back to tasks
+
+    // Map result back to tasks
     const optimizedRoute = result.route.map((index, sequence) => ({
       sequence: sequence + 1,
-      task_id: taskLocations[index].task_id,
-      location_id: taskLocations[index].location_id,
+      task_id: taskLocations[index].id,
       location_code: taskLocations[index].location_code,
       coordinates: {
         x: taskLocations[index].x,
         y: taskLocations[index].y,
         z: taskLocations[index].z
       },
-      quantity: taskLocations[index].quantity,
-      product_id: taskLocations[index].product_id
+      quantity: taskLocations[index].quantity
     }));
-    
-    const improvementPercentage = originalDistance > 0 
-      ? ((originalDistance - result.distance) / originalDistance) * 100 
-      : 0;
-    
-    // Estimate time (assuming 30 seconds per pick + travel time)
-    const avgSpeed = 1.5; // meters per second
-    const pickTime = 30; // seconds per pick
-    const travelTime = result.distance / avgSpeed;
-    const totalTime = (pickingTasks.length * pickTime) + travelTime;
-    
+
     return {
       optimized_route: optimizedRoute,
-      original_distance: Math.round(originalDistance * 100) / 100,
-      optimized_distance: Math.round(result.distance * 100) / 100,
-      improvement_percentage: Math.round(improvementPercentage * 100) / 100,
-      estimated_time_seconds: Math.round(totalTime),
-      estimated_time_minutes: Math.round(totalTime / 60 * 10) / 10,
-      algorithm: 'Genetic Algorithm with 2-opt',
-      parameters: {
-        population_size: this.ga.populationSize,
-        generations: this.ga.generations,
-        mutation_rate: this.ga.mutationRate
-      }
+      total_distance: result.distance,
+      generations_used: result.generations,
+      tasks_optimized: pickingTasks.length
     };
   }
 
-  // Optimize multiple waves
-  optimizeMultipleWaves(waves, pickingTasks, storageLocations) {
-    const results = [];
-    
-    waves.forEach(wave => {
-      const waveTasks = pickingTasks.filter(task => task.wave_id === wave.id);
-      const optimization = this.optimizePickingRoute(waveTasks, storageLocations);
-      
-      results.push({
-        wave_id: wave.id,
-        wave_number: wave.wave_number,
-        ...optimization
-      });
-    });
-    
-    const totalOriginalDistance = results.reduce((sum, r) => sum + r.original_distance, 0);
-    const totalOptimizedDistance = results.reduce((sum, r) => sum + r.optimized_distance, 0);
-    const totalImprovement = totalOriginalDistance > 0 
-      ? ((totalOriginalDistance - totalOptimizedDistance) / totalOriginalDistance) * 100 
-      : 0;
-    
-    return {
-      waves: results,
-      summary: {
-        total_waves: waves.length,
-        total_original_distance: Math.round(totalOriginalDistance * 100) / 100,
-        total_optimized_distance: Math.round(totalOptimizedDistance * 100) / 100,
-        total_improvement_percentage: Math.round(totalImprovement * 100) / 100,
-        total_estimated_time_minutes: results.reduce((sum, r) => sum + r.estimated_time_minutes, 0)
-      }
-    };
-  }
-
-  // Get route visualization data
   getRouteVisualization(optimizedRoute) {
-    const pathPoints = optimizedRoute.map(point => ({
-      x: point.coordinates.x,
-      y: point.coordinates.y,
-      z: point.coordinates.z,
-      label: point.location_code,
-      sequence: point.sequence
-    }));
-    
-    // Add start point (entrance at 0,0,0)
-    pathPoints.unshift({
-      x: 0,
-      y: 0,
-      z: 0,
-      label: 'Entrance',
-      sequence: 0
-    });
-    
-    // Add return to entrance
-    pathPoints.push({
-      x: 0,
-      y: 0,
-      z: 0,
-      label: 'Exit',
-      sequence: pathPoints.length
-    });
-    
     return {
-      path: pathPoints,
-      segments: pathPoints.slice(0, -1).map((point, i) => ({
-        from: point,
-        to: pathPoints[i + 1],
-        distance: Math.sqrt(
-          Math.pow(pathPoints[i + 1].x - point.x, 2) +
-          Math.pow(pathPoints[i + 1].y - point.y, 2) +
-          Math.pow(pathPoints[i + 1].z - point.z, 2)
-        )
+      path: optimizedRoute.map(task => task.coordinates),
+      waypoints: optimizedRoute.map(task => ({
+        location: task.location_code,
+        coordinates: task.coordinates,
+        sequence: task.sequence
       }))
     };
   }
