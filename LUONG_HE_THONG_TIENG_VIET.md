@@ -1,423 +1,380 @@
-# LUỒNG HỆ THỐNG QUẢN LÝ KHO HÀNG THÔNG MINH
+# HƯỚNG DẪN SỬ DỤNG HỆ THỐNG WAREHOUSE MANAGEMENT
 
 ## TỔNG QUAN HỆ THỐNG
 
-Hệ thống Warehouse Management System (WMS) là một ứng dụng web quản lý kho hàng thông minh với tích hợp AI, giúp tối ưu hóa các hoạt động kho bãi từ nhập kho, xuất kho, lấy hàng đến báo cáo và phân tích.
+Hệ thống Warehouse Management System (WMS) được thiết kế để quản lý toàn bộ quy trình kho hàng từ nhập kho, lưu trữ, đến xuất kho và giao hàng. Hệ thống sử dụng AI để tối ưu hóa các quy trình và cung cấp giao diện web hiện đại.
 
----
+## 6. WAVE PLANNING - LẬP KẾ HOẠCH THU GOM
 
-## 1. LUỒNG ĐĂNG NHẬP VÀ XÁC THỰC
+### 6.1. Wave Master (Quản lý Wave)
 
-### **Bước 1: Truy cập hệ thống**
-- Người dùng truy cập: `http://localhost:3000`
-- Hệ thống hiển thị màn hình đăng nhập
+**Mục đích**: Quản lý tất cả các wave picking trong hệ thống
 
-### **Bước 2: Đăng nhập**
-- Nhập **Username** và **Password**
-- Hệ thống kiểm tra thông tin với database
-- **Tài khoản có sẵn:**
-  - `admin` / `admin123` (Quản trị viên)
-  - `manager` / `manager123` (Quản lý)
-  - `supervisor` / `supervisor123` (Giám sát)
-  - `operator` / `operator123` (Nhân viên)
+**Các bước thực hiện**:
 
-### **Bước 3: Xác thực thành công**
-- Hệ thống tạo JWT token
-- Lưu thông tin người dùng vào localStorage
-- Chuyển hướng đến Dashboard chính
+1. **Truy cập Wave List**:
+   - Vào menu "Picking" từ sidebar
+   - Xem danh sách tất cả waves hiện có
+   - Sử dụng các bộ lọc để tìm wave cụ thể
 
-### **Bước 4: Phân quyền**
-- **Admin**: Toàn quyền truy cập tất cả chức năng
-- **Manager**: Quản lý kho, báo cáo, AI optimization
-- **Supervisor**: Giám sát picking, inventory, orders
-- **Operator**: Thực hiện picking tasks, xem inventory
+2. **Tìm kiếm và Lọc**:
+   - **Search theo Wave Number**: Nhập mã wave vào ô tìm kiếm
+   - **Filter theo Status**: Chọn trạng thái (Draft/Created, In Progress, Completed, Cancelled, Paused)
+   - **Filter theo Operator**: Chọn nhân viên phụ trách
+   - **Filter theo Date Range**: Chọn khoảng thời gian tạo wave
 
----
+3. **Xem Chi tiết Wave**:
+   - Click nút "View" trên wave muốn xem
+   - Modal hiển thị thông tin chi tiết:
+     - Mã wave, trạng thái, người tạo, thời gian
+     - Danh sách đơn hàng trong wave
+     - Thống kê: tổng items, tổng quantity, số locations
 
-## 2. LUỒNG DASHBOARD - TỔNG QUAN
+4. **Quản lý Wave**:
+   - **Gán Operator**: Click "Assign Operator" để gán nhân viên
+   - **Bắt đầu Wave**: Click "Start" để bắt đầu picking
+   - **Tạm dừng**: Click "Pause" khi wave đang chạy
+   - **Tiếp tục**: Click "Resume" khi wave bị tạm dừng
+   - **Hoàn thành**: Click "Complete" khi picking xong
+   - **Hủy Wave**: Click "Cancel" để hủy wave
 
-### **Khi vào Dashboard:**
-1. **Load thống kê tổng quan:**
-   - Tổng số sản phẩm trong kho
-   - Đơn hàng đang chờ xử lý
-   - Waves đang hoạt động
-   - Số lượng picks hôm nay
+### 6.2. Wave Build (Tạo Wave từ đơn hàng)
 
-2. **Hiển thị biểu đồ:**
-   - **Biểu đồ cột**: Phân bố inventory theo zone
-   - **Biểu đồ tròn**: Trạng thái đơn hàng
+**Mục đích**: Tạo wave mới từ danh sách đơn hàng có sẵn
 
-3. **Cập nhật real-time:**
-   - Metrics được tính toán từ dữ liệu thực
-   - Refresh tự động mỗi 30 giây
+**Các bước thực hiện**:
 
----
+1. **Mở Wave Build Modal**:
+   - Click nút "Wave Build" trong phần Wave Planning
+   - Hệ thống hiển thị wizard 2 bước
 
-## 3. LUỒNG QUẢN LÝ INVENTORY (TỒN KHO)
+2. **Step 1 - Chọn Orders**:
+   - Xem danh sách đơn hàng pending
+   - Sử dụng filter để lọc theo priority
+   - Sử dụng search để tìm đơn hàng cụ thể
+   - Check các đơn hàng muốn thêm vào wave
 
-### **3.1 Xem Inventory**
-1. Click menu **"Inventory"**
-2. Hệ thống load danh sách sản phẩm từ database
-3. Hiển thị bảng với thông tin:
-   - Mã sản phẩm (Product Reference)
-   - Phân loại ABC (A: cao, B: trung bình, C: thấp)
-   - Vị trí lưu trữ (Location Code)
-   - Khu vực (Zone)
-   - Số lượng tồn kho
-   - Số lượng đã đặt trước
-   - Số lượng khả dụng
+3. **Step 2 - Preview Wave**:
+   - Xem preview chi tiết wave sẽ tạo:
+     - Tổng số đơn hàng
+     - Tổng số SKU
+     - Tổng số quantity
+     - Ước lượng số locations cần đi
+     - Ước lượng thời gian hoàn thành
+     - Các zones liên quan
 
-### **3.2 Filter và Tìm kiếm**
-- **Filter theo Zone**: A, B, C, D, E, F...
-- **Filter theo ABC Code**: A, B, C
-- **Low Stock Only**: Chỉ hiển thị hàng sắp hết
+4. **Xác nhận tạo Wave**:
+   - Kiểm tra thông tin preview
+   - Click "Create Wave" để tạo
+   - Hệ thống validate inventory và tạo picking tasks
 
-### **3.3 Thao tác Inventory**
+### 6.3. Auto Wave Generation (Tự động tạo Wave)
 
-#### **A. Nhập Kho (Inbound)**
-1. Click **"Inbound (Nhap Kho)"**
-2. Nhập thông tin:
-   - Mã sản phẩm (VD: O9YFO8)
-   - Vị trí lưu trữ (VD: A-14-11)
-   - Số lượng
-   - Ghi chú (tùy chọn)
-3. Hệ thống:
-   - Kiểm tra sản phẩm có tồn tại
-   - Kiểm tra vị trí lưu trữ hợp lệ
-   - Cập nhật số lượng tồn kho
-   - Ghi log movement history
+**Mục đích**: Tự động tạo nhiều waves dựa trên quy tắc được cấu hình
 
-#### **B. Xuất Kho (Outbound)**
-1. Click **"Outbound (Xuat Kho)"**
-2. Nhập thông tin:
-   - Mã sản phẩm
-   - Vị trí xuất hàng
-   - Số lượng xuất
-   - Ghi chú
-3. Hệ thống:
-   - Kiểm tra đủ hàng tồn kho
-   - Trừ số lượng từ inventory
-   - Cập nhật available quantity
+**Các bước thực hiện**:
 
-#### **C. Chuyển Kho (Transfer)**
-1. Click **"Transfer (Chuyen Kho)"**
-2. Nhập thông tin:
-   - Mã sản phẩm
-   - Vị trí nguồn (From Location)
-   - Vị trí đích (To Location)
-   - Số lượng chuyển
-3. Hệ thống:
-   - Kiểm tra hàng tại vị trí nguồn
-   - Chuyển hàng giữa các vị trí
-   - Cập nhật cả hai vị trí
+1. **Mở Auto Generation Modal**:
+   - Click nút "Auto Generate Waves"
+   - Cấu hình các quy tắc tự động
 
-#### **D. Điều Chỉnh Tồn Kho (Adjust Stock)**
-1. Click **"Adjust Stock"** trên từng dòng
-2. Nhập:
-   - Số lượng mới
-   - Lý do điều chỉnh
-3. Hệ thống cập nhật và ghi log
+2. **Cấu hình Rules**:
+   - **Max Orders per Wave**: Số đơn tối đa trong 1 wave (mặc định: 20)
+   - **Max Picks per Wave**: Số tasks tối đa trong 1 wave (mặc định: 50)
+   - **Time Window**: Khung thời gian xử lý (mặc định: 4 giờ)
+   - **Priority Orders First**: Ưu tiên đơn hàng quan trọng
 
----
+3. **Cấu hình Grouping Strategy**:
+   - **Group by Zone**: Nhóm theo khu vực kho
+   - **Group by Distance**: Nhóm theo khoảng cách
+   - **Group by ABC**: Nhóm theo phân loại ABC
 
-## 4. LUỒNG QUẢN LÝ ĐỚN HÀNG (ORDERS)
+4. **Preview và Confirm**:
+   - Click "Preview" để xem waves sẽ được tạo
+   - Xem chi tiết từng wave được đề xuất
+   - Click "Generate Waves" để tạo thực tế
+   - Click "Confirm & Create" để xác nhận
 
-### **4.1 Xem Đơn Hàng**
-1. Click menu **"Orders"**
-2. Hiển thị danh sách đơn hàng với:
-   - Số đơn hàng (Order Number)
-   - Mã khách hàng (Customer Code)
-   - Trạng thái (Status)
-   - Độ ưu tiên (Priority)
-   - Số lượng items
-   - Ngày tạo
+### 6.4. Operator Assignment & Progress
 
-### **4.2 Trạng Thái Đơn Hàng**
-- **Pending**: Đơn hàng mới, chờ xử lý
-- **Assigned**: Đã phân công cho picking wave
-- **Picking**: Đang trong quá trình lấy hàng
-- **Picked**: Đã lấy hàng xong
-- **Shipped**: Đã giao hàng
+**Mục đích**: Gán nhân viên và theo dõi tiến độ thực hiện
 
-### **4.3 Tạo Đơn Hàng Mới**
-1. Click **"Create Order"**
-2. Nhập thông tin:
-   - Số đơn hàng
-   - Mã khách hàng
-   - Độ ưu tiên (Normal/High/Urgent)
-   - Danh sách sản phẩm (VD: O9YFO8:5, I1X92B:3)
-3. Hệ thống:
-   - Kiểm tra sản phẩm tồn tại
-   - Tạo đơn hàng với status "Pending"
-   - Cập nhật reserved quantity
+**Các bước thực hiện**:
 
-### **4.4 Xử Lý Đơn Hàng**
-- **Assign**: Chuyển từ Pending → Assigned
-- **Cancel**: Hủy đơn hàng và giải phóng reserved quantity
-- **Ship**: Chuyển từ Picked → Shipped
+1. **Gán Operator**:
+   - Trong Wave Detail, click "Assign Operator"
+   - Chọn nhân viên từ dropdown
+   - Xác nhận gán
 
----
+2. **Theo dõi Progress**:
+   - Xem % hoàn thành trong bảng waves
+   - Xem ETA (thời gian dự kiến hoàn thành)
+   - Theo dõi số tasks đã hoàn thành / tổng tasks
 
-## 5. LUỒNG PICKING (LẤY HÀNG)
+3. **Activity Log**:
+   - Xem lịch sử hoạt động của wave
+   - Theo dõi ai bắt đầu, ai hoàn thành
+   - Xem các thay đổi trạng thái
 
-### **5.1 Tạo Picking Wave**
-1. Click **"Create Picking Wave"**
-2. Chọn các đơn hàng Pending
-3. Phân công Operator (tùy chọn)
-4. Hệ thống:
-   - Tạo Wave với số hiệu duy nhất
-   - Tạo các Picking Tasks từ order items
-   - Chuyển orders sang status "Assigned"
+## 7. PICKING OPERATIONS - HOẠT ĐỘNG THU GOM
 
-### **5.2 Bắt Đầu Wave**
-1. Operator click **"Start"** trên wave
-2. Wave chuyển sang status "In Progress"
-3. Hiển thị danh sách picking tasks
+### 7.1. Pick Task Management (Quản lý Pick Task)
 
-### **5.3 Thực Hiện Picking**
-1. Operator xem danh sách tasks
-2. Đi đến vị trí lưu trữ theo chỉ dẫn
-3. Lấy hàng theo số lượng yêu cầu
-4. Click **"Complete Task"** và nhập:
-   - Số lượng thực tế lấy được
-   - Thời gian picking (giây)
+**Mục đích**: Quản lý từng task picking cụ thể
 
-### **5.4 Hoàn Thành Wave**
-- Khi tất cả tasks hoàn thành
-- Wave chuyển sang "Completed"
-- Orders chuyển sang "Picked"
-- Cập nhật inventory và performance metrics
+**Các bước thực hiện**:
 
----
+1. **Xem Pick Tasks**:
+   - Trong Wave Detail Modal, xem tab "Picking Tasks"
+   - Danh sách hiển thị:
+     - Product Reference
+     - Location Code
+     - Zone
+     - Quantity cần lấy
+     - Quantity đã lấy
+     - Status (Created, In Progress, Completed)
 
-## 6. LUỒNG QUẢN LÝ KHO (WAREHOUSE)
+2. **Thực hiện Picking**:
+   - Operator đi đến location được chỉ định
+   - Lấy đúng số lượng sản phẩm
+   - Click "Mark as Picked" để xác nhận
+   - Nhập số lượng thực tế đã lấy
 
-### **6.1 Xem Thống Kê Kho**
-1. Click menu **"Warehouse"**
-2. Hiển thị thống kê:
-   - Tổng số vị trí lưu trữ
-   - Tổng sức chứa
-   - Tỷ lệ sử dụng
-   - Số lượng di chuyển hôm nay
+3. **Báo cáo Issues**:
+   - Nếu có vấn đề (thiếu hàng, sai vị trí)
+   - Click "Report Issue"
+   - Mô tả chi tiết vấn đề gặp phải
 
-### **6.2 Quản Lý Storage Locations**
-- Xem bảng tất cả vị trí lưu trữ
-- Filter theo Zone (A, B, C, D) và Status (Empty/Occupied/Full)
-- Xem chi tiết từng vị trí:
-  - Location Code (VD: A-14-11)
-  - Zone và Position (x, y, z)
-  - Capacity và Current Stock
-  - Utilization percentage
+### 7.2. Picking Progress Dashboard
 
-### **6.3 Zone Summary**
-- 4 zone chính: A, B, C, D
-- Mỗi zone hiển thị:
-  - Số lượng locations
-  - Tỷ lệ sử dụng (utilization)
+**Mục đích**: Theo dõi tiến độ picking tổng quan
 
-### **6.4 Quick Actions**
-- **Movement History**: Xem lịch sử di chuyển hàng
-- **Quick Inbound/Outbound**: Thao tác nhanh
-- **Transfer Stock**: Chuyển hàng giữa các vị trí
-- **Location Details**: Xem chi tiết vị trí
-- **Generate Report**: Tạo báo cáo kho
+**Thông tin hiển thị**:
 
----
+1. **Thống kê Tổng quan**:
+   - Active Waves: Số waves đang hoạt động
+   - Total Tasks: Tổng số tasks
+   - Completed Today: Số tasks hoàn thành hôm nay
+   - Avg Pick Time: Thời gian picking trung bình
 
-## 7. LUỒNG AI OPTIMIZATION (TỐI ƯU HÓA AI)
+2. **Theo dõi Real-time**:
+   - Wave nào đang chậm tiến độ
+   - Operator nào đang active
+   - % hoàn thành theo từng wave
+   - ETA cho từng wave
 
-### **7.1 K-Means Clustering**
-1. Click **"Run K-Means"**
-2. Chọn số clusters (K = 3 mặc định)
-3. Hệ thống:
-   - Phân tích tần suất picking của sản phẩm
-   - Phân loại ABC dựa trên clustering
-   - Hiển thị kết quả phân loại
+### 7.3. Pick List Generation
 
-### **7.2 DBSCAN Clustering**
-1. Click **"Run DBSCAN"**
-2. Thiết lập tham số:
-   - Epsilon (0.3 mặc định)
-   - Min Points (3 mặc định)
-3. Hệ thống:
-   - Phát hiện anomalies và outliers
-   - Nhóm sản phẩm theo pattern
-   - Hiển thị noise points (sản phẩm bất thường)
+**Mục đích**: Tạo danh sách picking để in hoặc xuất file
 
-### **7.3 Route Optimization**
-1. Chọn Picking Wave
-2. Click **"Optimize Route"**
-3. Hệ thống:
+**Các bước thực hiện**:
+
+1. **Chọn Wave**:
+   - Chọn wave muốn tạo pick list
+   - Chọn format (PDF hoặc Excel)
+
+2. **Tùy chọn Format**:
+   - **Group by Location**: Nhóm theo vị trí
+   - **Sort by Route**: Sắp xếp theo tuyến đường tối ưu
+   - **Include Barcode/QR**: Thêm mã vạch nếu cần
+
+3. **Download**:
+   - Click "Generate" để tạo file
+   - Download file về máy
+   - In hoặc sử dụng trên thiết bị di động
+
+## CÁC TÍNH NĂNG KHÁC
+
+### Dashboard - Tổng quan
+
+**Mục đích**: Xem tổng quan tình hình kho hàng
+
+**Thông tin hiển thị**:
+- Total Inventory: Tổng số sản phẩm trong kho
+- Pending Orders: Số đơn hàng chờ xử lý
+- Active Waves: Số waves đang hoạt động
+- Today's Picks: Số lượng đã picking hôm nay
+
+**Biểu đồ**:
+- Inventory by Zone: Phân bố hàng tồn theo khu vực
+- Order Status: Trạng thái đơn hàng
+
+### Inventory Management - Quản lý Tồn kho
+
+**Các chức năng chính**:
+
+1. **Xem Inventory**:
+   - Danh sách tất cả sản phẩm trong kho
+   - Filter theo zone, ABC code, low stock
+   - Thông tin: Product, Location, Quantity, Reserved, Available
+
+2. **Nhập Kho (Inbound)**:
+   - Chọn sản phẩm và location
+   - Nhập số lượng
+   - Thêm ghi chú nếu cần
+
+3. **Xuất Kho (Outbound)**:
+   - Chọn sản phẩm và location xuất
+   - Nhập số lượng xuất
+   - Thêm lý do xuất kho
+
+4. **Chuyển Kho (Transfer)**:
+   - Chọn sản phẩm
+   - Chọn location nguồn và đích
+   - Nhập số lượng chuyển
+
+5. **Điều chỉnh Tồn kho (Adjust)**:
+   - Chọn inventory record
+   - Nhập số lượng mới
+   - Nhập lý do điều chỉnh
+
+### Order Management - Quản lý Đơn hàng
+
+**Các chức năng chính**:
+
+1. **Xem Orders**:
+   - Danh sách tất cả đơn hàng
+   - Filter theo status
+   - Thông tin: Order Number, Customer, Status, Priority, Items, Created Date
+
+2. **Tạo Order mới**:
+   - Nhập Order Number và Customer
+   - Chọn Priority
+   - Nhập danh sách sản phẩm (format: Product:Quantity)
+
+3. **Quản lý Status**:
+   - Assign: Gán đơn hàng vào wave
+   - Ship: Chuyển trạng thái sang shipped
+   - Cancel: Hủy đơn hàng
+
+### Warehouse Management - Quản lý Kho
+
+**Các chức năng chính**:
+
+1. **Xem Layout Kho**:
+   - Tổng số locations
+   - Capacity và utilization
+   - Movements hôm nay
+
+2. **2D Warehouse Map**:
+   - Xem bản đồ kho 2D
+   - Filter theo floor và zone
+   - Zoom và search locations
+   - Chi tiết từng vị trí
+
+3. **Quick Actions**:
+   - Movement History: Lịch sử di chuyển
+   - Location Details: Chi tiết vị trí
+   - Generate Report: Tạo báo cáo kho
+
+### AI Optimization - Tối ưu hóa AI
+
+**Các thuật toán AI**:
+
+1. **K-Means Clustering**:
+   - Phân loại sản phẩm theo tần suất bán
+   - Cấu hình số clusters (K)
+   - Kết quả: ABC classification tự động
+
+2. **DBSCAN Clustering**:
+   - Phát hiện anomalies trong patterns
+   - Cấu hình Epsilon và Min Points
+   - Kết quả: Outliers và clusters
+
+3. **Route Optimization**:
+   - Tối ưu tuyến đường picking
    - Sử dụng Genetic Algorithm
-   - Tối ưu hóa đường đi picking
-   - Hiển thị:
-     - Khoảng cách gốc vs tối ưu
-     - Phần trăm cải thiện
-     - Thời gian ước tính
-     - Route tối ưu từng bước
+   - Kết quả: Giảm thời gian và khoảng cách
 
-### **7.4 Storage Recommendations**
-1. Click **"Get Recommendations"**
-2. Hệ thống đưa ra gợi ý:
-   - Sản phẩm nên đặt ở vị trí nào
-   - Dựa trên tần suất picking
-   - Tối ưu hóa khoảng cách di chuyển
+4. **Storage Recommendations**:
+   - Đề xuất vị trí lưu trữ tối ưu
+   - Dựa trên phân tích AI
+   - Kết quả: Recommendations list
 
----
+### Reports - Báo cáo
 
-## 8. LUỒNG BÁO CÁO (REPORTS)
+**Các loại báo cáo**:
 
-### **8.1 Warehouse Summary**
-- Tổng quan hoạt động kho
-- Thống kê locations, capacity, utilization
-- Breakdown theo zone
+1. **Warehouse Summary**: Tổng quan kho hàng
+2. **Operator Performance**: Hiệu suất nhân viên
+3. **Inventory Analysis**: Phân tích tồn kho
+4. **AI Optimization**: Kết quả tối ưu AI
 
-### **8.2 Operator Performance**
-- Hiệu suất từng nhân viên
-- Số lượng picks, thời gian trung bình
-- Thống kê waves hoàn thành
+### Storage Config - Cấu hình Lưu trữ
 
-### **8.3 Inventory Analysis**
-- Phân tích tồn kho chi tiết
-- Phân loại ABC
-- Cảnh báo hàng sắp hết
+**Các cấu hình**:
 
-### **8.4 AI Optimization Report**
-- Kết quả clustering analysis
-- Route optimization statistics
-- Thuật toán đã sử dụng
+1. **ABC Classification**:
+   - Class A Threshold: Ngưỡng loại A (%)
+   - Class B Threshold: Ngưỡng loại B (%)
+   - Class C: Tự động tính (100% - A - B)
 
----
+2. **Storage Strategy**:
+   - Class-Based Storage: Lưu trữ theo phân loại
+   - Random Storage: Lưu trữ ngẫu nhiên
+   - Dedicated Storage: Lưu trữ cố định
+   - Hybrid Storage: Kết hợp các phương pháp
 
-## 9. LUỒNG CẤU HÌNH HỆ THỐNG
+3. **Zone Configuration**:
+   - High-Frequency Zone: Khu vực cho hàng bán chạy
+   - Low-Frequency Zone: Khu vực cho hàng ít bán
 
-### **9.1 Storage Config**
-- **ABC Classification**: Thiết lập ngưỡng phân loại
-  - Class A: 80% (mặc định)
-  - Class B: 15% (mặc định)
-  - Class C: 5% còn lại
+### Operators - Quản lý Nhân viên
 
-- **Storage Strategy**: Chọn chiến lược lưu trữ
-  - Class-Based Storage
-  - Random Storage
-  - Dedicated Storage
-  - Hybrid Storage
+**Các chức năng**:
 
-- **Zone Configuration**: Cấu hình zone
-  - High-Frequency Zone: A (mặc định)
-  - Low-Frequency Zone: F (mặc định)
+1. **Xem Operators**:
+   - Danh sách tất cả nhân viên
+   - Thông tin: ID, Name, Status, Current Wave, Performance
 
-### **9.2 Operators Management**
-- Thêm/sửa/xóa nhân viên
-- Phân ca làm việc (Morning/Afternoon/Night)
-- Theo dõi performance
-- Kích hoạt/vô hiệu hóa tài khoản
+2. **Thêm Operator mới**:
+   - Nhập Operator ID và tên
+   - Chọn status và ca làm việc
 
----
+3. **Quản lý Performance**:
+   - Theo dõi số picks đã hoàn thành
+   - Thời gian picking trung bình
+   - Điểm performance tổng thể
 
-## 10. LUỒNG DỮ LIỆU VÀ TÍCH HỢP
+## WORKFLOW HOÀN CHỈNH
 
-### **10.1 Database**
-- **Primary**: Firebase Firestore (cloud)
-- **Fallback**: Local JSON database
-- **Real-time sync**: Tự động đồng bộ
+### Quy trình từ Order đến Shipping:
 
-### **10.2 Data Sources**
-- **Products**: 208 sản phẩm từ Product.csv
-- **Orders**: 32,634 đơn hàng từ Customer_Order.csv
-- **Storage Locations**: 2,292 vị trí từ Storage_Location.csv
-- **Picking Tasks**: 215,192 tasks từ Picking_Wave.csv
+1. **Tạo Order** (Order Management)
+2. **Tạo Wave** (Wave Planning)
+3. **Gán Operator** (Operator Assignment)
+4. **Start Wave** (Begin Picking)
+5. **Thực hiện Picking** (Pick Task Management)
+6. **Complete Tasks** (Mark as Picked)
+7. **Complete Wave** (Finish Picking)
+8. **Ship Orders** (Update to Shipped)
 
-### **10.3 Metrics Calculation**
-- **Real-time**: Tính toán từ dữ liệu thực
-- **K-Means Accuracy**: 57.2%
-- **Route Optimization**: 22.1% improvement
-- **Storage Utilization**: 71.9%
-- **Overall Efficiency**: 73.5%
+### Trạng thái chuyển đổi:
 
----
+**Orders**: pending → assigned → picked → shipped
+**Waves**: created → in_progress → completed
+**Tasks**: created → in_progress → completed
 
-## 11. LUỒNG XỬ LÝ LỖI VÀ FALLBACK
+## LƯU Ý QUAN TRỌNG
 
-### **11.1 Authentication Errors**
-- Token hết hạn → Tự động logout
-- Login failed → Hiển thị thông báo lỗi
-- No permission → Redirect về dashboard
+1. **Development Mode**: Có AUTO_FIX_INVENTORY để tự động thêm inventory khi thiếu
+2. **Production Mode**: Strict validation, không tự động fix
+3. **Inventory Reservation**: Hệ thống tự động reserve inventory khi start wave
+4. **Transaction Safety**: Tất cả operations đều có rollback khi có lỗi
+5. **Real-time Updates**: UI tự động cập nhật khi có thay đổi
 
-### **11.2 API Errors**
-- Network error → Retry 3 lần
-- Server error → Fallback to local data
-- Data not found → Hiển thị empty state
+## TROUBLESHOOTING
 
-### **11.3 Chart Rendering Errors**
-- Chart.js not loaded → Show fallback message
-- Data format error → Display raw data
-- Canvas not found → Retry button
+### Lỗi thường gặp:
 
----
+1. **"Invalid operator ID"**: Kiểm tra operator có tồn tại trong database
+2. **"Insufficient inventory"**: Kiểm tra tồn kho và reserved quantity
+3. **"Wave not found"**: Kiểm tra wave ID hoặc wave number
+4. **404 API errors**: Kiểm tra server đang chạy và endpoints có sẵn
 
-## 12. LUỒNG RESPONSIVE VÀ MOBILE
+### Giải pháp:
 
-### **12.1 Mobile Layout**
-- Sidebar collapse thành hamburger menu
-- Tables scroll horizontally
-- Charts resize automatically
-- Touch-friendly buttons
-
-### **12.2 Tablet Layout**
-- 2-column grid cho stats
-- Compact navigation
-- Optimized chart sizes
-
----
-
-## 13. LUỒNG MAINTENANCE VÀ DEBUG
-
-### **13.1 Debug Tools**
-- Browser console: `debugFunctions()`
-- Manual chart test: `testCharts()`
-- API test endpoints
-- System health check
-
-### **13.2 Monitoring**
-- Real-time metrics updates
-- Error logging
-- Performance tracking
-- User activity logs
-
----
-
-## 14. CHECKLIST SỬ DỤNG HỆ THỐNG
-
-### **Cho Admin:**
-- [ ] Đăng nhập với admin/admin123
-- [ ] Kiểm tra Dashboard metrics
-- [ ] Cấu hình Storage Strategy
-- [ ] Quản lý Operators
-- [ ] Tạo báo cáo tổng quan
-
-### **Cho Manager:**
-- [ ] Xem báo cáo hiệu suất
-- [ ] Chạy AI optimization
-- [ ] Phân tích inventory
-- [ ] Tối ưu hóa routes
-
-### **Cho Supervisor:**
-- [ ] Tạo picking waves
-- [ ] Giám sát picking progress
-- [ ] Quản lý orders
-- [ ] Kiểm tra inventory levels
-
-### **Cho Operator:**
-- [ ] Nhận picking assignments
-- [ ] Thực hiện picking tasks
-- [ ] Cập nhật task completion
-- [ ] Báo cáo issues
-
----
-
-## KẾT LUẬN
-
-Hệ thống WMS cung cấp một luồng làm việc hoàn chỉnh từ quản lý tồn kho, xử lý đơn hàng, picking operations đến tối ưu hóa AI. Với giao diện thân thiện, hỗ trợ tiếng Việt và tích hợp công nghệ AI, hệ thống giúp tối ưu hóa hiệu quả hoạt động kho bãi và nâng cao năng suất làm việc.
-
-**Liên hệ hỗ trợ**: Sử dụng debug tools hoặc kiểm tra console logs để troubleshoot các vấn đề kỹ thuật.
+1. **Refresh browser** khi gặp lỗi UI
+2. **Check server logs** để debug API errors
+3. **Verify database** khi có data inconsistency
+4. **Restart server** nếu cần thiết

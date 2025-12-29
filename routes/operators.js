@@ -54,6 +54,56 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/operators/performance - Get all operators performance
+router.get('/performance', async (req, res) => {
+  try {
+    const db = await getDatabase();
+
+    // Get performance summary for all operators
+    const operatorPerformance = await db.all(`
+      SELECT 
+        u.id,
+        u.username,
+        u.role,
+        COUNT(pt.id) as total_tasks,
+        COALESCE(SUM(pt.quantity_to_pick), 0) as total_quantity_assigned,
+        COALESCE(SUM(pt.quantity_picked), 0) as total_quantity_picked,
+        COALESCE(AVG(pt.quantity_picked), 0) as avg_quantity_per_task,
+        COUNT(DISTINCT pt.wave_number) as waves_worked
+      FROM users u
+      LEFT JOIN picking_tasks pt ON u.id = pt.operator
+      WHERE u.role IN ('operator', 'manager', 'admin')
+      GROUP BY u.id, u.username, u.role
+      ORDER BY total_tasks DESC
+    `);
+
+    // Calculate completion rates
+    const enhancedPerformance = operatorPerformance.map(op => ({
+      ...op,
+      completion_rate: op.total_quantity_assigned > 0 
+        ? Math.round((op.total_quantity_picked / op.total_quantity_assigned) * 100)
+        : 0,
+      avg_quantity_per_task: Math.round(op.avg_quantity_per_task * 100) / 100
+    }));
+
+    res.json({
+      success: true,
+      operator_performance: enhancedPerformance,
+      summary: {
+        total_operators: operatorPerformance.length,
+        active_operators: operatorPerformance.filter(op => op.total_tasks > 0).length,
+        total_tasks: operatorPerformance.reduce((sum, op) => sum + op.total_tasks, 0),
+        total_quantity: operatorPerformance.reduce((sum, op) => sum + op.total_quantity_picked, 0)
+      },
+      data_source: 'SQL Database'
+    });
+
+  } catch (error) {
+    console.error('Get operators performance error:', error);
+    res.status(500).json({ error: 'Failed to get operators performance' });
+  }
+});
+
 // GET /api/operators/:id/performance - Get operator performance
 router.get('/:id/performance', async (req, res) => {
   try {

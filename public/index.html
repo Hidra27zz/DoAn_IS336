@@ -6,7 +6,7 @@
   <title>Warehouse Management System - AI Optimization</title>
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
   
   <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -187,32 +187,109 @@
 
         <!-- Picking Section -->
         <section id="picking-section" class="content-section">
-          <h2>Picking Operations</h2>
-          <div class="section-header">
-            <div class="filters">
-              <select id="wave-status-filter">
-                <option value="">All Status</option>
-                <option value="created">Created</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
+          <h2>Wave Planning & Picking Operations</h2>
+          
+          <!-- Wave Planning Controls -->
+          <div class="wave-planning-panel">
+            <div class="panel-header">
+              <h3>6. WAVE PLANNING - LẬP KẾ HOẠCH THU GOM</h3>
+              <div class="action-buttons">
+                <button class="btn btn-primary" onclick="showModal('create-wave-modal')">
+                  Tạo Wave Thủ Công
+                </button>
+                <button class="btn btn-secondary" onclick="showModal('auto-wave-modal')">
+                  Auto Generate Waves
+                </button>
+                <button class="btn btn-info" onclick="showModal('wave-build-modal')">
+                  Wave Build
+                </button>
+              </div>
             </div>
-            <button class="btn btn-primary" id="refresh-waves">Refresh</button>
           </div>
+
+          <!-- Wave Filters & Search -->
+          <div class="section-header">
+            <div class="filters-row">
+              <div class="filter-group">
+                <label>Search Wave:</label>
+                <input type="text" id="wave-search" placeholder="Wave Number..." onkeyup="filterWaves()">
+              </div>
+              <div class="filter-group">
+                <label>Status:</label>
+                <select id="wave-status-filter" onchange="filterWaves()">
+                  <option value="">All Status</option>
+                  <option value="created">Draft</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="paused">Paused</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Operator:</label>
+                <select id="wave-operator-filter" onchange="filterWaves()">
+                  <option value="">All Operators</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Date From:</label>
+                <input type="date" id="wave-date-from" onchange="filterWaves()">
+              </div>
+              <div class="filter-group">
+                <label>Date To:</label>
+                <input type="date" id="wave-date-to" onchange="filterWaves()">
+              </div>
+              <button class="btn btn-primary" id="refresh-waves" onclick="loadPickingData()">
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Wave List Table -->
           <div class="table-container">
             <table id="waves-table">
               <thead>
                 <tr>
                   <th>Wave Number</th>
                   <th>Status</th>
+                  <th>Orders</th>
                   <th>Total Items</th>
+                  <th>Locations</th>
                   <th>Operator</th>
-                  <th>Started</th>
+                  <th>Progress</th>
+                  <th>Created</th>
+                  <th>ETA</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody></tbody>
             </table>
+          </div>
+
+          <!-- Picking Operations Dashboard -->
+          <div class="picking-dashboard">
+            <div class="panel-header">
+              <h3>7. PICKING OPERATIONS - HOẠT ĐỘNG THU GOM</h3>
+            </div>
+            
+            <div class="picking-stats-grid">
+              <div class="stat-card">
+                <h4>Active Waves</h4>
+                <p id="active-waves-count">0</p>
+              </div>
+              <div class="stat-card">
+                <h4>Total Tasks</h4>
+                <p id="total-tasks-count">0</p>
+              </div>
+              <div class="stat-card">
+                <h4>Completed Today</h4>
+                <p id="completed-today-count">0</p>
+              </div>
+              <div class="stat-card">
+                <h4>Avg Pick Time</h4>
+                <p id="avg-pick-time">0 min</p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -752,26 +829,220 @@
     </div>
   </div>
 
-  <!-- Create Wave Modal -->
+  <!-- Create Wave Modal - Enhanced -->
   <div id="create-wave-modal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content modal-large">
       <div class="modal-header">
-        <h3>Create Picking Wave - Tao Dot Lay Hang</h3>
+        <h3>Create Picking Wave - Tạo Wave Thủ Công</h3>
         <span class="close-btn" onclick="closeModal('create-wave-modal')">&times;</span>
       </div>
       <form id="create-wave-form" onsubmit="handleCreateWave(event)">
-        <div class="form-group">
-          <label>Select Orders (hold Ctrl to select multiple)</label>
-          <select id="wave-orders" multiple size="5"></select>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Select Orders (hold Ctrl to select multiple)</label>
+            <select id="wave-orders" multiple size="8" onchange="updateWavePreview()">
+              <!-- Orders will be loaded dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Wave Preview</label>
+            <div id="wave-preview" class="wave-preview">
+              <div class="preview-item">Total Orders: <span id="preview-orders">0</span></div>
+              <div class="preview-item">Total Items: <span id="preview-items">0</span></div>
+              <div class="preview-item">Total Quantity: <span id="preview-quantity">0</span></div>
+              <div class="preview-item">Est. Locations: <span id="preview-locations">0</span></div>
+              <div class="preview-item">Est. Time: <span id="preview-time">0 min</span></div>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Assign Operator</label>
-          <select id="wave-operator">
-            <option value="">Unassigned</option>
-          </select>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Assign Operator</label>
+            <select id="wave-operator">
+              <option value="">Unassigned</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="wave-priority">
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary">Create Wave</button>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Time Window (hours)</label>
+            <input type="number" id="wave-time-window" min="1" max="24" value="4">
+          </div>
+          <div class="form-group">
+            <label>Max Orders per Wave</label>
+            <input type="number" id="wave-max-orders" min="1" max="100" value="20">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="wave-notes" placeholder="Optional notes for this wave"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="validateWaveCreation()">Validate</button>
+          <button type="submit" class="btn btn-primary">Create Wave</button>
+        </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Wave Build Modal -->
+  <div id="wave-build-modal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>Wave Build - Tạo Wave từ Đơn Hàng</h3>
+        <span class="close-btn" onclick="closeModal('wave-build-modal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="build-step" id="build-step-1">
+          <h4>Step 1: Select Orders</h4>
+          <div class="orders-selection">
+            <div class="selection-filters">
+              <input type="text" id="build-order-search" placeholder="Search orders..." onkeyup="filterBuildOrders()">
+              <select id="build-priority-filter" onchange="filterBuildOrders()">
+                <option value="">All Priorities</option>
+                <option value="1">Low</option>
+                <option value="2">Normal</option>
+                <option value="3">High</option>
+              </select>
+            </div>
+            <div class="orders-list" id="build-orders-list">
+              <!-- Orders will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <div class="build-step" id="build-step-2" style="display: none;">
+          <h4>Step 2: Wave Preview</h4>
+          <div class="build-preview" id="build-preview">
+            <!-- Preview will be shown here -->
+          </div>
+        </div>
+
+        <div class="build-actions">
+          <button class="btn btn-secondary" onclick="prevBuildStep()">Previous</button>
+          <button class="btn btn-primary" onclick="nextBuildStep()">Next</button>
+          <button class="btn btn-success" onclick="confirmWaveBuild()" style="display: none;">Create Wave</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auto Wave Generation Modal -->
+  <div id="auto-wave-modal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>Auto Wave Generation - Tự Động Tạo Wave</h3>
+        <span class="close-btn" onclick="closeModal('auto-wave-modal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="auto-wave-config">
+          <h4>Generation Rules</h4>
+          <div class="config-grid">
+            <div class="config-group">
+              <label>Max Orders per Wave</label>
+              <input type="number" id="auto-max-orders" value="20" min="1" max="100">
+            </div>
+            <div class="config-group">
+              <label>Max Picks per Wave</label>
+              <input type="number" id="auto-max-picks" value="50" min="1" max="200">
+            </div>
+            <div class="config-group">
+              <label>Time Window (hours)</label>
+              <input type="number" id="auto-time-window" value="4" min="1" max="24">
+            </div>
+            <div class="config-group">
+              <label>Priority Orders First</label>
+              <input type="checkbox" id="auto-priority-first" checked>
+            </div>
+          </div>
+
+          <h4>Grouping Strategy</h4>
+          <div class="grouping-options">
+            <label><input type="checkbox" id="auto-group-zone" checked> Group by Zone</label>
+            <label><input type="checkbox" id="auto-group-distance"> Group by Distance</label>
+            <label><input type="checkbox" id="auto-group-abc"> Group by ABC Classification</label>
+          </div>
+        </div>
+
+        <div class="auto-wave-preview" id="auto-wave-preview" style="display: none;">
+          <h4>Generated Waves Preview</h4>
+          <div id="auto-preview-content">
+            <!-- Preview content will be loaded here -->
+          </div>
+        </div>
+
+        <div class="auto-wave-actions">
+          <button class="btn btn-secondary" onclick="previewAutoWaves()">Preview</button>
+          <button class="btn btn-primary" onclick="generateAutoWaves()">Generate Waves</button>
+          <button class="btn btn-success" onclick="confirmAutoWaves()" style="display: none;">Confirm & Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wave Detail Modal -->
+  <div id="wave-detail-modal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>Wave Details - <span id="wave-detail-number"></span></h3>
+        <span class="close-btn" onclick="closeModal('wave-detail-modal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="wave-info-grid">
+          <div class="wave-info-card">
+            <h4>Wave Information</h4>
+            <div id="wave-info-content">
+              <!-- Wave info will be loaded here -->
+            </div>
+          </div>
+          <div class="wave-stats-card">
+            <h4>Statistics</h4>
+            <div id="wave-stats-content">
+              <!-- Wave stats will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <div class="wave-tasks-section">
+          <h4>Picking Tasks</h4>
+          <div class="table-container">
+            <table id="wave-tasks-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Location</th>
+                  <th>Zone</th>
+                  <th>Qty to Pick</th>
+                  <th>Qty Picked</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="wave-actions">
+          <button class="btn btn-secondary" onclick="assignOperatorToWave()">Assign Operator</button>
+          <button class="btn btn-primary" onclick="startWaveFromDetail()">Start Wave</button>
+          <button class="btn btn-warning" onclick="pauseWaveFromDetail()">Pause</button>
+          <button class="btn btn-success" onclick="completeWaveFromDetail()">Complete</button>
+          <button class="btn btn-danger" onclick="cancelWaveFromDetail()">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 

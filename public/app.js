@@ -13,19 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('Current URL:', window.location.href);
   console.log('Document ready state:', document.readyState);
   
-  // Wait for Chart.js to load
-  function waitForChart() {
-    if (typeof Chart !== 'undefined') {
-      console.log('Chart.js loaded, version:', Chart.version || 'Unknown');
-      console.log('Chart constructor available:', typeof Chart);
-      initializeApp();
-    } else {
-      console.log('Waiting for Chart.js to load...');
-      setTimeout(waitForChart, 100);
-    }
-  }
-  
-  waitForChart();
+  // Initialize app immediately, Chart.js will be checked when needed
+  initializeApp();
 });
 
 function initializeApp() {
@@ -241,6 +230,10 @@ function setupLogoutHandler() {
 }
 // API helper
 async function apiCall(endpoint, options = {}) {
+  console.log('=== API Call Debug ===');
+  console.log('Endpoint:', endpoint);
+  console.log('Options:', options);
+  
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json',
@@ -253,8 +246,14 @@ async function apiCall(endpoint, options = {}) {
     finalOptions.headers = { ...defaultOptions.headers, ...options.headers };
   }
   
+  console.log('Final options:', finalOptions);
+  console.log('Full URL:', `${API_BASE}${endpoint}`);
+  
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, finalOptions);
+    
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
     
     if (response.status === 401) {
       localStorage.removeItem('authToken');
@@ -263,9 +262,44 @@ async function apiCall(endpoint, options = {}) {
       return null;
     }
     
-    return await response.json();
+    const result = await response.json();
+    console.log('Response body:', result);
+    
+    // Handle non-200 responses
+    if (!response.ok) {
+      console.error(`API Error ${response.status}:`, result);
+      
+      // Show user-friendly error message
+      let errorMessage = `Request failed with status ${response.status}`;
+      if (result && result.error) {
+        errorMessage = result.error;
+      }
+      
+      showToast(`Lỗi: ${errorMessage}`, 'error');
+      
+      // Show inventory issues if available
+      if (result && result.inventory_issues && result.inventory_issues.length > 0) {
+        console.log('Inventory issues:', result.inventory_issues);
+        const issueDetails = result.inventory_issues.map(issue => 
+          `${issue.product_reference} tại ${issue.location_code}: cần ${issue.required}, có ${issue.available}`
+        ).join('\n');
+        showToast(`Vấn đề tồn kho:\n${issueDetails}`, 'warning');
+      }
+      
+      return null;
+    }
+    
+    return result;
   } catch (error) {
-    console.error('API error:', error);
+    console.error('API fetch error:', error);
+    
+    // More user-friendly error handling
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      showToast('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.', 'error');
+    } else {
+      showToast(`Lỗi kết nối: ${error.message}`, 'error');
+    }
+    
     return null;
   }
 }
@@ -390,11 +424,17 @@ async function loadDashboardData() {
   try {
     // Try authenticated API first
     console.log('Attempting authenticated API calls...');
-    [inventorySummary, orderStats, pickingPerf] = await Promise.all([
+    [inventorySummary, orderStats] = await Promise.all([
       apiCall('/inventory/summary'),
-      apiCall('/orders/stats/summary'),
-      apiCall('/picking/performance')
+      apiCall('/orders/stats/summary')
     ]);
+    
+    // Load performance data separately (non-blocking)
+    try {
+      pickingPerf = await apiCall('/picking/performance');
+    } catch (error) {
+      console.warn('Performance data not available:', error);
+    }
     
     console.log('API responses received:', { 
       inventorySummary: !!inventorySummary, 
@@ -513,7 +553,7 @@ function renderDashboardCharts(inventorySummary, orderStats) {
   
   // Check if Chart.js is available
   if (typeof Chart === 'undefined') {
-    console.error('Chart.js is not loaded!');
+    console.warn('Chart.js is not loaded, showing fallback');
     showChartFallback('inventory-chart', 'Chart.js not loaded');
     showChartFallback('orders-chart', 'Chart.js not loaded');
     return;
@@ -757,10 +797,10 @@ async function loadInventoryData() {
     const tbody = document.querySelector('#inventory-table tbody');
     tbody.innerHTML = data.inventory.map(item => `
       <tr>
-        <td>${item.product?.reference || item.product_reference || 'N/A'}</td>
+        <td>${item.product?.reference || item.product_reference || 'Unknown Product'}</td>
         <td>${item.product?.abc_code || item.abc_code || 'C'}</td>
-        <td>${item.location?.location_code || item.location_code || 'N/A'}</td>
-        <td>${item.location?.zone || item.zone || 'N/A'}</td>
+        <td>${item.location?.location_code || item.location_code || 'No Location'}</td>
+        <td>${item.location?.zone || item.zone || 'Unknown Zone'}</td>
         <td>${item.quantity || 0}</td>
         <td>${item.reserved_quantity || 0}</td>
         <td>${(item.quantity || 0) - (item.reserved_quantity || 0)}</td>
@@ -807,8 +847,8 @@ async function loadOrdersData() {
     const tbody = document.querySelector('#orders-table tbody');
     tbody.innerHTML = data.orders.map(order => `
       <tr>
-        <td>${order.order_number || 'N/A'}</td>
-        <td>${order.customer_code || order.customer_name || 'N/A'}</td>
+        <td>${order.order_number || 'No Order Number'}</td>
+        <td>${order.customer_code || order.customer_name || 'Unknown Customer'}</td>
         <td><span class="status-badge status-${order.status}">${order.status}</span></td>
         <td>${order.priority || 'normal'}</td>
         <td>${order.total_items || 0}</td>
@@ -839,38 +879,407 @@ async function viewOrder(orderId) {
 }
 
 // Picking
+// Enhanced Picking Data Loading with Wave Planning Features
 async function loadPickingData() {
-  const status = document.getElementById('wave-status-filter')?.value || '';
+  console.log('Loading enhanced picking data...');
   
-  let url = '/waves?limit=50';
-  if (status) url += `&status=${status}`;
-  
-  const data = await apiCall(url);
-  
-  if (data?.waves) {
-    const tbody = document.querySelector('#waves-table tbody');
-    tbody.innerHTML = data.waves.map(wave => `
-      <tr>
-        <td>${wave.wave_number || 'N/A'}</td>
-        <td><span class="status-badge status-${wave.status}">${wave.status}</span></td>
-        <td>${wave.total_items || 0}</td>
-        <td>${wave.assigned_operator_id || 'Unassigned'}</td>
-        <td>${formatDate(wave.started_at)}</td>
-        <td>
-          <button class="btn btn-secondary" onclick="viewWave('${wave.id}')">View</button>
-          ${wave.status === 'created' ? `<button class="btn btn-primary" onclick="startWave('${wave.id}')">Start</button>` : ''}
-        </td>
-      </tr>
-    `).join('');
+  try {
+    // Get filter values
+    const status = document.getElementById('wave-status-filter')?.value || '';
+    const search = document.getElementById('wave-search')?.value || '';
+    const operatorId = document.getElementById('wave-operator-filter')?.value || '';
+    const dateFrom = document.getElementById('wave-date-from')?.value || '';
+    const dateTo = document.getElementById('wave-date-to')?.value || '';
     
-    // Update wave select for route optimization
-    const waveSelect = document.getElementById('route-wave-id');
-    if (waveSelect) {
-      waveSelect.innerHTML = data.waves.map(w => 
-        `<option value="${w.id}">Wave #${w.wave_number}</option>`
-      ).join('');
+    // Build URL with filters
+    let url = '/waves?limit=50';
+    if (status) url += `&status=${status}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (operatorId) url += `&operator_id=${operatorId}`;
+    if (dateFrom) url += `&date_from=${dateFrom}`;
+    if (dateTo) url += `&date_to=${dateTo}`;
+    
+    console.log('Fetching waves from:', url);
+    const data = await apiCall(url);
+    
+    if (data?.waves) {
+      console.log('Waves loaded:', data.waves.length);
+      
+      const tbody = document.querySelector('#waves-table tbody');
+      if (tbody) {
+        tbody.innerHTML = data.waves.map(wave => `
+          <tr>
+            <td>
+              <strong>${wave.wave_number || 'Unknown Wave'}</strong>
+              <br><small>ID: ${wave.id}</small>
+            </td>
+            <td><span class="status-badge status-${wave.status}">${wave.status}</span></td>
+            <td>${wave.total_orders || 0}</td>
+            <td>${wave.total_items || 0}</td>
+            <td>${wave.location_count || 0}</td>
+            <td>
+              <div class="operator-info">
+                <strong>${wave.assigned_operator_name || 'Unassigned'}</strong>
+                ${wave.assigned_operator_id ? `<br><small>ID: ${wave.assigned_operator_id}</small>` : ''}
+              </div>
+            </td>
+            <td>
+              <div class="progress-info">
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: ${wave.completion_percentage || 0}%"></div>
+                </div>
+                <small>${wave.completion_percentage || 0}% (${wave.total_picked || 0}/${wave.total_quantity || 0})</small>
+              </div>
+            </td>
+            <td>
+              <small>${formatDate(wave.created_at)}</small>
+            </td>
+            <td>
+              <small>~${wave.estimated_time_minutes || 0} min</small>
+            </td>
+            <td class="actions-cell">
+              <div class="action-buttons">
+                <button class="btn btn-small btn-info" onclick="viewWaveDetail('${wave.wave_number}')" title="View Details">
+                  View
+                </button>
+                ${wave.status === 'created' ? `
+                  <button class="btn btn-small btn-primary" onclick="startWave('${wave.wave_number}')" title="Start Wave">
+                    Start
+                  </button>
+                ` : ''}
+                <button class="btn btn-small btn-secondary" onclick="editWave('${wave.wave_number}')" title="Edit Wave">
+                  Edit
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+      
+      // Update wave select for route optimization
+      const waveSelect = document.getElementById('route-wave-id');
+      if (waveSelect) {
+        waveSelect.innerHTML = '<option value="">Select Wave</option>' + 
+          data.waves.map(w => 
+            `<option value="${w.wave_number}">Wave #${w.wave_number} (${w.total_items} items)</option>`
+          ).join('');
+      }
+
+      // Update picking dashboard stats
+      updatePickingStats(data.waves);
+      
+      // Enhanced picking data loaded successfully
+console.log('Enhanced picking data loaded successfully');
+
+// Missing wave action functions - Add these implementations
+async function pauseWave(waveId) {
+  console.log('Pausing wave:', waveId);
+  
+  if (!waveId) {
+    showToast('Wave ID is required', 'error');
+    return;
+  }
+  
+  const reason = prompt('Reason for pausing wave (optional):') || 'Paused by user';
+  
+  try {
+    const result = await apiCall(`/waves/${waveId}/pause`, {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    });
+    
+    if (result && result.success) {
+      showToast(`Wave ${result.wave_number} paused successfully`, 'warning');
+      loadPickingData();
+    } else {
+      showToast('Failed to pause wave', 'error');
+    }
+  } catch (error) {
+    console.error('Error pausing wave:', error);
+    showToast('Error pausing wave', 'error');
+  }
+}
+
+async function resumeWave(waveId) {
+  console.log('Resuming wave:', waveId);
+  
+  if (!waveId) {
+    showToast('Wave ID is required', 'error');
+    return;
+  }
+  
+  try {
+    const result = await apiCall(`/waves/${waveId}/resume`, {
+      method: 'POST'
+    });
+    
+    if (result && result.success) {
+      showToast(`Wave ${result.wave_number} resumed successfully`, 'success');
+      loadPickingData();
+    } else {
+      showToast('Failed to resume wave', 'error');
+    }
+  } catch (error) {
+    console.error('Error resuming wave:', error);
+    showToast('Error resuming wave', 'error');
+  }
+}
+
+async function editWave(waveId) {
+  console.log('Editing wave:', waveId);
+  
+  // Get current wave data
+  const waveData = await apiCall(`/waves/${waveId}`);
+  if (!waveData) return;
+  
+  const wave = waveData.wave;
+  
+  // Simple edit dialog - in production this would be a proper modal
+  const newPriority = prompt(`Edit Priority for Wave ${wave.wave_number}:
+Current: ${wave.priority || 'normal'}
+Options: normal, high, urgent`, wave.priority || 'normal');
+  
+  if (newPriority && ['normal', 'high', 'urgent'].includes(newPriority.toLowerCase())) {
+    const result = await apiCall(`/waves/${waveId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ 
+        priority: newPriority.toLowerCase(),
+        notes: `Priority updated to ${newPriority} by user`
+      })
+    });
+    
+    if (result) {
+      showToast(`Wave ${result.wave_number} updated successfully`, 'success');
+      loadPickingData();
     }
   }
+}
+
+async function completeWave(waveId) {
+  console.log('Completing wave:', waveId);
+  
+  if (!waveId) {
+    showToast('Wave ID is required', 'error');
+    return;
+  }
+  
+  if (!confirm('Are you sure you want to complete this wave? This action cannot be undone.')) {
+    return;
+  }
+  
+  try {
+    const result = await apiCall(`/waves/${waveId}/complete`, {
+      method: 'POST'
+    });
+    
+    if (result && result.success) {
+      showToast(`Wave ${result.wave_number} completed successfully`, 'success');
+      loadPickingData();
+    } else {
+      showToast('Failed to complete wave', 'error');
+    }
+  } catch (error) {
+    console.error('Error completing wave:', error);
+    showToast('Error completing wave', 'error');
+  }
+}
+
+async function cancelWave(waveId) {
+  console.log('Cancelling wave:', waveId);
+  
+  if (!waveId) {
+    showToast('Wave ID is required', 'error');
+    return;
+  }
+  
+  const reason = prompt('Reason for cancelling wave:');
+  if (!reason) {
+    showToast('Cancellation reason is required', 'error');
+    return;
+  }
+  
+  if (!confirm('Are you sure you want to cancel this wave? This will release all inventory reservations.')) {
+    return;
+  }
+  
+  try {
+    const result = await apiCall(`/waves/${waveId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    });
+    
+    if (result && result.success) {
+      showToast(`Wave ${result.wave_number} cancelled successfully`, 'warning');
+      loadPickingData();
+    } else {
+      showToast('Failed to cancel wave', 'error');
+    }
+  } catch (error) {
+    console.error('Error cancelling wave:', error);
+    showToast('Error cancelling wave', 'error');
+  }
+}
+
+// Missing operator functions - removed duplicate, using complete version later in file
+
+// Missing task completion function
+async function completeTask(taskId) {
+  console.log('Completing task:', taskId);
+  
+  const quantity = prompt('Enter quantity picked:');
+  if (!quantity || isNaN(quantity) || quantity <= 0) {
+    showToast('Please enter a valid quantity', 'error');
+    return;
+  }
+  
+  const result = await apiCall(`/picking/tasks/${taskId}/complete`, {
+    method: 'POST',
+    body: JSON.stringify({
+      quantity_picked: parseInt(quantity),
+      picking_time_seconds: 30 // Default time
+    })
+  });
+  
+  if (result) {
+    showToast('Task completed successfully', 'success');
+    // Refresh the wave detail if modal is open
+    const modal = document.getElementById('wave-detail-modal');
+    if (modal && modal.classList.contains('active')) {
+      const waveNumber = document.getElementById('wave-detail-number').textContent;
+      if (waveNumber) {
+        viewWaveDetail(waveNumber);
+      }
+    }
+  }
+}
+
+// Make wave action functions available globally (moved here after function definitions)
+window.pauseWave = pauseWave;
+window.resumeWave = resumeWave;
+window.editWave = editWave;
+window.completeWave = completeWave;
+window.cancelWave = cancelWave;
+
+// Make operator functions available globally - will be set later after complete functions are defined
+// window.editOperator = editOperator;
+// window.toggleOperatorStatus = toggleOperatorStatus;
+
+// Make task functions available globally
+window.completeTask = completeTask;
+    } else {
+      console.warn('No waves data received');
+      const tbody = document.querySelector('#waves-table tbody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="10">No waves found</td></tr>';
+      }
+    }
+
+    // Load operators for filters
+    await loadOperatorsForFilters();
+    
+    // Load pending orders for wave creation
+    await loadPendingOrdersForWaves();
+    
+  } catch (error) {
+    console.error('Failed to load picking data:', error);
+    const tbody = document.querySelector('#waves-table tbody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="10">Failed to load picking data. Please refresh.</td></tr>';
+    }
+  }
+}
+
+// Update picking dashboard statistics
+function updatePickingStats(waves) {
+  try {
+    const activeWaves = waves.filter(w => w.status === 'in_progress').length;
+    const totalTasks = waves.reduce((sum, w) => sum + (w.total_items || 0), 0);
+    const completedToday = waves.filter(w => 
+      w.status === 'completed' && 
+      new Date(w.updated_at).toDateString() === new Date().toDateString()
+    ).length;
+    
+    // Calculate average pick time (simplified)
+    const avgPickTime = waves.length > 0 ? 
+      Math.round(waves.reduce((sum, w) => sum + (w.estimated_time_minutes || 0), 0) / waves.length) : 0;
+
+    // Update UI elements
+    const activeWavesEl = document.getElementById('active-waves-count');
+    const totalTasksEl = document.getElementById('total-tasks-count');
+    const completedTodayEl = document.getElementById('completed-today-count');
+    const avgPickTimeEl = document.getElementById('avg-pick-time');
+
+    if (activeWavesEl) activeWavesEl.textContent = activeWaves;
+    if (totalTasksEl) totalTasksEl.textContent = totalTasks;
+    if (completedTodayEl) completedTodayEl.textContent = completedToday;
+    if (avgPickTimeEl) avgPickTimeEl.textContent = `${avgPickTime} min`;
+
+  } catch (error) {
+    console.error('Error updating picking stats:', error);
+  }
+}
+
+// Load operators for filter dropdown
+async function loadOperatorsForFilters() {
+  try {
+    const operatorsData = await apiCall('/operators');
+    if (operatorsData?.operators) {
+      const operatorFilter = document.getElementById('wave-operator-filter');
+      const waveOperatorSelect = document.getElementById('wave-operator');
+      
+      const operatorOptions = operatorsData.operators.map(op => 
+        `<option value="${op.id}">${op.username} (${op.role})</option>`
+      ).join('');
+
+      if (operatorFilter) {
+        operatorFilter.innerHTML = '<option value="">All Operators</option>' + operatorOptions;
+      }
+      
+      if (waveOperatorSelect) {
+        waveOperatorSelect.innerHTML = '<option value="">Unassigned</option>' + operatorOptions;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load operators for filters:', error);
+  }
+}
+
+// Load pending orders for wave creation
+async function loadPendingOrdersForWaves() {
+  try {
+    const ordersData = await apiCall('/orders?status=pending&limit=100');
+    if (ordersData?.orders) {
+      const waveOrdersSelect = document.getElementById('wave-orders');
+      const buildOrdersList = document.getElementById('build-orders-list');
+      
+      if (waveOrdersSelect) {
+        waveOrdersSelect.innerHTML = ordersData.orders.map(order => 
+          `<option value="${order.id}" data-items="${order.total_items || 0}" data-customer="${order.customer_name || order.customer_code}">
+            ${order.order_number} - ${order.customer_name || order.customer_code} (${order.total_items || 0} items)
+          </option>`
+        ).join('');
+      }
+
+      if (buildOrdersList) {
+        buildOrdersList.innerHTML = ordersData.orders.map(order => `
+          <div class="order-item" data-order-id="${order.id}">
+            <input type="checkbox" id="order-${order.id}" value="${order.id}">
+            <label for="order-${order.id}">
+              <strong>${order.order_number}</strong> - ${order.customer_name || order.customer_code}
+              <br><small>${order.total_items || 0} items, Priority: ${order.priority || 'Normal'}</small>
+            </label>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load pending orders:', error);
+  }
+}
+
+// Filter waves based on current filter values
+function filterWaves() {
+  loadPickingData();
 }
 
 async function viewWave(waveId) {
@@ -881,9 +1290,70 @@ async function viewWave(waveId) {
 }
 
 async function startWave(waveId) {
-  const result = await apiCall(`/waves/${waveId}/start`, { method: 'POST' });
+  console.log('=== Starting Wave Debug ===');
+  console.log('Wave ID:', waveId);
+  
+  // Get current user info for operator_id
+  const currentUserStr = localStorage.getItem('currentUser');
+  console.log('currentUser from localStorage:', currentUserStr);
+  
+  let userInfo = {};
+  try {
+    userInfo = JSON.parse(currentUserStr || '{}');
+  } catch (e) {
+    console.error('Error parsing currentUser:', e);
+    userInfo = {};
+  }
+  
+  console.log('Parsed userInfo:', userInfo);
+  
+  // Determine operator ID - handle demo users and real database users
+  let operatorId;
+  
+  console.log('User info details:', {
+    id: userInfo.id,
+    username: userInfo.username,
+    role: userInfo.role
+  });
+  
+  if (userInfo.id === 'admin-001') {
+    // Demo admin user - map to actual admin user in database
+    operatorId = 17; // Admin user ID in SQL database (from users table)
+    console.log('Using demo admin, mapped to database user ID:', operatorId);
+  } else if (userInfo.id === 'test-001') {
+    // Demo test user - map to actual operator user in database  
+    operatorId = 19; // Operator1 user ID in SQL database
+    console.log('Using demo test user, mapped to database user ID:', operatorId);
+  } else if (userInfo.id && !isNaN(parseInt(userInfo.id))) {
+    // For real database users, use their actual ID
+    operatorId = parseInt(userInfo.id);
+    console.log('Using real database user ID:', operatorId);
+  } else {
+    // Default to admin user if no valid ID found
+    operatorId = 17;
+    console.log('No valid user ID found, defaulting to admin ID:', operatorId);
+  }
+  console.log('Using operator ID:', operatorId);
+  
+  const requestBody = {
+    operator_id: operatorId
+  };
+  
+  console.log('Request body:', requestBody);
+  console.log('Request body JSON:', JSON.stringify(requestBody));
+  
+  const result = await apiCall(`/waves/${waveId}/start`, { 
+    method: 'POST',
+    body: JSON.stringify(requestBody)
+  });
+  
+  console.log('API call result:', result);
+  
   if (result) {
+    console.log('Wave started successfully:', result);
     loadPickingData();
+  } else {
+    console.error('Failed to start wave - result is null/false');
   }
 }
 
@@ -1207,12 +1677,19 @@ async function generateReport(reportType) {
 }
 
 async function generateWarehouseSummaryReport() {
-  const [layout, utilization, orders, picking] = await Promise.all([
+  const [layout, utilization, orders] = await Promise.all([
     apiCall('/warehouse/layout'),
     apiCall('/warehouse/utilization'),
-    apiCall('/orders/stats/summary'),
-    apiCall('/picking/performance')
+    apiCall('/orders/stats/summary')
   ]);
+  
+  // Load performance data separately
+  let picking = null;
+  try {
+    picking = await apiCall('/picking/performance');
+  } catch (error) {
+    console.warn('Performance data not available for report');
+  }
   
   let report = '='.repeat(60) + '\n';
   report += '           WAREHOUSE SUMMARY REPORT\n';
@@ -1253,8 +1730,20 @@ async function generateWarehouseSummaryReport() {
 }
 
 async function generateOperatorPerformanceReport() {
-  const picking = await apiCall('/picking/performance');
-  const waves = await apiCall('/picking/waves?limit=100');
+  let picking = null;
+  let waves = null;
+  
+  try {
+    picking = await apiCall('/picking/performance');
+  } catch (error) {
+    console.warn('Performance data not available');
+  }
+  
+  try {
+    waves = await apiCall('/picking/waves?limit=100');
+  } catch (error) {
+    console.warn('Waves data not available');
+  }
   
   let report = '='.repeat(60) + '\n';
   report += '         OPERATOR PERFORMANCE REPORT\n';
@@ -1372,12 +1861,13 @@ async function generateAIOptimizationReport() {
 
 // Utility functions
 function formatDate(dateString) {
-  if (!dateString) return 'N/A';
+  if (!dateString) return 'No Date';
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
   } catch {
-    return dateString;
+    return 'Invalid Date';
   }
 }
 
@@ -1473,26 +1963,54 @@ function showToast(message, type = 'info', duration = 4000) {
 async function handleInbound(event) {
   event.preventDefault();
   
+  const productRef = document.getElementById('inbound-product').value.trim();
+  const locationCode = document.getElementById('inbound-location').value.trim();
+  const quantity = parseInt(document.getElementById('inbound-quantity').value);
+  const notes = document.getElementById('inbound-notes').value.trim();
+  
+  // Validation
+  if (!productRef) {
+    showToast('Vui lòng nhập mã sản phẩm', 'error');
+    return;
+  }
+  
+  if (!locationCode) {
+    showToast('Vui lòng chọn vị trí lưu trữ', 'error');
+    return;
+  }
+  
+  if (!quantity || quantity <= 0) {
+    showToast('Vui lòng nhập số lượng hợp lệ', 'error');
+    return;
+  }
+  
   const data = {
     movement_type: 'inbound',
-    product_reference: document.getElementById('inbound-product').value,
-    to_location_code: document.getElementById('inbound-location').value,
-    quantity: parseInt(document.getElementById('inbound-quantity').value),
-    notes: document.getElementById('inbound-notes').value
+    product_reference: productRef,
+    to_location_code: locationCode,
+    quantity: quantity,
+    notes: notes
   };
   
-  const result = await apiCall('/warehouse/movements', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-  
-  if (result) {
-    showToast('Inbound successful!', 'success');
-    closeModal('inbound-modal');
-    document.getElementById('inbound-form').reset();
-    loadInventoryData();
-  } else {
-    showToast('Inbound failed!', 'error');
+  try {
+    showToast('Đang xử lý nhập kho...', 'info');
+    
+    const result = await apiCall('/warehouse/movements', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    
+    if (result && result.success) {
+      showToast(`✅ Nhập kho thành công: ${quantity} ${productRef} vào ${locationCode}`, 'success');
+      closeModal('inbound-modal');
+      document.getElementById('inbound-form').reset();
+      loadInventoryData();
+    } else {
+      showToast(`❌ Nhập kho thất bại: ${result?.error || 'Lỗi không xác định'}`, 'error');
+    }
+  } catch (error) {
+    console.error('Inbound error:', error);
+    showToast('❌ Lỗi hệ thống khi nhập kho', 'error');
   }
 }
 
@@ -1500,26 +2018,54 @@ async function handleInbound(event) {
 async function handleOutbound(event) {
   event.preventDefault();
   
+  const productRef = document.getElementById('outbound-product').value.trim();
+  const locationCode = document.getElementById('outbound-location').value.trim();
+  const quantity = parseInt(document.getElementById('outbound-quantity').value);
+  const notes = document.getElementById('outbound-notes').value.trim();
+  
+  // Validation
+  if (!productRef) {
+    showToast('Vui lòng nhập mã sản phẩm', 'error');
+    return;
+  }
+  
+  if (!locationCode) {
+    showToast('Vui lòng chọn vị trí xuất hàng', 'error');
+    return;
+  }
+  
+  if (!quantity || quantity <= 0) {
+    showToast('Vui lòng nhập số lượng hợp lệ', 'error');
+    return;
+  }
+  
   const data = {
     movement_type: 'outbound',
-    product_reference: document.getElementById('outbound-product').value,
-    from_location_code: document.getElementById('outbound-location').value,
-    quantity: parseInt(document.getElementById('outbound-quantity').value),
-    notes: document.getElementById('outbound-notes').value
+    product_reference: productRef,
+    from_location_code: locationCode,
+    quantity: quantity,
+    notes: notes
   };
   
-  const result = await apiCall('/warehouse/movements', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-  
-  if (result) {
-    showToast('Outbound successful!', 'success');
-    closeModal('outbound-modal');
-    document.getElementById('outbound-form').reset();
-    loadInventoryData();
-  } else {
-    showToast('Outbound failed!', 'error');
+  try {
+    showToast('Đang xử lý xuất kho...', 'info');
+    
+    const result = await apiCall('/warehouse/movements', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    
+    if (result && result.success) {
+      showToast(`✅ Xuất kho thành công: ${quantity} ${productRef} từ ${locationCode}`, 'success');
+      closeModal('outbound-modal');
+      document.getElementById('outbound-form').reset();
+      loadInventoryData();
+    } else {
+      showToast(`❌ Xuất kho thất bại: ${result?.error || 'Lỗi không xác định'}`, 'error');
+    }
+  } catch (error) {
+    console.error('Outbound error:', error);
+    showToast('❌ Lỗi hệ thống khi xuất kho', 'error');
   }
 }
 
@@ -1527,51 +2073,117 @@ async function handleOutbound(event) {
 async function handleTransfer(event) {
   event.preventDefault();
   
+  const productRef = document.getElementById('transfer-product').value.trim();
+  const fromLocation = document.getElementById('transfer-from').value.trim();
+  const toLocation = document.getElementById('transfer-to').value.trim();
+  const quantity = parseInt(document.getElementById('transfer-quantity').value);
+  
+  // Validation
+  if (!productRef) {
+    showToast('Vui lòng nhập mã sản phẩm', 'error');
+    return;
+  }
+  
+  if (!fromLocation) {
+    showToast('Vui lòng chọn vị trí nguồn', 'error');
+    return;
+  }
+  
+  if (!toLocation) {
+    showToast('Vui lòng chọn vị trí đích', 'error');
+    return;
+  }
+  
+  if (fromLocation === toLocation) {
+    showToast('Vị trí nguồn và đích không thể giống nhau', 'error');
+    return;
+  }
+  
+  if (!quantity || quantity <= 0) {
+    showToast('Vui lòng nhập số lượng hợp lệ', 'error');
+    return;
+  }
+  
   const data = {
     movement_type: 'transfer',
-    product_reference: document.getElementById('transfer-product').value,
-    from_location_code: document.getElementById('transfer-from').value,
-    to_location_code: document.getElementById('transfer-to').value,
-    quantity: parseInt(document.getElementById('transfer-quantity').value)
+    product_reference: productRef,
+    from_location_code: fromLocation,
+    to_location_code: toLocation,
+    quantity: quantity
   };
   
-  const result = await apiCall('/warehouse/movements', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-  
-  if (result) {
-    showToast('Transfer successful!', 'success');
-    closeModal('transfer-modal');
-    document.getElementById('transfer-form').reset();
-    loadInventoryData();
-  } else {
-    showToast('Transfer failed!', 'error');
+  try {
+    showToast('Đang xử lý chuyển kho...', 'info');
+    
+    const result = await apiCall('/warehouse/movements', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    
+    if (result && result.success) {
+      showToast(`✅ Chuyển kho thành công: ${quantity} ${productRef} từ ${fromLocation} đến ${toLocation}`, 'success');
+      closeModal('transfer-modal');
+      document.getElementById('transfer-form').reset();
+      loadInventoryData();
+    } else {
+      showToast(`❌ Chuyển kho thất bại: ${result?.error || 'Lỗi không xác định'}`, 'error');
+    }
+  } catch (error) {
+    console.error('Transfer error:', error);
+    showToast('❌ Lỗi hệ thống khi chuyển kho', 'error');
   }
 }
 
-// Adjust Stock
+// Adjust Stock - Điều chỉnh tồn kho
 async function handleAdjust(event) {
   event.preventDefault();
   
   const inventoryId = document.getElementById('adjust-inventory-id').value;
+  const newQuantity = parseInt(document.getElementById('adjust-quantity').value);
+  const reason = document.getElementById('adjust-reason').value.trim();
+  
+  // Validation
+  if (!inventoryId) {
+    showToast('Không tìm thấy ID inventory', 'error');
+    return;
+  }
+  
+  if (newQuantity === undefined || newQuantity < 0) {
+    showToast('Vui lòng nhập số lượng hợp lệ (>= 0)', 'error');
+    return;
+  }
+  
+  if (!reason) {
+    showToast('Vui lòng nhập lý do điều chỉnh', 'error');
+    return;
+  }
+  
   const data = {
-    quantity: parseInt(document.getElementById('adjust-quantity').value),
-    reason: document.getElementById('adjust-reason').value
+    quantity: newQuantity,
+    reason: reason
   };
   
-  const result = await apiCall(`/inventory/${inventoryId}/adjust`, {
-    method: 'PUT',
-    body: JSON.stringify(data)
-  });
-  
-  if (result) {
-    showToast('Stock adjusted!', 'success');
-    closeModal('adjust-modal');
-    document.getElementById('adjust-form').reset();
-    loadInventoryData();
-  } else {
-    showToast('Adjustment failed!', 'error');
+  try {
+    showToast('Đang xử lý điều chỉnh tồn kho...', 'info');
+    
+    const result = await apiCall(`/inventory/${inventoryId}/adjust`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    
+    if (result && result.success) {
+      const diff = result.difference;
+      const diffText = diff > 0 ? `+${diff}` : `${diff}`;
+      showToast(`✅ Điều chỉnh thành công: ${diffText} (${result.old_quantity} → ${result.new_quantity})`, 'success');
+      closeModal('adjust-modal');
+      document.getElementById('adjust-form').reset();
+      loadInventoryData();
+    } else {
+      showToast(`❌ Điều chỉnh thất bại: ${result?.error || 'Lỗi không xác định'}`, 'error');
+    }
+  } catch (error) {
+    console.error('Adjust error:', error);
+    showToast('❌ Lỗi hệ thống khi điều chỉnh tồn kho', 'error');
   }
 }
 
@@ -2295,77 +2907,113 @@ async function loadOperatorsData() {
   
   if (data?.operators) {
     const tbody = document.querySelector('#operators-table tbody');
-    tbody.innerHTML = data.operators.map(operator => `
-      <tr>
-        <td>${operator.operator_id || 'N/A'}</td>
-        <td>${operator.name || 'N/A'}</td>
-        <td><span class="status-badge status-${operator.status}">${operator.status}</span></td>
-        <td>${operator.current_wave || 'None'}</td>
-        <td>${operator.total_picks || 0}</td>
-        <td>${operator.avg_pick_time || 0}s</td>
-        <td>
-          <div class="performance-indicator ${getPerformanceClass(operator.performance_score)}">
-            ${operator.performance_score || 0}%
-          </div>
-        </td>
-        <td class="table-actions">
-          <button class="btn btn-small btn-secondary" onclick="editOperator('${operator.id}')">Edit</button>
-          <button class="btn btn-small ${operator.status === 'active' ? 'btn-warning' : 'btn-success'}" 
-                  onclick="toggleOperatorStatus('${operator.id}', '${operator.status}')">
-            ${operator.status === 'active' ? 'Deactivate' : 'Activate'}
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = data.operators.map(operator => {
+      // Calculate performance score based on completion rate
+      const performanceScore = operator.performance?.total_tasks > 0 ? 
+        Math.round((operator.performance.total_quantity / operator.performance.total_tasks) * 10) : 0;
+      
+      return `
+        <tr>
+          <td>${operator.id || 'Unknown ID'}</td>
+          <td>${operator.username || 'Unknown User'}</td>
+          <td><span class="status-badge status-${operator.role}">${operator.role}</span></td>
+          <td>None</td>
+          <td>${operator.performance?.total_tasks || 0}</td>
+          <td>${operator.performance?.avg_quantity || 0}s</td>
+          <td>
+            <div class="performance-indicator ${getPerformanceClass(performanceScore)}">
+              ${performanceScore}%
+            </div>
+          </td>
+          <td class="table-actions">
+            <button class="btn btn-small btn-secondary" onclick="editOperator('${operator.id}')">Edit</button>
+            <button class="btn btn-small btn-success" onclick="toggleOperatorStatus('${operator.id}', 'active')">
+              Manage
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
   
   // Load performance chart
   loadOperatorPerformanceChart();
 }
 
+// Helper function for performance class
+function getPerformanceClass(score) {
+  if (score >= 80) return 'performance-excellent';
+  if (score >= 60) return 'performance-good';
+  if (score >= 40) return 'performance-average';
+  return 'performance-poor';
+}
+
 async function loadOperatorPerformanceChart() {
   const data = await apiCall('/operators/performance');
   
-  if (data?.operators) {
+  if (data?.operator_performance) {
     const ctx = document.getElementById('operator-performance-chart');
-    if (ctx) {
+    if (ctx && typeof Chart !== 'undefined') {
       if (charts.operatorPerformance) charts.operatorPerformance.destroy();
+      
+      const operators = data.operator_performance.slice(0, 10); // Top 10 operators
       
       charts.operatorPerformance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: data.operators.map(op => op.name || op.operator_id),
+          labels: operators.map(op => op.username),
           datasets: [
             {
-              label: 'Total Picks',
-              data: data.operators.map(op => op.total_picks || 0),
+              label: 'Total Tasks',
+              data: operators.map(op => op.total_tasks),
               backgroundColor: '#3b82f6',
-              yAxisID: 'y'
+              borderColor: '#2563eb',
+              borderWidth: 1
             },
             {
-              label: 'Avg Pick Time (s)',
-              data: data.operators.map(op => op.avg_pick_time || 0),
-              backgroundColor: '#ef4444',
-              type: 'line',
+              label: 'Completion Rate (%)',
+              data: operators.map(op => op.completion_rate),
+              backgroundColor: '#22c55e',
+              borderColor: '#16a34a',
+              borderWidth: 1,
               yAxisID: 'y1'
             }
           ]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
             y: {
-              type: 'linear',
-              display: true,
-              position: 'left',
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Total Tasks'
+              }
             },
             y1: {
               type: 'linear',
               display: true,
               position: 'right',
+              beginAtZero: true,
+              max: 100,
+              title: {
+                display: true,
+                text: 'Completion Rate (%)'
+              },
               grid: {
                 drawOnChartArea: false,
               },
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'Operator Performance Comparison'
+            },
+            legend: {
+              display: true,
+              position: 'top'
             }
           }
         }
@@ -2514,3 +3162,605 @@ if (typeof window !== 'undefined') {
     setInterval(loadRealTimeMetrics, 30000); // Refresh every 30 seconds
   });
 }
+
+// ========================================
+// ENHANCED WAVE PLANNING & PICKING OPERATIONS
+// ========================================
+
+// Enhanced Wave Management Functions
+
+// View wave detail in modal
+async function viewWaveDetail(waveId) {
+  try {
+    console.log('Loading wave detail for:', waveId);
+    
+    const waveData = await apiCall(`/waves/${waveId}`);
+    if (!waveData) {
+      showToast('Failed to load wave details', 'info');
+      return;
+    }
+
+    // Update modal content
+    document.getElementById('wave-detail-number').textContent = waveData.wave.wave_number;
+    
+    // Wave information
+    const waveInfoContent = document.getElementById('wave-info-content');
+    waveInfoContent.innerHTML = `
+      <div class="info-item"><strong>Status:</strong> <span class="status-badge status-${waveData.wave.status}">${waveData.wave.status}</span></div>
+      <div class="info-item"><strong>Operator:</strong> ${waveData.wave.assigned_operator_name || 'Unassigned'}</div>
+      <div class="info-item"><strong>Created:</strong> ${formatDate(waveData.wave.created_at)}</div>
+      <div class="info-item"><strong>Updated:</strong> ${formatDate(waveData.wave.updated_at)}</div>
+      <div class="info-item"><strong>Priority:</strong> ${waveData.wave.priority || 'Normal'}</div>
+    `;
+
+    // Wave statistics
+    const waveStatsContent = document.getElementById('wave-stats-content');
+    waveStatsContent.innerHTML = `
+      <div class="stat-item">
+        <span class="stat-label">Total Items:</span>
+        <span class="stat-value">${waveData.wave.total_items}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Total Quantity:</span>
+        <span class="stat-value">${waveData.wave.total_quantity}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Picked:</span>
+        <span class="stat-value">${waveData.wave.total_picked}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Progress:</span>
+        <span class="stat-value">${waveData.wave.completion_percentage}%</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Est. Time:</span>
+        <span class="stat-value">${waveData.wave.estimated_time_minutes} min</span>
+      </div>
+    `;
+
+    // Wave tasks
+    const tasksTableBody = document.querySelector('#wave-tasks-table tbody');
+    if (waveData.tasks && waveData.tasks.length > 0) {
+      tasksTableBody.innerHTML = waveData.tasks.map(task => `
+        <tr>
+          <td>
+            <strong>${task.product_reference}</strong>
+            <br><small>${task.product_description || 'N/A'}</small>
+          </td>
+          <td>${task.location_code}</td>
+          <td>${task.zone || 'N/A'}</td>
+          <td>${task.quantity_to_pick}</td>
+          <td>${task.quantity_picked || 0}</td>
+          <td><span class="status-badge status-${task.status}">${task.status}</span></td>
+          <td>
+            ${task.status === 'created' || task.status === 'in_progress' ? 
+              `<button class="btn btn-small btn-primary" onclick="completeTask('${task.id}')">Complete</button>` : 
+              '<span class="text-muted">Completed</span>'
+            }
+          </td>
+        </tr>
+      `).join('');
+    } else {
+      tasksTableBody.innerHTML = '<tr><td colspan="7">No tasks found</td></tr>';
+    }
+
+    // Show modal
+    showModal('wave-detail-modal');
+
+  } catch (error) {
+    console.error('Error loading wave detail:', error);
+    showToast('Failed to load wave details', 'info');
+  }
+}
+
+// Update wave preview when orders are selected
+function updateWavePreview() {
+  const selectedOrders = Array.from(document.getElementById('wave-orders').selectedOptions);
+  
+  let totalOrders = selectedOrders.length;
+  let totalItems = 0;
+  let totalQuantity = 0;
+
+  selectedOrders.forEach(option => {
+    totalItems += parseInt(option.dataset.items || 0);
+    // Estimate quantity (simplified)
+    totalQuantity += parseInt(option.dataset.items || 0) * 2;
+  });
+
+  // Estimate locations and time
+  const estimatedLocations = Math.ceil(totalItems * 0.7); // Assume 70% location efficiency
+  const estimatedTime = Math.ceil(totalItems * 2.5); // 2.5 minutes per item
+
+  // Update preview
+  document.getElementById('preview-orders').textContent = totalOrders;
+  document.getElementById('preview-items').textContent = totalItems;
+  document.getElementById('preview-quantity').textContent = totalQuantity;
+  document.getElementById('preview-locations').textContent = estimatedLocations;
+  document.getElementById('preview-time').textContent = estimatedTime + ' min';
+}
+
+// Validate wave creation
+async function validateWaveCreation() {
+  const selectedOrders = Array.from(document.getElementById('wave-orders').selectedOptions);
+  
+  if (selectedOrders.length === 0) {
+    showToast('Please select at least one order', 'info');
+    return;
+  }
+
+  const orderIds = selectedOrders.map(option => parseInt(option.value));
+
+  try {
+    const validation = await apiCall('/waves/validate', {
+      method: 'POST',
+      body: JSON.stringify({ order_ids: orderIds })
+    });
+
+    if (validation && validation.validation) {
+      const v = validation.validation;
+      
+      let message = `Validation Results:\n`;
+      message += `Total Orders: ${v.total_orders}\n`;
+      message += `Valid Orders: ${v.valid_orders}\n`;
+      
+      if (v.invalid_orders.length > 0) {
+        message += `\nInvalid Orders:\n`;
+        v.invalid_orders.forEach(order => {
+          message += `- ${order.order_number}: ${order.issue}\n`;
+        });
+      }
+      
+      if (v.inventory_issues.length > 0) {
+        message += `\nInventory Issues:\n`;
+        v.inventory_issues.forEach(issue => {
+          message += `- ${issue.product_reference}: Need ${issue.required_quantity}, Have ${issue.available_quantity}\n`;
+        });
+      }
+      
+      message += `\nCan Create Wave: ${v.valid ? 'YES' : 'NO'}`;
+      
+      alert(message);
+    }
+  } catch (error) {
+    console.error('Validation error:', error);
+    showToast('Failed to validate wave creation', 'info');
+  }
+}
+
+// Enhanced wave creation
+async function handleCreateWaveEnhanced(event) {
+  event.preventDefault();
+  
+  const selectedOrders = Array.from(document.getElementById('wave-orders').selectedOptions);
+  const operatorId = document.getElementById('wave-operator').value;
+  const priority = document.getElementById('wave-priority').value;
+  const timeWindow = document.getElementById('wave-time-window').value;
+  const notes = document.getElementById('wave-notes').value;
+
+  if (selectedOrders.length === 0) {
+    showToast('Please select at least one order', 'info');
+    return;
+  }
+
+  const orderIds = selectedOrders.map(option => parseInt(option.value));
+
+  try {
+    const result = await apiCall('/waves', {
+      method: 'POST',
+      body: JSON.stringify({
+        order_ids: orderIds,
+        operator_id: operatorId ? parseInt(operatorId) : null,
+        priority: priority,
+        time_window: timeWindow ? parseInt(timeWindow) : null,
+        notes: notes
+      })
+    });
+
+    if (result && result.success) {
+      alert(`Wave ${result.wave_number} created successfully!\nTasks: ${result.tasks_created}\nOrders: ${result.orders_assigned}`);
+      closeModal('create-wave-modal');
+      loadPickingData();
+      
+      // Reset form
+      document.getElementById('create-wave-form').reset();
+      updateWavePreview();
+    }
+  } catch (error) {
+    console.error('Create wave error:', error);
+    showToast('Failed to create wave', 'info');
+  }
+}
+
+// Auto wave generation functions
+async function previewAutoWaves() {
+  const rules = {
+    max_orders_per_wave: parseInt(document.getElementById('auto-max-orders').value),
+    max_picks_per_wave: parseInt(document.getElementById('auto-max-picks').value),
+    time_window_hours: parseInt(document.getElementById('auto-time-window').value),
+    priority_orders_first: document.getElementById('auto-priority-first').checked,
+    group_by_zone: document.getElementById('auto-group-zone').checked,
+    group_by_distance: document.getElementById('auto-group-distance').checked,
+    group_by_abc: document.getElementById('auto-group-abc').checked
+  };
+
+  try {
+    const result = await apiCall('/waves/auto-generate', {
+      method: 'POST',
+      body: JSON.stringify({ rules })
+    });
+
+    if (result && result.success) {
+      const previewContent = document.getElementById('auto-preview-content');
+      
+      if (result.generated_waves.length === 0) {
+        previewContent.innerHTML = '<p>No waves can be generated with current rules.</p>';
+      } else {
+        previewContent.innerHTML = `
+          <div class="preview-summary">
+            <p><strong>Generated ${result.waves_generated} waves from ${result.total_orders_processed} orders</strong></p>
+          </div>
+          <div class="waves-preview-list">
+            ${result.generated_waves.map((wave, index) => `
+              <div class="wave-preview-item">
+                <h5>Wave ${index + 1}</h5>
+                <p>Orders: ${wave.total_orders} | Items: ${wave.total_items} | Est. Time: ${wave.estimated_time_minutes} min</p>
+                <details>
+                  <summary>Orders in this wave</summary>
+                  <ul>
+                    ${wave.orders.map(order => `<li>${order.order_number} - ${order.customer_name} (${order.item_count} items)</li>`).join('')}
+                  </ul>
+                </details>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      document.getElementById('auto-wave-preview').style.display = 'block';
+      document.querySelector('button[onclick="confirmAutoWaves()"]').style.display = 'inline-block';
+      
+      // Store generated waves for confirmation
+      window.generatedWaves = result.generated_waves;
+    }
+  } catch (error) {
+    console.error('Auto preview error:', error);
+    showToast('Failed to preview auto generation', 'info');
+  }
+}
+
+async function confirmAutoWaves() {
+  if (!window.generatedWaves || window.generatedWaves.length === 0) {
+    showToast('No waves to create', 'info');
+    return;
+  }
+
+  // Get current user for operator assignment
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  let operatorId = 17; // Default admin
+  
+  if (currentUser.id === 'admin-001') {
+    operatorId = 17;
+  } else if (currentUser.id === 'test-001') {
+    operatorId = 19;
+  } else if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
+    operatorId = parseInt(currentUser.id);
+  }
+
+  try {
+    const result = await apiCall('/waves/auto-generate/confirm', {
+      method: 'POST',
+      body: JSON.stringify({
+        waves_to_create: window.generatedWaves,
+        operator_id: operatorId
+      })
+    });
+
+    if (result && result.success) {
+      alert(`Successfully created ${result.total_waves_created} waves!`);
+      closeModal('auto-wave-modal');
+      loadPickingData();
+      
+      // Reset form
+      document.getElementById('auto-wave-preview').style.display = 'none';
+      window.generatedWaves = null;
+    }
+  } catch (error) {
+    console.error('Confirm auto waves error:', error);
+    showToast('Failed to create auto-generated waves', 'info');
+  }
+}
+
+// Wave Build functions
+let currentBuildStep = 1;
+
+function nextBuildStep() {
+  if (currentBuildStep === 1) {
+    // Validate selection and move to preview
+    const selectedOrders = Array.from(document.querySelectorAll('#build-orders-list input[type="checkbox"]:checked'));
+    
+    if (selectedOrders.length === 0) {
+      showToast('Please select at least one order', 'info');
+      return;
+    }
+
+    // Generate preview
+    generateBuildPreview(selectedOrders);
+    
+    // Show step 2
+    document.getElementById('build-step-1').style.display = 'none';
+    document.getElementById('build-step-2').style.display = 'block';
+    document.querySelector('button[onclick="prevBuildStep()"]').style.display = 'inline-block';
+    document.querySelector('button[onclick="nextBuildStep()"]').style.display = 'none';
+    document.querySelector('button[onclick="confirmWaveBuild()"]').style.display = 'inline-block';
+    
+    currentBuildStep = 2;
+  }
+}
+
+function prevBuildStep() {
+  if (currentBuildStep === 2) {
+    // Go back to step 1
+    document.getElementById('build-step-1').style.display = 'block';
+    document.getElementById('build-step-2').style.display = 'none';
+    document.querySelector('button[onclick="prevBuildStep()"]').style.display = 'none';
+    document.querySelector('button[onclick="nextBuildStep()"]').style.display = 'inline-block';
+    document.querySelector('button[onclick="confirmWaveBuild()"]').style.display = 'none';
+    
+    currentBuildStep = 1;
+  }
+}
+
+async function generateBuildPreview(selectedOrders) {
+  const orderIds = selectedOrders.map(cb => parseInt(cb.value));
+  
+  try {
+    const preview = await apiCall('/waves/build', {
+      method: 'POST',
+      body: JSON.stringify({
+        order_ids: orderIds,
+        preview_only: true
+      })
+    });
+
+    if (preview && preview.success) {
+      const previewDiv = document.getElementById('build-preview');
+      previewDiv.innerHTML = `
+        <div class="build-preview-summary">
+          <div class="preview-stat">
+            <h4>${preview.preview.total_orders}</h4>
+            <p>Orders</p>
+          </div>
+          <div class="preview-stat">
+            <h4>${preview.preview.total_items}</h4>
+            <p>Items</p>
+          </div>
+          <div class="preview-stat">
+            <h4>${preview.preview.total_quantity}</h4>
+            <p>Quantity</p>
+          </div>
+          <div class="preview-stat">
+            <h4>${preview.preview.estimated_locations}</h4>
+            <p>Locations</p>
+          </div>
+          <div class="preview-stat">
+            <h4>${preview.preview.estimated_time_minutes} min</h4>
+            <p>Est. Time</p>
+          </div>
+        </div>
+        
+        <div class="build-preview-details">
+          <h5>Orders in Wave:</h5>
+          <ul>
+            ${preview.preview.orders.map(order => 
+              `<li>${order.order_number} - ${order.customer_name} (${order.item_count} items, ${order.total_quantity} qty)</li>`
+            ).join('')}
+          </ul>
+          
+          <h5>Zones Involved:</h5>
+          <p>${preview.preview.zones_involved.join(', ') || 'No zones identified'}</p>
+        </div>
+      `;
+      
+      // Store for confirmation
+      window.buildPreviewData = { order_ids: orderIds, preview: preview.preview };
+    }
+  } catch (error) {
+    console.error('Build preview error:', error);
+    showToast('Failed to generate build preview', 'info');
+  }
+}
+
+async function confirmWaveBuild() {
+  if (!window.buildPreviewData) {
+    showToast('No build data available', 'info');
+    return;
+  }
+
+  // Get current user for operator assignment
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  let operatorId = 17; // Default admin
+  
+  if (currentUser.id === 'admin-001') {
+    operatorId = 17;
+  } else if (currentUser.id === 'test-001') {
+    operatorId = 19;
+  } else if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
+    operatorId = parseInt(currentUser.id);
+  }
+
+  try {
+    const result = await apiCall('/waves', {
+      method: 'POST',
+      body: JSON.stringify({
+        order_ids: window.buildPreviewData.order_ids,
+        operator_id: operatorId,
+        priority: 'normal',
+        notes: 'Created via Wave Build'
+      })
+    });
+
+    if (result && result.success) {
+      alert(`Wave ${result.wave_number} created successfully!`);
+      closeModal('wave-build-modal');
+      loadPickingData();
+      
+      // Reset build process
+      currentBuildStep = 1;
+      document.getElementById('build-step-1').style.display = 'block';
+      document.getElementById('build-step-2').style.display = 'none';
+      window.buildPreviewData = null;
+    }
+  } catch (error) {
+    console.error('Confirm wave build error:', error);
+    showToast('Failed to create wave', 'info');
+  }
+}
+
+function filterBuildOrders() {
+  const search = document.getElementById('build-order-search').value.toLowerCase();
+  const priority = document.getElementById('build-priority-filter').value;
+  
+  const orderItems = document.querySelectorAll('#build-orders-list .order-item');
+  
+  orderItems.forEach(item => {
+    const label = item.querySelector('label').textContent.toLowerCase();
+    const orderPriority = item.querySelector('small').textContent;
+    
+    const matchesSearch = search === '' || label.includes(search);
+    const matchesPriority = priority === '' || orderPriority.includes(`Priority: ${priority}`);
+    
+    item.style.display = matchesSearch && matchesPriority ? 'block' : 'none';
+  });
+}
+
+// Make new functions available globally
+window.viewWaveDetail = viewWaveDetail;
+window.updateWavePreview = updateWavePreview;
+window.validateWaveCreation = validateWaveCreation;
+window.handleCreateWaveEnhanced = handleCreateWaveEnhanced;
+window.previewAutoWaves = previewAutoWaves;
+window.confirmAutoWaves = confirmAutoWaves;
+window.nextBuildStep = nextBuildStep;
+window.prevBuildStep = prevBuildStep;
+window.generateBuildPreview = generateBuildPreview;
+window.confirmWaveBuild = confirmWaveBuild;
+window.filterBuildOrders = filterBuildOrders;
+
+// Missing wave detail functions
+async function assignOperatorToWave() {
+  const waveNumber = document.getElementById('wave-detail-number').textContent;
+  if (!waveNumber) return;
+  
+  const operatorId = prompt('Enter Operator ID to assign:');
+  if (!operatorId) return;
+  
+  const result = await apiCall(`/waves/${waveNumber}/assign`, {
+    method: 'PUT',
+    body: JSON.stringify({ operator_id: parseInt(operatorId) })
+  });
+  
+  if (result) {
+    showToast(`Operator assigned to wave ${result.wave_number}`, 'success');
+    viewWaveDetail(waveNumber); // Refresh the modal
+  }
+}
+
+// Missing auto wave function
+async function generateAutoWaves() {
+  // This is the same as previewAutoWaves but actually creates the waves
+  await previewAutoWaves();
+  
+  if (window.generatedWaves && window.generatedWaves.length > 0) {
+    const operatorId = prompt('Enter Operator ID for auto-generated waves (optional):');
+    
+    const result = await apiCall('/waves/auto-generate/confirm', {
+      method: 'POST',
+      body: JSON.stringify({
+        waves_to_create: window.generatedWaves,
+        operator_id: operatorId ? parseInt(operatorId) : null
+      })
+    });
+    
+    if (result) {
+      showToast(`${result.total_waves_created} waves created successfully`, 'success');
+      closeModal('auto-wave-modal');
+      loadPickingData();
+      window.generatedWaves = null;
+    }
+  }
+}
+
+// Missing filter function for build orders
+function filterBuildOrders() {
+  const searchTerm = document.getElementById('build-order-search').value.toLowerCase();
+  const priorityFilter = document.getElementById('build-priority-filter').value;
+  
+  const orderItems = document.querySelectorAll('#build-orders-list .order-item');
+  
+  orderItems.forEach(item => {
+    const orderText = item.textContent.toLowerCase();
+    const matchesSearch = !searchTerm || orderText.includes(searchTerm);
+    const matchesPriority = !priorityFilter || item.dataset.priority === priorityFilter;
+    
+    item.style.display = (matchesSearch && matchesPriority) ? 'block' : 'none';
+  });
+}
+
+// Make new functions available globally
+window.assignOperatorToWave = assignOperatorToWave;
+window.generateAutoWaves = generateAutoWaves;
+window.filterBuildOrders = filterBuildOrders;
+
+// Override the original handleCreateWave with enhanced version
+window.handleCreateWave = handleCreateWaveEnhanced;
+
+// Wave action wrapper functions for detail modal (defined after all base functions)
+async function startWaveFromDetail() {
+  const waveNumber = document.getElementById('wave-detail-number').textContent;
+  if (waveNumber) {
+    await startWave(waveNumber);
+    viewWaveDetail(waveNumber); // Refresh the modal
+  }
+}
+
+async function pauseWaveFromDetail() {
+  const waveNumber = document.getElementById('wave-detail-number').textContent;
+  if (waveNumber) {
+    await pauseWave(waveNumber);
+    viewWaveDetail(waveNumber); // Refresh the modal
+  }
+}
+
+async function completeWaveFromDetail() {
+  const waveNumber = document.getElementById('wave-detail-number').textContent;
+  if (waveNumber) {
+    await completeWave(waveNumber);
+    closeModal('wave-detail-modal'); // Close modal after completion
+    loadPickingData(); // Refresh the main table
+  }
+}
+
+async function cancelWaveFromDetail() {
+  const waveNumber = document.getElementById('wave-detail-number').textContent;
+  if (waveNumber) {
+    await cancelWave(waveNumber);
+    closeModal('wave-detail-modal'); // Close modal after cancellation
+    loadPickingData(); // Refresh the main table
+  }
+}
+
+// Export wrapper functions
+window.startWaveFromDetail = startWaveFromDetail;
+window.pauseWaveFromDetail = pauseWaveFromDetail;
+window.completeWaveFromDetail = completeWaveFromDetail;
+window.cancelWaveFromDetail = cancelWaveFromDetail;
+
+console.log('Enhanced Wave Planning & Picking Operations loaded');
+console.log('All wave functions available:', {
+  pauseWave: typeof window.pauseWave,
+  completeWave: typeof window.completeWave,
+  cancelWave: typeof window.cancelWave,
+  pauseWaveFromDetail: typeof window.pauseWaveFromDetail,
+  completeWaveFromDetail: typeof window.completeWaveFromDetail,
+  cancelWaveFromDetail: typeof window.cancelWaveFromDetail
+});

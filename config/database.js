@@ -190,10 +190,48 @@ class SQLDatabase {
         await this.run(indexSQL);
       }
 
-      console.log('✅ Database tables and indexes created successfully');
+      // Seed initial data
+      await this.seedInitialData();
+
+      console.log('✅ Database tables, indexes, and initial data created successfully');
     } catch (error) {
       console.error('❌ Failed to create tables:', error);
       throw error;
+    }
+  }
+
+  async seedInitialData() {
+    console.log('🌱 Seeding initial data...');
+
+    try {
+      // Seed users
+      const bcrypt = require('bcryptjs');
+      
+      // Admin user
+      const adminHash = await bcrypt.hash('admin123', 12);
+      await this.run(`
+        INSERT OR IGNORE INTO users (username, email, password_hash, role)
+        VALUES (?, ?, ?, ?)
+      `, ['admin', 'admin@warehouse.com', adminHash, 'admin']);
+
+      // Manager user
+      const managerHash = await bcrypt.hash('manager123', 12);
+      await this.run(`
+        INSERT OR IGNORE INTO users (username, email, password_hash, role)
+        VALUES (?, ?, ?, ?)
+      `, ['manager', 'manager@warehouse.com', managerHash, 'manager']);
+
+      // Operator user
+      const operatorHash = await bcrypt.hash('operator123', 12);
+      await this.run(`
+        INSERT OR IGNORE INTO users (username, email, password_hash, role)
+        VALUES (?, ?, ?, ?)
+      `, ['operator', 'operator@warehouse.com', operatorHash, 'operator']);
+
+      console.log('✅ Initial users seeded');
+    } catch (error) {
+      console.error('❌ Failed to seed initial data:', error);
+      // Don't throw - seeding failure shouldn't stop database initialization
     }
   }
 

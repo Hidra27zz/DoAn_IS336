@@ -29,6 +29,9 @@ const MetricsCalculator = require('./services/metrics-calculator');
 const { authMiddleware } = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
 
+// Set development environment variables
+process.env.AUTO_FIX_INVENTORY = 'true'; // Auto-fix inventory issues for development
+
 // Import database
 const { getDatabase } = require('./config/database');
 

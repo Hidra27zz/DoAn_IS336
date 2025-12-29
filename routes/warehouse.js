@@ -265,34 +265,54 @@ router.get('/movements', async (req, res) => {
 
 // POST /api/warehouse/movements - Create movement (inbound/outbound/transfer)
 router.post('/movements', async (req, res) => {
+  const db = await getDatabase();
+  
   try {
-    const db = await getDatabase();
+    await db.run('BEGIN TRANSACTION');
+    
     const { movement_type, product_reference, from_location_code, to_location_code, quantity, notes } = req.body;
+    
+    // Validate common fields
+    if (!movement_type || !product_reference || !quantity || quantity <= 0) {
+      await db.run('ROLLBACK');
+      return res.status(400).json({ error: 'Movement type, product reference, and valid quantity are required' });
+    }
 
-    // Validate
-    if (!movement_type || !quantity) {
-      return res.status(400).json({ error: 'Movement type and quantity are required' });
+    // Validate product exists
+    const product = await db.get('SELECT * FROM products WHERE reference = ?', [product_reference]);
+    if (!product) {
+      await db.run('ROLLBACK');
+      return res.status(400).json({ error: `Product ${product_reference} not found` });
     }
 
     if (movement_type === 'inbound') {
-      if (!product_reference || !to_location_code) {
-        return res.status(400).json({ error: 'Product reference and destination location are required for inbound' });
+      // A. NHẬP KHO (INBOUND)
+      if (!to_location_code) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Destination location is required for inbound' });
       }
 
-      // Check if inventory record exists
-      const existing = await db.get(
+      // Kiểm tra vị trí lưu trữ hợp lệ
+      const location = await db.get('SELECT * FROM storage_locations WHERE location_code = ?', [to_location_code]);
+      if (!location) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: `Location ${to_location_code} not found` });
+      }
+
+      // Kiểm tra hoặc tạo inventory record
+      let inventory = await db.get(
         'SELECT * FROM inventory WHERE product_reference = ? AND location_code = ?',
         [product_reference, to_location_code]
       );
 
-      if (existing) {
-        // Update existing
+      if (inventory) {
+        // Cập nhật số lượng tồn kho
         await db.run(
           'UPDATE inventory SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [quantity, existing.id]
+          [quantity, inventory.id]
         );
       } else {
-        // Create new
+        // Tạo inventory record mới
         await db.run(
           'INSERT INTO inventory (product_reference, location_code, quantity, reserved_quantity) VALUES (?, ?, ?, 0)',
           [product_reference, to_location_code, quantity]
@@ -301,68 +321,176 @@ router.post('/movements', async (req, res) => {
 
       // Update location occupancy
       await db.run(
-        'UPDATE storage_locations SET current_occupancy = current_occupancy + ? WHERE location_code = ?',
+        'UPDATE storage_locations SET current_occupancy = COALESCE(current_occupancy, 0) + ? WHERE location_code = ?',
         [quantity, to_location_code]
       );
 
+      // Ghi log movement history
+      await db.run(
+        `INSERT INTO system_logs (level, module, message, details) VALUES (?, ?, ?, ?)`,
+        ['INFO', 'inventory', `Inbound: ${quantity} units of ${product_reference} to ${to_location_code}`, 
+         JSON.stringify({ 
+           movement_type: 'inbound',
+           product_reference,
+           to_location_code,
+           quantity,
+           notes: notes || '',
+           timestamp: new Date().toISOString()
+         })]
+      );
+
+      await db.run('COMMIT');
+      
+      res.json({
+        success: true,
+        message: `Successfully added ${quantity} units of ${product_reference} to ${to_location_code}`,
+        movement: {
+          type: 'inbound',
+          product_reference,
+          location: to_location_code,
+          quantity,
+          notes
+        },
+        data_source: 'SQL Database'
+      });
+
     } else if (movement_type === 'outbound') {
-      if (!product_reference || !from_location_code) {
-        return res.status(400).json({ error: 'Product reference and source location are required for outbound' });
+      // B. XUẤT KHO (OUTBOUND)
+      if (!from_location_code) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Source location is required for outbound' });
       }
 
-      // Check inventory
-      const existing = await db.get(
+      // Kiểm tra vị trí xuất hàng
+      const location = await db.get('SELECT * FROM storage_locations WHERE location_code = ?', [from_location_code]);
+      if (!location) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: `Location ${from_location_code} not found` });
+      }
+
+      // Kiểm tra đủ hàng tồn kho
+      const inventory = await db.get(
         'SELECT * FROM inventory WHERE product_reference = ? AND location_code = ?',
         [product_reference, from_location_code]
       );
 
-      if (!existing || existing.quantity < quantity) {
-        return res.status(400).json({ error: 'Insufficient inventory' });
+      if (!inventory) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: `No inventory found for ${product_reference} at ${from_location_code}` });
       }
 
-      // Update inventory
+      const availableQuantity = inventory.quantity - inventory.reserved_quantity;
+      if (quantity > availableQuantity) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ 
+          error: `Insufficient inventory. Available: ${availableQuantity}, Requested: ${quantity}` 
+        });
+      }
+
+      // Trừ số lượng từ inventory
       await db.run(
         'UPDATE inventory SET quantity = quantity - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [quantity, existing.id]
+        [quantity, inventory.id]
       );
 
       // Update location occupancy
       await db.run(
-        'UPDATE storage_locations SET current_occupancy = current_occupancy - ? WHERE location_code = ?',
+        'UPDATE storage_locations SET current_occupancy = COALESCE(current_occupancy, 0) - ? WHERE location_code = ?',
         [quantity, from_location_code]
       );
 
+      // Ghi log movement history
+      await db.run(
+        `INSERT INTO system_logs (level, module, message, details) VALUES (?, ?, ?, ?)`,
+        ['INFO', 'inventory', `Outbound: ${quantity} units of ${product_reference} from ${from_location_code}`, 
+         JSON.stringify({ 
+           movement_type: 'outbound',
+           product_reference,
+           from_location_code,
+           quantity,
+           notes: notes || '',
+           timestamp: new Date().toISOString()
+         })]
+      );
+
+      await db.run('COMMIT');
+      
+      res.json({
+        success: true,
+        message: `Successfully removed ${quantity} units of ${product_reference} from ${from_location_code}`,
+        movement: {
+          type: 'outbound',
+          product_reference,
+          location: from_location_code,
+          quantity,
+          remaining: inventory.quantity - quantity,
+          notes
+        },
+        data_source: 'SQL Database'
+      });
+
     } else if (movement_type === 'transfer') {
-      if (!product_reference || !from_location_code || !to_location_code) {
-        return res.status(400).json({ error: 'Product reference, source and destination locations are required for transfer' });
+      // C. CHUYỂN KHO (TRANSFER)
+      if (!from_location_code || !to_location_code) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Both source and destination locations are required for transfer' });
       }
 
-      // Check source inventory
-      const source = await db.get(
+      if (from_location_code === to_location_code) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Source and destination locations cannot be the same' });
+      }
+
+      // Kiểm tra cả hai vị trí
+      const fromLocation = await db.get('SELECT * FROM storage_locations WHERE location_code = ?', [from_location_code]);
+      const toLocation = await db.get('SELECT * FROM storage_locations WHERE location_code = ?', [to_location_code]);
+      
+      if (!fromLocation) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: `Source location ${from_location_code} not found` });
+      }
+      
+      if (!toLocation) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: `Destination location ${to_location_code} not found` });
+      }
+
+      // Kiểm tra hàng tại vị trí nguồn
+      const fromInventory = await db.get(
         'SELECT * FROM inventory WHERE product_reference = ? AND location_code = ?',
         [product_reference, from_location_code]
       );
 
-      if (!source || source.quantity < quantity) {
-        return res.status(400).json({ error: 'Insufficient inventory at source location' });
+      if (!fromInventory) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: `No inventory found for ${product_reference} at ${from_location_code}` });
       }
 
-      // Reduce from source
+      const availableQuantity = fromInventory.quantity - fromInventory.reserved_quantity;
+      if (quantity > availableQuantity) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ 
+          error: `Insufficient inventory at source. Available: ${availableQuantity}, Requested: ${quantity}` 
+        });
+      }
+
+      // Chuyển hàng giữa các vị trí
+      // 1. Trừ từ vị trí nguồn
       await db.run(
         'UPDATE inventory SET quantity = quantity - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [quantity, source.id]
+        [quantity, fromInventory.id]
       );
 
-      // Add to destination
-      const dest = await db.get(
+      // 2. Thêm vào vị trí đích
+      let toInventory = await db.get(
         'SELECT * FROM inventory WHERE product_reference = ? AND location_code = ?',
         [product_reference, to_location_code]
       );
 
-      if (dest) {
+      if (toInventory) {
         await db.run(
           'UPDATE inventory SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [quantity, dest.id]
+          [quantity, toInventory.id]
         );
       } else {
         await db.run(
@@ -373,29 +501,54 @@ router.post('/movements', async (req, res) => {
 
       // Update location occupancies
       await db.run(
-        'UPDATE storage_locations SET current_occupancy = current_occupancy - ? WHERE location_code = ?',
+        'UPDATE storage_locations SET current_occupancy = COALESCE(current_occupancy, 0) - ? WHERE location_code = ?',
         [quantity, from_location_code]
       );
       await db.run(
-        'UPDATE storage_locations SET current_occupancy = current_occupancy + ? WHERE location_code = ?',
+        'UPDATE storage_locations SET current_occupancy = COALESCE(current_occupancy, 0) + ? WHERE location_code = ?',
         [quantity, to_location_code]
       );
+
+      // Ghi log movement history
+      await db.run(
+        `INSERT INTO system_logs (level, module, message, details) VALUES (?, ?, ?, ?)`,
+        ['INFO', 'inventory', `Transfer: ${quantity} units of ${product_reference} from ${from_location_code} to ${to_location_code}`, 
+         JSON.stringify({ 
+           movement_type: 'transfer',
+           product_reference,
+           from_location_code,
+           to_location_code,
+           quantity,
+           notes: notes || '',
+           timestamp: new Date().toISOString()
+         })]
+      );
+
+      await db.run('COMMIT');
+      
+      res.json({
+        success: true,
+        message: `Successfully transferred ${quantity} units of ${product_reference} from ${from_location_code} to ${to_location_code}`,
+        movement: {
+          type: 'transfer',
+          product_reference,
+          from_location: from_location_code,
+          to_location: to_location_code,
+          quantity,
+          notes
+        },
+        data_source: 'SQL Database'
+      });
+
+    } else {
+      await db.run('ROLLBACK');
+      return res.status(400).json({ error: 'Invalid movement type. Must be inbound, outbound, or transfer' });
     }
 
-    res.json({
-      success: true,
-      movement_type: movement_type,
-      product_reference: product_reference,
-      quantity: quantity,
-      from_location: from_location_code,
-      to_location: to_location_code,
-      message: `${movement_type} completed successfully`,
-      data_source: 'SQL Database'
-    });
-
   } catch (error) {
-    console.error('Create movement error:', error);
-    res.status(500).json({ error: 'Failed to create movement' });
+    await db.run('ROLLBACK');
+    console.error('Movement error:', error);
+    res.status(500).json({ error: 'Failed to process movement: ' + error.message });
   }
 });
 
