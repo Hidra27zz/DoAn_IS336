@@ -206,16 +206,85 @@ router.post('/', async (req, res) => {
       const itemGroups = new Map();
       
       for (const item of orderItems) {
-        // Find best inventory location for this product
+        // Find best inventory location for this product with sufficient quantity
         const inventory = await db.get(`
-          SELECT location_code, quantity, created_at
-          FROM inventory 
-          WHERE product_reference = ? AND quantity >= ?
-          ORDER BY created_at ASC
+          SELECT 
+            i.location_code, 
+            i.quantity, 
+            i.created_at,
+            sl.zone,
+            p.description
+          FROM inventory i
+          LEFT JOIN storage_locations sl ON i.location_code = sl.location_code
+          LEFT JOIN products p ON i.product_reference = p.reference
+          WHERE i.product_reference = ? 
+            AND (i.quantity - COALESCE(i.reserved_quantity, 0)) >= ?
+          ORDER BY i.created_at ASC
           LIMIT 1
         `, [item.product_reference, item.quantity]);
 
-        const locationCode = inventory?.location_code || 'UNKNOWN';
+        if (!inventory) {
+          // Try to find any inventory for this product (even if insufficient)
+          const anyInventory = await db.get(`
+            SELECT 
+              i.location_code, 
+              i.quantity, 
+              (i.quantity - COALESCE(i.reserved_quantity, 0)) as available_quantity,
+              p.description
+            FROM inventory i
+            LEFT JOIN products p ON i.product_reference = p.reference
+            WHERE i.product_reference = ?
+            ORDER BY (i.quantity - COALESCE(i.reserved_quantity, 0)) DESC
+            LIMIT 1
+          `, [item.product_reference]);
+
+          if (!anyInventory) {
+            // Product not found in inventory at all
+            const productInfo = await db.get(`
+              SELECT reference, description FROM products WHERE reference = ?
+            `, [item.product_reference]);
+
+            const key = `${item.product_reference}-MISSING`;
+            if (itemGroups.has(key)) {
+              itemGroups.get(key).quantity += item.quantity;
+              itemGroups.get(key).orders.push(item.order_number);
+            } else {
+              itemGroups.set(key, {
+                product_reference: item.product_reference,
+                product_description: productInfo?.description || 'Unknown Product',
+                location_code: 'MISSING',
+                quantity: item.quantity,
+                size: item.size,
+                orders: [item.order_number],
+                has_inventory: false,
+                issue: 'Product not found in inventory'
+              });
+            }
+            continue;
+          } else {
+            // Insufficient quantity
+            const key = `${item.product_reference}-INSUFFICIENT`;
+            if (itemGroups.has(key)) {
+              itemGroups.get(key).quantity += item.quantity;
+              itemGroups.get(key).orders.push(item.order_number);
+            } else {
+              itemGroups.set(key, {
+                product_reference: item.product_reference,
+                product_description: anyInventory.description || 'Unknown Product',
+                location_code: anyInventory.location_code,
+                quantity: item.quantity,
+                available_quantity: anyInventory.available_quantity,
+                size: item.size,
+                orders: [item.order_number],
+                has_inventory: false,
+                issue: `Insufficient quantity. Need: ${item.quantity}, Available: ${anyInventory.available_quantity}`
+              });
+            }
+            continue;
+          }
+        }
+
+        const locationCode = inventory.location_code;
         const key = `${item.product_reference}-${locationCode}`;
 
         if (itemGroups.has(key)) {
@@ -224,16 +293,18 @@ router.post('/', async (req, res) => {
         } else {
           itemGroups.set(key, {
             product_reference: item.product_reference,
+            product_description: inventory.description || 'Unknown Product',
             location_code: locationCode,
+            zone: inventory.zone || 'Unknown',
             quantity: item.quantity,
             size: item.size,
             orders: [item.order_number],
-            has_inventory: !!inventory
+            has_inventory: true
           });
         }
       }
 
-      // Create picking tasks
+      // Create picking tasks and collect inventory issues
       let tasksCreated = 0;
       const inventoryIssues = [];
 
@@ -241,39 +312,138 @@ router.post('/', async (req, res) => {
         if (!group.has_inventory) {
           inventoryIssues.push({
             product_reference: group.product_reference,
+            product_description: group.product_description,
+            location_code: group.location_code,
             required_quantity: group.quantity,
-            issue: 'No inventory found'
+            available_quantity: group.available_quantity || 0,
+            issue: group.issue,
+            orders: group.orders.join(', ')
           });
           continue;
         }
+
+        // Calculate estimated pick time (2-5 minutes per task based on zone and quantity)
+        const baseTime = 2; // 2 minutes base time
+        const quantityTime = Math.ceil(group.quantity / 10) * 0.5; // 0.5 min per 10 items
+        const zoneMultiplier = group.zone === 'A' ? 1 : (group.zone === 'B' ? 1.2 : 1.5);
+        const estimatedMinutes = Math.round((baseTime + quantityTime) * zoneMultiplier);
 
         // Create picking task
         await db.run(`
           INSERT INTO picking_tasks (
             wave_number, product_reference, location_code, 
             quantity_to_pick, quantity_picked, operator, 
-            size, status, created_at
+            size, status, estimated_time_minutes, zone,
+            created_at, updated_at
           )
-          VALUES (?, ?, ?, ?, 0, ?, ?, 'created', CURRENT_TIMESTAMP)
+          VALUES (?, ?, ?, ?, 0, ?, ?, 'created', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `, [
           waveNumber, 
           group.product_reference, 
           group.location_code, 
           group.quantity, 
           operator_id, 
-          group.size
+          group.size || 'M',
+          estimatedMinutes,
+          group.zone
         ]);
+
+        // Reserve inventory
+        await db.run(`
+          UPDATE inventory 
+          SET reserved_quantity = COALESCE(reserved_quantity, 0) + ?
+          WHERE product_reference = ? AND location_code = ?
+        `, [group.quantity, group.product_reference, group.location_code]);
 
         tasksCreated++;
       }
 
+      // If there are inventory issues, decide whether to proceed or rollback
       if (inventoryIssues.length > 0) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({
-          error: 'Inventory issues found',
-          inventory_issues: inventoryIssues
-        });
+        // In development mode, auto-fix inventory issues
+        if (process.env.AUTO_FIX_INVENTORY === 'true') {
+          console.log('🔧 AUTO_FIX_INVENTORY enabled - creating missing inventory...');
+          
+          for (const issue of inventoryIssues) {
+            if (issue.location_code === 'MISSING') {
+              // Create inventory for missing products
+              const defaultLocation = await db.get(`
+                SELECT location_code FROM storage_locations 
+                WHERE zone = 'A' 
+                ORDER BY location_code 
+                LIMIT 1
+              `);
+              
+              const locationCode = defaultLocation?.location_code || 'A-01-01';
+              
+              await db.run(`
+                INSERT OR REPLACE INTO inventory (
+                  product_reference, location_code, quantity, reserved_quantity, created_at
+                )
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+              `, [issue.product_reference, locationCode, issue.required_quantity * 2, issue.required_quantity]);
+              
+              // Create the picking task
+              await db.run(`
+                INSERT INTO picking_tasks (
+                  wave_number, product_reference, location_code, 
+                  quantity_to_pick, quantity_picked, operator, 
+                  size, status, estimated_time_minutes, zone,
+                  created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, 0, ?, 'M', 'created', 3, 'A', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              `, [waveNumber, issue.product_reference, locationCode, issue.required_quantity, operator_id]);
+              
+              tasksCreated++;
+              console.log(`✅ Auto-fixed: ${issue.product_reference} at ${locationCode}`);
+            } else if (issue.location_code !== 'INSUFFICIENT') {
+              // Increase inventory for insufficient quantity
+              await db.run(`
+                UPDATE inventory 
+                SET quantity = quantity + ?, reserved_quantity = COALESCE(reserved_quantity, 0) + ?
+                WHERE product_reference = ? AND location_code = ?
+              `, [issue.required_quantity, issue.required_quantity, issue.product_reference, issue.location_code]);
+              
+              // Create the picking task
+              await db.run(`
+                INSERT INTO picking_tasks (
+                  wave_number, product_reference, location_code, 
+                  quantity_to_pick, quantity_picked, operator, 
+                  size, status, estimated_time_minutes, zone,
+                  created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, 0, ?, 'M', 'created', 3, 'A', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              `, [waveNumber, issue.product_reference, issue.location_code, issue.required_quantity, operator_id]);
+              
+              tasksCreated++;
+              console.log(`✅ Auto-fixed quantity: ${issue.product_reference} at ${issue.location_code}`);
+            }
+          }
+        } else {
+          // In production mode, return error for inventory issues
+          await db.run('ROLLBACK');
+          return res.status(400).json({
+            error: 'Inventory issues found',
+            inventory_issues: inventoryIssues,
+            message: 'Please resolve inventory issues before creating wave'
+          });
+        }
       }
+
+      // Calculate total estimated time for the wave
+      const totalEstimatedTime = await db.get(`
+        SELECT 
+          COUNT(*) as total_tasks,
+          SUM(estimated_time_minutes) as total_time_minutes,
+          COUNT(DISTINCT location_code) as unique_locations,
+          COUNT(DISTINCT zone) as zones_involved
+        FROM picking_tasks 
+        WHERE wave_number = ?
+      `, [waveNumber]);
+
+      // Add travel time between locations (1 minute per location change)
+      const travelTime = Math.max(0, (totalEstimatedTime.unique_locations - 1) * 1);
+      const finalEstimatedTime = (totalEstimatedTime.total_time_minutes || 0) + travelTime;
 
       // Update orders status to assigned
       await db.run(`
@@ -299,9 +469,11 @@ router.post('/', async (req, res) => {
           tasks_created: tasksCreated,
           priority,
           time_window,
-          notes
+          notes,
+          estimated_time_minutes: finalEstimatedTime,
+          inventory_issues_fixed: inventoryIssues.length
         }),
-        operator_id
+        operator_id || 1
       ]);
 
       await db.run('COMMIT');
@@ -314,6 +486,10 @@ router.post('/', async (req, res) => {
         priority: priority,
         time_window: time_window,
         notes: notes,
+        estimated_time_minutes: finalEstimatedTime,
+        unique_locations: totalEstimatedTime.unique_locations,
+        zones_involved: totalEstimatedTime.zones_involved,
+        inventory_issues_fixed: inventoryIssues.length,
         data_source: 'SQL Database'
       });
 
@@ -1028,12 +1204,21 @@ router.post('/:id/start', async (req, res) => {
     await db.run('BEGIN TRANSACTION');
 
     try {
-      // Find wave by id or wave_number
-      const wave = await db.get(`
+      // Find wave by wave_number first, then by id
+      let wave = await db.get(`
         SELECT wave_number, status FROM picking_tasks 
-        WHERE id = ? OR wave_number = ?
+        WHERE wave_number = ?
         LIMIT 1
-      `, [id, id]);
+      `, [id]);
+      
+      // If not found by wave_number, try by task id
+      if (!wave) {
+        wave = await db.get(`
+          SELECT wave_number, status FROM picking_tasks 
+          WHERE id = ?
+          LIMIT 1
+        `, [id]);
+      }
 
       if (!wave) {
         await db.run('ROLLBACK');
@@ -1205,12 +1390,21 @@ router.post('/:id/pause', async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    // Find wave
-    const wave = await db.get(`
+    // Find wave by wave_number first, then by id
+    let wave = await db.get(`
       SELECT wave_number, status FROM picking_tasks 
-      WHERE id = ? OR wave_number = ?
+      WHERE wave_number = ?
       LIMIT 1
-    `, [id, id]);
+    `, [id]);
+    
+    // If not found by wave_number, try by task id
+    if (!wave) {
+      wave = await db.get(`
+        SELECT wave_number, status FROM picking_tasks 
+        WHERE id = ?
+        LIMIT 1
+      `, [id]);
+    }
 
     if (!wave) {
       return res.status(404).json({ error: 'Wave not found' });
@@ -1262,12 +1456,21 @@ router.post('/:id/resume', async (req, res) => {
     const db = await getDatabase();
     const { id } = req.params;
 
-    // Find wave
-    const wave = await db.get(`
+    // Find wave by wave_number first, then by id
+    let wave = await db.get(`
       SELECT wave_number, status FROM picking_tasks 
-      WHERE id = ? OR wave_number = ?
+      WHERE wave_number = ?
       LIMIT 1
-    `, [id, id]);
+    `, [id]);
+    
+    // If not found by wave_number, try by task id
+    if (!wave) {
+      wave = await db.get(`
+        SELECT wave_number, status FROM picking_tasks 
+        WHERE id = ?
+        LIMIT 1
+      `, [id]);
+    }
 
     if (!wave) {
       return res.status(404).json({ error: 'Wave not found' });

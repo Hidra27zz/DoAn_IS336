@@ -1318,11 +1318,11 @@ async function startWave(waveId) {
   
   if (userInfo.id === 'admin-001') {
     // Demo admin user - map to actual admin user in database
-    operatorId = 17; // Admin user ID in SQL database (from users table)
+    operatorId = 78; // Admin user ID in SQL database (from users table)
     console.log('Using demo admin, mapped to database user ID:', operatorId);
   } else if (userInfo.id === 'test-001') {
     // Demo test user - map to actual operator user in database  
-    operatorId = 19; // Operator1 user ID in SQL database
+    operatorId = 80; // Operator1 user ID in SQL database
     console.log('Using demo test user, mapped to database user ID:', operatorId);
   } else if (userInfo.id && !isNaN(parseInt(userInfo.id))) {
     // For real database users, use their actual ID
@@ -1330,7 +1330,7 @@ async function startWave(waveId) {
     console.log('Using real database user ID:', operatorId);
   } else {
     // Default to admin user if no valid ID found
-    operatorId = 17;
+    operatorId = 78;
     console.log('No valid user ID found, defaulting to admin ID:', operatorId);
   }
   console.log('Using operator ID:', operatorId);
@@ -2247,30 +2247,52 @@ async function handleCreateWave(event) {
   event.preventDefault();
   
   const orderSelect = document.getElementById('wave-orders');
-  const selectedOrders = Array.from(orderSelect.selectedOptions).map(o => o.value);
+  const selectedOrders = Array.from(orderSelect.selectedOptions).map(o => parseInt(o.value));
   
   if (selectedOrders.length === 0) {
-    showToast('Please select at least one order', 'error');
+    showToast('Vui lòng chọn ít nhất một đơn hàng', 'error');
     return;
   }
   
+  const operatorSelect = document.getElementById('wave-operator');
+  const operatorId = operatorSelect?.value ? parseInt(operatorSelect.value) : null;
+  
   const data = {
     order_ids: selectedOrders,
-    operator_id: document.getElementById('wave-operator').value || null
+    operator_id: operatorId,
+    priority: 'normal',
+    notes: 'Created from wave planning interface'
   };
   
-  const result = await apiCall('/picking/waves', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
+  console.log('Creating wave with data:', data);
   
-  if (result) {
-    showToast(`Wave #${result.wave_number} created!`, 'success');
-    closeModal('create-wave-modal');
-    loadPickingData();
-    loadOrdersData();
-  } else {
-    showToast('Failed to create wave!', 'error');
+  try {
+    showToast('Đang tạo wave...', 'info');
+    
+    const result = await apiCall('/waves', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    
+    if (result && result.success) {
+      showToast(`✅ Wave ${result.wave_number} đã được tạo thành công! 
+        📦 ${result.tasks_created} tasks, 
+        ⏱️ Ước tính: ${result.estimated_time_minutes} phút`, 'success');
+      
+      closeModal('create-wave-modal');
+      loadPickingData();
+      loadOrdersData();
+      
+      // Clear selections
+      if (orderSelect) {
+        orderSelect.selectedIndex = -1;
+      }
+    } else {
+      showToast(`❌ Tạo wave thất bại: ${result?.error || 'Lỗi không xác định'}`, 'error');
+    }
+  } catch (error) {
+    console.error('Create wave error:', error);
+    showToast('❌ Lỗi hệ thống khi tạo wave', 'error');
   }
 }
 
@@ -3333,18 +3355,20 @@ async function handleCreateWaveEnhanced(event) {
   
   const selectedOrders = Array.from(document.getElementById('wave-orders').selectedOptions);
   const operatorId = document.getElementById('wave-operator').value;
-  const priority = document.getElementById('wave-priority').value;
-  const timeWindow = document.getElementById('wave-time-window').value;
-  const notes = document.getElementById('wave-notes').value;
+  const priority = document.getElementById('wave-priority')?.value || 'normal';
+  const timeWindow = document.getElementById('wave-time-window')?.value;
+  const notes = document.getElementById('wave-notes')?.value || '';
 
   if (selectedOrders.length === 0) {
-    showToast('Please select at least one order', 'info');
+    showToast('Vui lòng chọn ít nhất một đơn hàng', 'warning');
     return;
   }
 
   const orderIds = selectedOrders.map(option => parseInt(option.value));
 
   try {
+    showToast('Đang tạo wave nâng cao...', 'info');
+    
     const result = await apiCall('/waves', {
       method: 'POST',
       body: JSON.stringify({
@@ -3357,17 +3381,31 @@ async function handleCreateWaveEnhanced(event) {
     });
 
     if (result && result.success) {
-      alert(`Wave ${result.wave_number} created successfully!\nTasks: ${result.tasks_created}\nOrders: ${result.orders_assigned}`);
+      showToast(`✅ Wave ${result.wave_number} tạo thành công!
+        📦 ${result.tasks_created} tasks
+        📍 ${result.unique_locations} locations
+        🏢 ${result.zones_involved} zones
+        ⏱️ Ước tính: ${result.estimated_time_minutes} phút
+        ${result.inventory_issues_fixed > 0 ? `🔧 Đã sửa ${result.inventory_issues_fixed} vấn đề inventory` : ''}`, 'success');
+      
       closeModal('create-wave-modal');
       loadPickingData();
-      
-      // Reset form
-      document.getElementById('create-wave-form').reset();
       updateWavePreview();
+    } else {
+      showToast(`❌ Tạo wave thất bại: ${result?.error || 'Lỗi không xác định'}`, 'error');
+      
+      // Show inventory issues if any
+      if (result?.inventory_issues && result.inventory_issues.length > 0) {
+        let issueMessage = 'Vấn đề inventory:\n';
+        result.inventory_issues.forEach(issue => {
+          issueMessage += `• ${issue.product_description || issue.product_reference}: ${issue.issue}\n`;
+        });
+        console.error('Inventory issues:', issueMessage);
+      }
     }
   } catch (error) {
     console.error('Create wave error:', error);
-    showToast('Failed to create wave', 'info');
+    showToast('❌ Lỗi hệ thống khi tạo wave', 'error');
   }
 }
 
@@ -3436,12 +3474,12 @@ async function confirmAutoWaves() {
 
   // Get current user for operator assignment
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  let operatorId = 17; // Default admin
+  let operatorId = 78; // Default admin
   
   if (currentUser.id === 'admin-001') {
-    operatorId = 17;
+    operatorId = 78;
   } else if (currentUser.id === 'test-001') {
-    operatorId = 19;
+    operatorId = 80;
   } else if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
     operatorId = parseInt(currentUser.id);
   }
@@ -3578,12 +3616,12 @@ async function confirmWaveBuild() {
 
   // Get current user for operator assignment
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  let operatorId = 17; // Default admin
+  let operatorId = 78; // Default admin
   
   if (currentUser.id === 'admin-001') {
-    operatorId = 17;
+    operatorId = 78;
   } else if (currentUser.id === 'test-001') {
-    operatorId = 19;
+    operatorId = 80;
   } else if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
     operatorId = parseInt(currentUser.id);
   }
