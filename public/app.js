@@ -584,9 +584,14 @@ function displayAlerts(alertsSummary) {
   // Delayed Orders Alert
   if (alerts.delayed_orders > 0) {
     alertsHTML += `
-      <div class="alert alert-warning" onclick="showDelayedOrders()">
-        <strong>⚠️ Delayed Orders:</strong> ${alerts.delayed_orders} orders have been pending for more than 24 hours
-        <button class="btn btn-sm btn-warning" style="float: right;">View Details</button>
+      <div class="alert alert-warning">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Delayed Orders</strong><br>
+            <span style="font-size: 14px;">${alerts.delayed_orders} orders have been pending for more than 24 hours</span>
+          </div>
+          <button class="btn btn-sm btn-warning" onclick="showDelayedOrders()">View Details</button>
+        </div>
       </div>
     `;
   }
@@ -594,9 +599,14 @@ function displayAlerts(alertsSummary) {
   // Low Stock Alert
   if (alerts.low_stock > 0) {
     alertsHTML += `
-      <div class="alert alert-info" onclick="showLowStock()">
-        <strong>📦 Low Stock:</strong> ${alerts.low_stock} products are running low
-        <button class="btn btn-sm btn-info" style="float: right;">View Details</button>
+      <div class="alert alert-info">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Low Stock</strong><br>
+            <span style="font-size: 14px;">${alerts.low_stock} products are running low</span>
+          </div>
+          <button class="btn btn-sm btn-info" onclick="showLowStock()">View Details</button>
+        </div>
       </div>
     `;
   }
@@ -604,9 +614,14 @@ function displayAlerts(alertsSummary) {
   // Out of Stock Alert
   if (alerts.out_of_stock > 0) {
     alertsHTML += `
-      <div class="alert alert-danger" onclick="showOutOfStock()">
-        <strong>❌ Out of Stock:</strong> ${alerts.out_of_stock} products are out of stock
-        <button class="btn btn-sm btn-danger" style="float: right;">View Details</button>
+      <div class="alert alert-danger">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Out of Stock</strong><br>
+            <span style="font-size: 14px;">${alerts.out_of_stock} products are out of stock</span>
+          </div>
+          <button class="btn btn-sm btn-danger" onclick="showOutOfStock()">View Details</button>
+        </div>
       </div>
     `;
   }
@@ -614,9 +629,14 @@ function displayAlerts(alertsSummary) {
   // Stalled Waves Alert
   if (alerts.stalled_waves > 0) {
     alertsHTML += `
-      <div class="alert alert-warning" onclick="showStalledWaves()">
-        <strong>⏸️ Stalled Waves:</strong> ${alerts.stalled_waves} waves have not been updated in over 4 hours
-        <button class="btn btn-sm btn-warning" style="float: right;">View Details</button>
+      <div class="alert alert-warning">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Stalled Waves</strong><br>
+            <span style="font-size: 14px;">${alerts.stalled_waves} waves have not been updated in over 4 hours</span>
+          </div>
+          <button class="btn btn-sm btn-warning" onclick="showStalledWaves()">View Details</button>
+        </div>
       </div>
     `;
   }
@@ -624,9 +644,14 @@ function displayAlerts(alertsSummary) {
   // Over-reserved Inventory Alert
   if (alerts.over_reserved > 0) {
     alertsHTML += `
-      <div class="alert alert-danger" onclick="showOverReserved()">
-        <strong>⚠️ Over-reserved:</strong> ${alerts.over_reserved} inventory locations have more reserved than available
-        <button class="btn btn-sm btn-danger" style="float: right;">View Details</button>
+      <div class="alert alert-danger">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Over-reserved</strong><br>
+            <span style="font-size: 14px;">${alerts.over_reserved} inventory locations have more reserved than available</span>
+          </div>
+          <button class="btn btn-sm btn-danger" onclick="showOverReserved()">View Details</button>
+        </div>
       </div>
     `;
   }
@@ -641,6 +666,11 @@ async function showDelayedOrders() {
     const data = await apiCall('/alerts/delayed-orders?threshold_hours=24');
     
     if (data && data.success) {
+      if (data.total_delayed === 0) {
+        alert('Không có orders bị chờ quá lâu');
+        return;
+      }
+      
       let html = `
         <div class="modal-header">
           <h3>Delayed Orders (${data.total_delayed})</h3>
@@ -2195,11 +2225,13 @@ async function generateWarehouseSummaryReport() {
   report += '--- ZONE BREAKDOWN ---\n';
   if (utilization?.by_zone && utilization.by_zone.length > 0) {
     utilization.by_zone.forEach(z => {
-      report += `Zone ${z.zone}: ${z.location_count} locations, ${z.utilization_rate}% utilization\n`;
+      const locationCount = z.location_count || z.total_locations || 0;
+      const utilizationRate = z.utilization_rate || 0;
+      report += `Zone ${z.zone}: ${locationCount} locations, ${utilizationRate}% utilization\n`;
     });
   } else if (layout?.zone_summary) {
     layout.zone_summary.forEach(z => {
-      report += `Zone ${z.zone}: ${z.total_locations} locations, ${Math.round(z.avg_utilization)}% utilization\n`;
+      report += `Zone ${z.zone}: ${z.total_locations || 0} locations, ${Math.round(z.avg_utilization || 0)}% utilization\n`;
     });
   } else {
     report += 'No zone data available\n';
@@ -3436,74 +3468,110 @@ async function showProductTimeline(productRef) {
 
 // Storage Config Functions
 async function loadStorageConfigData() {
-  // Load current configuration
-  const config = await apiCall('/config/storage');
+  // Load current configuration from new backend
+  const config = await apiCall('/storage-config');
   
-  if (config) {
-    document.getElementById('class-a-threshold').value = config.abc_thresholds?.class_a || 80;
-    document.getElementById('class-b-threshold').value = config.abc_thresholds?.class_b || 15;
-    document.getElementById('storage-strategy').value = config.storage_strategy || 'class-based';
-    document.getElementById('high-freq-zone').value = config.zone_config?.high_frequency || 'A';
-    document.getElementById('low-freq-zone').value = config.zone_config?.low_frequency || 'F';
+  if (config && config.success) {
+    // Load ABC classification
+    document.getElementById('class-a-threshold').value = config.abc_classification?.class_a_threshold || 80;
+    document.getElementById('class-b-threshold').value = config.abc_classification?.class_b_threshold || 95;
+    
+    // Load storage strategy
+    document.getElementById('storage-strategy').value = config.storage_strategy?.strategy_type || 'class_based';
+    
+    // Load zone config - convert arrays to comma-separated strings
+    const highFreqZones = config.zone_config?.high_frequency_zones || ['A', 'B', 'C'];
+    const lowFreqZones = config.zone_config?.low_frequency_zones || ['D', 'E', 'F'];
+    
+    document.getElementById('high-freq-zone').value = highFreqZones.join(', ');
+    document.getElementById('low-freq-zone').value = lowFreqZones.join(', ');
+    
+    showToast('Configuration loaded successfully', 'success');
   }
 }
 
 async function updateABCConfig() {
-  const classA = parseInt(document.getElementById('class-a-threshold').value);
-  const classB = parseInt(document.getElementById('class-b-threshold').value);
+  const classA = parseFloat(document.getElementById('class-a-threshold').value);
+  const classB = parseFloat(document.getElementById('class-b-threshold').value);
   
-  if (classA + classB >= 100) {
-    showToast('Class A + Class B thresholds must be less than 100%', 'error');
+  if (classA >= classB) {
+    showToast('Class A threshold must be less than Class B threshold', 'error');
     return;
   }
   
-  const result = await apiCall('/config/storage/abc', {
-    method: 'PUT',
+  if (classA < 0 || classB > 100) {
+    showToast('Thresholds must be between 0 and 100', 'error');
+    return;
+  }
+  
+  const result = await apiCall('/storage-config/abc', {
+    method: 'POST',
     body: JSON.stringify({
-      class_a: classA,
-      class_b: classB,
-      class_c: 100 - classA - classB
+      class_a_threshold: classA,
+      class_b_threshold: classB
     })
   });
   
   if (result?.success) {
-    showToast('ABC configuration updated successfully', 'success');
+    showToast('ABC configuration updated and applied to products', 'success');
   } else {
-    showToast('Failed to update ABC configuration', 'error');
+    showToast(result?.error || 'Failed to update ABC configuration', 'error');
   }
 }
 
 async function updateStorageStrategy() {
-  const strategy = document.getElementById('storage-strategy').value;
+  const strategySelect = document.getElementById('storage-strategy');
+  const strategy = strategySelect.value;
   
-  const result = await apiCall('/config/storage/strategy', {
-    method: 'PUT',
-    body: JSON.stringify({ strategy })
+  // Map display values to backend values
+  const strategyMap = {
+    'class-based': 'class_based',
+    'random': 'random',
+    'dedicated': 'dedicated',
+    'hybrid': 'hybrid'
+  };
+  
+  const strategyType = strategyMap[strategy] || strategy;
+  
+  const result = await apiCall('/storage-config/strategy', {
+    method: 'POST',
+    body: JSON.stringify({ 
+      strategy_type: strategyType 
+    })
   });
   
   if (result?.success) {
     showToast('Storage strategy updated successfully', 'success');
   } else {
-    showToast('Failed to update storage strategy', 'error');
+    showToast(result?.error || 'Failed to update storage strategy', 'error');
   }
 }
 
 async function updateZoneConfig() {
-  const highFreqZone = document.getElementById('high-freq-zone').value;
-  const lowFreqZone = document.getElementById('low-freq-zone').value;
+  const highFreqZoneInput = document.getElementById('high-freq-zone').value;
+  const lowFreqZoneInput = document.getElementById('low-freq-zone').value;
   
-  const result = await apiCall('/config/storage/zones', {
-    method: 'PUT',
+  // Parse comma-separated zones
+  const highFreqZones = highFreqZoneInput.split(',').map(z => z.trim()).filter(z => z);
+  const lowFreqZones = lowFreqZoneInput.split(',').map(z => z.trim()).filter(z => z);
+  
+  if (highFreqZones.length === 0 || lowFreqZones.length === 0) {
+    showToast('Both zone configurations are required', 'error');
+    return;
+  }
+  
+  const result = await apiCall('/storage-config/zones', {
+    method: 'POST',
     body: JSON.stringify({
-      high_frequency: highFreqZone,
-      low_frequency: lowFreqZone
+      high_frequency_zones: highFreqZones,
+      low_frequency_zones: lowFreqZones
     })
   });
   
   if (result?.success) {
     showToast('Zone configuration updated successfully', 'success');
   } else {
-    showToast('Failed to update zone configuration', 'error');
+    showToast(result?.error || 'Failed to update zone configuration', 'error');
   }
 }
 

@@ -24,29 +24,29 @@ router.get('/', async (req, res) => {
 
     // Filter by status
     if (status) {
-      whereConditions.push('status = ?');
+      whereConditions.push('pt.status = ?');
       params.push(status);
     }
 
     // Search by wave number
     if (search) {
-      whereConditions.push('wave_number LIKE ?');
+      whereConditions.push('pt.wave_number LIKE ?');
       params.push(`%${search}%`);
     }
 
     // Filter by date range
     if (date_from) {
-      whereConditions.push('DATE(created_at) >= ?');
+      whereConditions.push('DATE(pt.created_at) >= ?');
       params.push(date_from);
     }
     if (date_to) {
-      whereConditions.push('DATE(created_at) <= ?');
+      whereConditions.push('DATE(pt.created_at) <= ?');
       params.push(date_to);
     }
 
     // Filter by operator
     if (operator_id) {
-      whereConditions.push('operator = ?');
+      whereConditions.push('pt.operator = ?');
       params.push(operator_id);
     }
 
@@ -55,7 +55,7 @@ router.get('/', async (req, res) => {
     // Get total count of unique waves
     const countResult = await db.get(`
       SELECT COUNT(DISTINCT wave_number) as total 
-      FROM picking_tasks ${whereClause}
+      FROM picking_tasks pt ${whereClause}
     `, params);
     const total = countResult?.total || 0;
 

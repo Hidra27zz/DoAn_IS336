@@ -157,6 +157,7 @@ app.use('/api/dashboard', authMiddleware, require('./routes/dashboard'));
 app.use('/api/timeline', authMiddleware, require('./routes/timeline'));
 app.use('/api/config', authMiddleware, require('./routes/config'));
 app.use('/api/alerts', authMiddleware, require('./routes/alerts'));
+app.use('/api/storage-config', authMiddleware, require('./routes/storage-config'));
 
 // Real-time metrics endpoint
 app.get('/api/metrics/real-time', (req, res) => {

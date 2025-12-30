@@ -77,19 +77,30 @@ router.get('/summary', async (req, res) => {
         AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id)
     `);
 
-    // Low stock items
+    // Low stock items (products with total available < threshold across all locations)
     const lowStock = await db.get(`
-      SELECT COUNT(DISTINCT product_reference) as count
-      FROM inventory
-      WHERE (quantity - COALESCE(reserved_quantity, 0)) < 10
-        AND (quantity - COALESCE(reserved_quantity, 0)) > 0
+      SELECT COUNT(*) as count
+      FROM (
+        SELECT 
+          product_reference,
+          SUM(quantity - COALESCE(reserved_quantity, 0)) as available
+        FROM inventory
+        GROUP BY product_reference
+        HAVING available < 10 AND available > 0
+      )
     `);
 
-    // Out of stock items
+    // Out of stock items (products with total available <= 0 across all locations)
     const outOfStock = await db.get(`
-      SELECT COUNT(DISTINCT product_reference) as count
-      FROM inventory
-      WHERE (quantity - COALESCE(reserved_quantity, 0)) <= 0
+      SELECT COUNT(*) as count
+      FROM (
+        SELECT 
+          product_reference,
+          SUM(quantity - COALESCE(reserved_quantity, 0)) as available
+        FROM inventory
+        GROUP BY product_reference
+        HAVING available <= 0
+      )
     `);
 
     // Stalled waves (in_progress > 4 hours)
@@ -145,7 +156,7 @@ router.get('/low-stock', async (req, res) => {
         p.description,
         p.abc_code,
         SUM(i.quantity) as total_quantity,
-        SUM(i.reserved_quantity) as total_reserved,
+        SUM(COALESCE(i.reserved_quantity, 0)) as total_reserved,
         SUM(i.quantity - COALESCE(i.reserved_quantity, 0)) as available,
         COUNT(DISTINCT i.location_code) as location_count
       FROM inventory i

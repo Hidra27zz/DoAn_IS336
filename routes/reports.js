@@ -283,7 +283,7 @@ async function generateWarehouseSummaryReport(db) {
     FROM orders
   `);
 
-  // Get picking performance
+  // Get picking performance (all picks, not just completed)
   const pickingPerformance = await db.get(`
     SELECT 
       COUNT(*) as total_picks,
@@ -294,7 +294,6 @@ async function generateWarehouseSummaryReport(db) {
         ELSE NULL
       END), 2) as avg_pick_time
     FROM picking_tasks
-    WHERE status = 'completed'
   `);
 
   return {
