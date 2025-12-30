@@ -293,6 +293,25 @@ class ProductClusteringService {
       clusterToClass[stat.index] = classLabels[Math.min(i, classLabels.length - 1)];
     });
     
+    // Calculate accuracy by comparing AI classification with existing ABC codes
+    let correctClassifications = 0;
+    let totalClassified = 0;
+    
+    result.clusters.forEach((cluster, clusterIndex) => {
+      const aiClass = clusterToClass[clusterIndex];
+      cluster.forEach(point => {
+        const product = point.originalData;
+        if (product.abc_code) {
+          totalClassified++;
+          if (product.abc_code.toUpperCase() === aiClass) {
+            correctClassifications++;
+          }
+        }
+      });
+    });
+    
+    const accuracy = totalClassified > 0 ? Math.round((correctClassifications / totalClassified) * 100) : 0;
+    
     return {
       algorithm: 'K-Means',
       clusters: result.clusters.map((cluster, index) => ({
@@ -310,7 +329,10 @@ class ProductClusteringService {
         totalProducts: products.length,
         classA: result.clusters.filter((_, i) => clusterToClass[i] === 'A').reduce((sum, c) => sum + c.length, 0),
         classB: result.clusters.filter((_, i) => clusterToClass[i] === 'B').reduce((sum, c) => sum + c.length, 0),
-        classC: result.clusters.filter((_, i) => clusterToClass[i] === 'C').reduce((sum, c) => sum + c.length, 0)
+        classC: result.clusters.filter((_, i) => clusterToClass[i] === 'C').reduce((sum, c) => sum + c.length, 0),
+        accuracy: accuracy,
+        correctClassifications: correctClassifications,
+        totalClassified: totalClassified
       }
     };
   }
