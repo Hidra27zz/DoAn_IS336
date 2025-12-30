@@ -18,6 +18,7 @@ const pickingRoutes = require('./routes/picking');
 const operatorsRoutes = require('./routes/operators');
 const warehouseRoutes = require('./routes/warehouse');
 const aiRoutes = require('./routes/ai');
+const aiWorkflowRoutes = require('./routes/ai-workflow');
 const reportsRoutes = require('./routes/reports');
 
 // Import services
@@ -150,9 +151,12 @@ app.use('/api/picking', authMiddleware, pickingRoutes);
 app.use('/api/operators', authMiddleware, operatorsRoutes);
 app.use('/api/warehouse', authMiddleware, warehouseRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
-app.use('/api/reports', authMiddleware, reportsRoutes);
+app.use('/api/ai-workflow', authMiddleware, aiWorkflowRoutes);
+app.use('/api/reports', authMiddleware, require('./routes/reports'));
+app.use('/api/dashboard', authMiddleware, require('./routes/dashboard'));
 app.use('/api/timeline', authMiddleware, require('./routes/timeline'));
 app.use('/api/config', authMiddleware, require('./routes/config'));
+app.use('/api/alerts', authMiddleware, require('./routes/alerts'));
 
 // Real-time metrics endpoint
 app.get('/api/metrics/real-time', (req, res) => {

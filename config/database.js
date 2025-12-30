@@ -63,6 +63,7 @@ class SQLDatabase {
         slot_position INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(product_reference, location_code),
         FOREIGN KEY (product_reference) REFERENCES products (reference),
         FOREIGN KEY (location_code) REFERENCES storage_locations (location_code)
       )`,

@@ -603,4 +603,51 @@ router.get('/low-stock', async (req, res) => {
   }
 });
 
+// Alias for low stock alerts (frontend compatibility)
+router.get('/alerts/low-stock', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { threshold = 20 } = req.query;
+    
+    const sql = `
+      SELECT 
+        i.product_reference,
+        p.abc_code,
+        p.sector,
+        p.description as product_description,
+        SUM(i.quantity) as total_quantity,
+        SUM(i.reserved_quantity) as total_reserved,
+        COUNT(*) as location_count
+      FROM inventory i
+      JOIN products p ON i.product_reference = p.reference
+      GROUP BY i.product_reference, p.abc_code, p.sector, p.description
+      HAVING total_quantity < ?
+      ORDER BY total_quantity ASC, p.abc_code ASC
+    `;
+    
+    const lowStockItems = await db.all(sql, [parseInt(threshold)]);
+    
+    res.json({
+      success: true,
+      threshold: parseInt(threshold),
+      alerts: lowStockItems.map(item => ({
+        product_reference: item.product_reference,
+        abc_code: item.abc_code,
+        sector: item.sector,
+        description: item.product_description,
+        total_quantity: item.total_quantity,
+        total_reserved: item.total_reserved,
+        available_quantity: item.total_quantity - item.total_reserved,
+        location_count: item.location_count,
+        alert_type: 'low_stock'
+      })),
+      data_source: 'SQL Database'
+    });
+    
+  } catch (error) {
+    console.error('Get low stock alerts error:', error);
+    res.status(500).json({ error: 'Failed to get low stock alerts' });
+  }
+});
+
 module.exports = router;

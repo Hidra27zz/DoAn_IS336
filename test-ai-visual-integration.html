@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Visual Integration Test</title>
+    <link rel="stylesheet" href="public/ai-badge.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .test-item {
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .test-item h3 {
+            margin-top: 0;
+            font-size: 1em;
+            color: #667eea;
+        }
+        .success {
+            color: #22c55e;
+            font-weight: bold;
+        }
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Visual Integration Test</h1>
+    <p>Testing all AI visual components and integration points</p>
+
+    <!-- Test 1: AI Badges -->
+    <div class="test-section">
+        <h2>1. AI Badges</h2>
+        <div class="test-grid">
+            <div class="test-item">
+                <h3>AI Badge</h3>
+                <div class="ai-powered">
+                    <button style="padding: 10px 20px; border: none; background: #2563eb; color: white; border-radius: 6px; cursor: pointer;">
+                        Optimize
+                    </button>
+                    <span class="ai-badge">AI</span>
+                </div>
+            </div>
+            <div class="test-item">
+                <h3>AI Button</h3>
+                <button class="btn-ai">Run AI Analysis</button>
+            </div>
+            <div class="test-item">
+                <h3>AI Status</h3>
+                <div class="ai-status-indicator">
+                    <span class="ai-status-dot"></span>
+                    <span>AI Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 2: AI Thinking Indicator -->
+    <div class="test-section">
+        <h2>2. AI Thinking Indicator</h2>
+        <div class="ai-thinking-indicator">
+            <span>AI is thinking</span>
+            <div class="ai-thinking-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 3: AI Confidence Score -->
+    <div class="test-section">
+        <h2>3. AI Confidence Score</h2>
+        <div class="ai-confidence">
+            <span>Confidence:</span>
+            <div class="ai-confidence-bar">
+                <div class="ai-confidence-fill" style="width: 87%"></div>
+            </div>
+            <span class="ai-confidence-value">87%</span>
+        </div>
+    </div>
+
+    <!-- Test 4: AI Suggestion Card -->
+    <div class="test-section">
+        <h2>4. AI Suggestion Card</h2>
+        <div class="ai-suggestion">
+            <div class="ai-suggestion-header">
+                <div class="ai-suggestion-icon">💡</div>
+                <div class="ai-suggestion-title">Optimization Suggestion</div>
+            </div>
+            <div class="ai-suggestion-body">
+                Move high-frequency products to Zone A for 23% faster picking times.
+            </div>
+            <div class="ai-suggestion-actions">
+                <button class="ai-suggestion-btn">Apply</button>
+                <button class="ai-suggestion-btn">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 5: AI Comparison Widget -->
+    <div class="test-section">
+        <h2>5. AI Comparison Widget</h2>
+        <div class="ai-comparison-widget">
+            <div class="comparison-side before">
+                <div class="comparison-label">Before AI</div>
+                <div class="comparison-value">225m</div>
+            </div>
+            <div class="comparison-arrow">→</div>
+            <div class="comparison-side after">
+                <div class="comparison-label">After AI</div>
+                <div class="comparison-value">172m</div>
+                <div class="comparison-improvement">23% faster</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 6: AI Widget Integration -->
+    <div class="test-section">
+        <h2>6. AI Widget Integration</h2>
+        <div id="widget-test">
+            <p>Check bottom-right corner for floating AI button</p>
+            <button onclick="testNotification()" class="btn-ai">Test Notification</button>
+            <button onclick="testWidget()" class="btn-ai" style="margin-left: 10px;">Test Widget Panel</button>
+        </div>
+        <div id="widget-status" style="margin-top: 20px;">
+            <p>Widget Status: <span id="status-text" class="error">Not Loaded</span></p>
+        </div>
+    </div>
+
+    <!-- Test 7: Integration Checklist -->
+    <div class="test-section">
+        <h2>7. Integration Checklist</h2>
+        <div id="checklist">
+            <p>✓ AI Badge CSS loaded</p>
+            <p id="check-widget">⏳ Checking AI Widget...</p>
+            <p id="check-styles">⏳ Checking AI Styles...</p>
+            <p id="check-buttons">⏳ Checking AI Buttons...</p>
+        </div>
+    </div>
+
+    <!-- Load AI Widget -->
+    <script src="public/ai-widget.js"></script>
+
+    <script>
+        // Test widget integration
+        setTimeout(() => {
+            const statusText = document.getElementById('status-text');
+            const checkWidget = document.getElementById('check-widget');
+            const checkStyles = document.getElementById('check-styles');
+            const checkButtons = document.getElementById('check-buttons');
+
+            // Check if widget loaded
+            if (window.aiWidget) {
+                statusText.textContent = 'Loaded Successfully';
+                statusText.className = 'success';
+                checkWidget.textContent = '✓ AI Widget loaded';
+            } else {
+                checkWidget.textContent = '✗ AI Widget not loaded';
+            }
+
+            // Check if styles applied
+            const testBtn = document.querySelector('.btn-ai');
+            if (testBtn) {
+                const styles = window.getComputedStyle(testBtn);
+                if (styles.background.includes('gradient') || styles.backgroundImage.includes('gradient')) {
+                    checkStyles.textContent = '✓ AI Styles applied';
+                } else {
+                    checkStyles.textContent = '✗ AI Styles not applied';
+                }
+            }
+
+            // Check if AI badges exist
+            const badges = document.querySelectorAll('.ai-badge');
+            if (badges.length > 0) {
+                checkButtons.textContent = `✓ ${badges.length} AI badges found`;
+            } else {
+                checkButtons.textContent = '✗ No AI badges found';
+            }
+        }, 1000);
+
+        function testNotification() {
+            if (window.aiWidget) {
+                window.aiWidget.showNotification(
+                    'Test Notification',
+                    'AI visual integration is working correctly!',
+                    'success'
+                );
+            } else {
+                alert('AI Widget not loaded');
+            }
+        }
+
+        function testWidget() {
+            if (window.aiWidget) {
+                window.aiWidget.togglePanel();
+            } else {
+                alert('AI Widget not loaded');
+            }
+        }
+    </script>
+</body>
+</html>

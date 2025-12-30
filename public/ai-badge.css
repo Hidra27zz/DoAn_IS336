@@ -1,0 +1,427 @@
+/* AI Badge Styles - Add to any element to show AI power */
+
+.ai-powered {
+    position: relative;
+    display: inline-block;
+}
+
+.ai-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.7em;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    animation: ai-glow 2s infinite;
+    z-index: 10;
+}
+
+@keyframes ai-glow {
+    0%, 100% { box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4); }
+    50% { box-shadow: 0 2px 16px rgba(102, 126, 234, 0.8); }
+}
+
+.ai-badge::before {
+    content: 'AI';
+    margin-right: 3px;
+    font-size: 0.8em;
+}
+
+/* AI Button Enhancement */
+.btn-ai {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ai::before {
+    content: 'AI ';
+    font-weight: bold;
+    margin-right: 4px;
+}
+
+.btn-ai:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-ai:active {
+    transform: translateY(0);
+}
+
+.btn-ai.processing {
+    pointer-events: none;
+}
+
+.btn-ai.processing::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: ai-processing 1.5s infinite;
+}
+
+@keyframes ai-processing {
+    to { left: 100%; }
+}
+
+/* AI Thinking Indicator */
+.ai-thinking-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 20px;
+    font-size: 0.9em;
+    color: #667eea;
+}
+
+.ai-thinking-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.ai-thinking-dots span {
+    width: 6px;
+    height: 6px;
+    background: #667eea;
+    border-radius: 50%;
+    animation: ai-bounce 1.4s infinite ease-in-out;
+}
+
+.ai-thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+.ai-thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes ai-bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+/* AI Confidence Score */
+.ai-confidence {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 20px;
+    font-size: 0.85em;
+}
+
+.ai-confidence-bar {
+    width: 60px;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.ai-confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #fbbf24, #4ade80);
+    transition: width 0.5s;
+}
+
+.ai-confidence-value {
+    font-weight: bold;
+    color: #667eea;
+}
+
+/* AI Suggestion Card */
+.ai-suggestion {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-left: 4px solid #667eea;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    animation: ai-slide-in 0.5s;
+}
+
+@keyframes ai-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.ai-suggestion-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.ai-suggestion-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.ai-suggestion-title {
+    font-weight: bold;
+    color: #667eea;
+}
+
+.ai-suggestion-body {
+    color: #666;
+    line-height: 1.5;
+}
+
+.ai-suggestion-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.ai-suggestion-btn {
+    padding: 6px 12px;
+    border: 1px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s;
+}
+
+.ai-suggestion-btn:hover {
+    background: #667eea;
+    color: white;
+}
+
+/* AI Comparison Widget */
+.ai-comparison-widget {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 15px;
+    align-items: center;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.comparison-side {
+    text-align: center;
+}
+
+.comparison-side.before {
+    color: #ef4444;
+}
+
+.comparison-side.after {
+    color: #22c55e;
+}
+
+.comparison-label {
+    font-size: 0.9em;
+    margin-bottom: 8px;
+    opacity: 0.7;
+}
+
+.comparison-value {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.comparison-arrow {
+    font-size: 2em;
+    color: #667eea;
+}
+
+.comparison-improvement {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #22c55e;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+/* AI Status Indicator */
+.ai-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(74, 222, 128, 0.1);
+    border-radius: 20px;
+    font-size: 0.85em;
+}
+
+.ai-status-dot {
+    width: 8px;
+    height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+    animation: ai-pulse 2s infinite;
+}
+
+@keyframes ai-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+/* AI Tooltip */
+.ai-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.ai-tooltip::after {
+    content: attr(data-ai-tip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: #1e1e1e;
+    color: white;
+    border-radius: 6px;
+    font-size: 0.85em;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    margin-bottom: 5px;
+}
+
+.ai-tooltip:hover::after {
+    opacity: 1;
+}
+
+/* AI Progress Ring */
+.ai-progress-ring {
+    width: 60px;
+    height: 60px;
+    position: relative;
+}
+
+.ai-progress-ring svg {
+    transform: rotate(-90deg);
+}
+
+.ai-progress-ring circle {
+    fill: none;
+    stroke-width: 4;
+}
+
+.ai-progress-ring .bg {
+    stroke: #e0e0e0;
+}
+
+.ai-progress-ring .progress {
+    stroke: url(#ai-gradient);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s;
+}
+
+.ai-progress-ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #667eea;
+}
+
+/* AI Notification */
+.ai-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    padding: 16px;
+    max-width: 350px;
+    animation: ai-notification-slide 0.5s;
+    z-index: 1000;
+}
+
+@keyframes ai-notification-slide {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.ai-notification-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.ai-notification-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.ai-notification-title {
+    font-weight: bold;
+    color: #333;
+}
+
+.ai-notification-body {
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.ai-notification-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+}
+
+.ai-notification-close:hover {
+    color: #333;
+}

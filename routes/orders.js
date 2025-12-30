@@ -47,20 +47,25 @@ router.get('/', async (req, res) => {
     const countResult = await db.get(countSql, params);
     const total = countResult.total;
 
-    // Get paginated results
+    // Get paginated results with item counts
     const offset = (page - 1) * limit;
     const sql = `
       SELECT 
-        id,
-        order_number,
-        customer_name,
-        status,
-        priority,
-        created_at,
-        updated_at
-      FROM orders
+        o.id,
+        o.order_number,
+        o.customer_name,
+        o.status,
+        o.priority,
+        o.created_at,
+        o.updated_at,
+        o.wave_number,
+        COUNT(oi.id) as total_items,
+        SUM(oi.quantity) as total_quantity
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
       ${whereClause}
-      ORDER BY created_at DESC
+      GROUP BY o.id
+      ORDER BY o.created_at DESC
       LIMIT ? OFFSET ?
     `;
 

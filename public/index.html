@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Warehouse Management System - AI Optimization</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="ai-badge.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
   
@@ -52,6 +53,7 @@
           <li class="nav-item" data-section="picking">Picking</li>
           <li class="nav-item" data-section="warehouse">Warehouse</li>
           <li class="nav-item" data-section="ai">AI Optimization</li>
+          <li class="nav-item" data-section="ai-command">AI Command Center</li>
           <li class="nav-item" data-section="reports">Reports</li>
           <li class="nav-item" data-section="storage-config">Storage Config</li>
           <li class="nav-item" data-section="operators">Operators</li>
@@ -66,6 +68,12 @@
         <!-- Dashboard Section -->
         <section id="dashboard-section" class="content-section active">
           <h2>Dashboard</h2>
+          
+          <!-- Alerts Section -->
+          <div id="dashboard-alerts" class="dashboard-alerts">
+            <!-- Alerts will be loaded here -->
+          </div>
+          
           <div class="stats-grid">
             <div class="stat-card">
               <h3>Total Inventory</h3>
@@ -134,6 +142,7 @@
                   <th>ABC</th>
                   <th>Vị trí</th>
                   <th>Khu vực</th>
+                  <th>Tầng</th>
                   <th>Số lượng</th>
                   <th>Đã đặt trước</th>
                   <th>Có sẵn</th>
@@ -493,7 +502,7 @@
         </section>
 
         <!-- AI Optimization Section -->
-        <section id="ai-section" class="content-section">
+        <section id="ai-section" class="content-section" data-ai-section>
           <h2>AI Optimization</h2>
           
           <!-- Comprehensive AI Dashboard Link -->
@@ -501,7 +510,8 @@
             <h3>AI Warehouse Optimization Dashboard</h3>
             <p>Comprehensive AI-powered warehouse management with K-Means, DBSCAN, Genetic Algorithm and real-time analytics</p>
             <div style="display: flex; gap: 10px; margin-top: 15px;">
-              <a href="/ai" class="btn" style="background: white; color: #667eea; font-weight: bold;">AI Dashboard</a>
+              <a href="ai-command-center.html" class="btn" style="background: white; color: #667eea; font-weight: bold;">AI Command Center</a>
+              <a href="/ai" class="btn" style="background: rgba(255,255,255,0.2); color: white; font-weight: bold; border: 1px solid white;">AI Dashboard</a>
               <a href="/ai/comparison" class="btn" style="background: rgba(255,255,255,0.2); color: white; font-weight: bold; border: 1px solid white;">AI Comparison</a>
             </div>
           </div>
@@ -514,7 +524,7 @@
                 <label>Number of Clusters (K)</label>
                 <input type="number" id="kmeans-k" value="3" min="2" max="10">
               </div>
-              <button class="btn btn-primary" id="run-kmeans">Run K-Means</button>
+              <button class="btn-ai" id="run-kmeans" data-ai-optimize="kmeans">Run K-Means</button>
               <div id="kmeans-result" class="ai-result"></div>
             </div>
             <div class="ai-card">
@@ -528,7 +538,7 @@
                 <label>Min Points</label>
                 <input type="number" id="dbscan-minpoints" value="3" min="2">
               </div>
-              <button class="btn btn-primary" id="run-dbscan">Run DBSCAN</button>
+              <button class="btn-ai" id="run-dbscan" data-ai-optimize="dbscan">Run DBSCAN</button>
               <div id="dbscan-result" class="ai-result"></div>
             </div>
             <div class="ai-card">
@@ -538,16 +548,21 @@
                 <label>Wave ID</label>
                 <select id="route-wave-id"></select>
               </div>
-              <button class="btn btn-primary" id="run-route-optimization">Optimize Route</button>
+              <button class="btn-ai" id="run-route-optimization" data-ai-optimize="route">Optimize Route</button>
               <div id="route-result" class="ai-result"></div>
             </div>
             <div class="ai-card">
               <h3>Storage Recommendations</h3>
               <p>Get AI-powered storage location recommendations</p>
-              <button class="btn btn-primary" id="get-recommendations">Get Recommendations</button>
+              <button class="btn-ai" id="get-recommendations" data-ai-optimize="storage">Get Recommendations</button>
               <div id="recommendations-result" class="ai-result"></div>
             </div>
           </div>
+        </section>
+
+        <!-- AI Command Center Section -->
+        <section id="ai-command-section" class="content-section">
+          <iframe src="ai-command-center.html" style="width: 100%; height: calc(100vh - 100px); border: none; border-radius: 8px;"></iframe>
         </section>
 
         <!-- Timeline Section removed - not part of core WMS -->
@@ -1146,7 +1161,7 @@
   </div>
 
   <!-- <script src="event-handlers.js"></script> -->
-  <script src="app.js"></script>
+  <script src="app.js?v=20251230"></script>
   
   <script>
     // Function to open warehouse viewers in same window
@@ -1158,5 +1173,8 @@
       window.location.href = page;
     }
   </script>
+
+  <!-- AI Widget Integration -->
+  <script src="ai-widget.js"></script>
 </body>
 </html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Inventory Display</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #4CAF50; color: white; }
+    .low-stock-alert { background-color: #ffebee; }
+    .very-low-stock { background-color: #fff3e0; }
+    .text-danger { color: #f44336; font-weight: bold; }
+    .text-warning { color: #ff9800; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Test Inventory Display</h1>
+  <button onclick="loadData()">Load Inventory</button>
+  <div id="result"></div>
+
+  <script>
+    async function loadData() {
+      try {
+        // Login first
+        const loginRes = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'admin', password: 'admin123' })
+        });
+        const loginData = await loginRes.json();
+        const token = loginData.token;
+
+        // Get inventory
+        const invRes = await fetch('/api/inventory?limit=10', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const invData = await invRes.json();
+
+        // Display
+        let html = '<table><thead><tr>';
+        html += '<th>Product</th><th>Location</th><th>Quantity</th><th>Reserved</th><th>Available</th><th>Status</th>';
+        html += '</tr></thead><tbody>';
+
+        invData.inventory.forEach(item => {
+          const quantity = parseFloat(item.quantity) || 0;
+          const reserved = parseFloat(item.reserved_quantity) || 0;
+          const available = quantity - reserved;
+          
+          const isOutOfStock = available <= 0;
+          const isLowStock = available > 0 && available < 10;
+          const rowClass = isOutOfStock ? 'low-stock-alert' : (isLowStock ? 'very-low-stock' : '');
+          const availClass = isOutOfStock ? 'text-danger' : (isLowStock ? 'text-warning' : '');
+          
+          html += `<tr class="${rowClass}">`;
+          html += `<td>${item.product.reference}</td>`;
+          html += `<td>${item.location.location_code}</td>`;
+          html += `<td>${quantity}</td>`;
+          html += `<td>${reserved}</td>`;
+          html += `<td class="${availClass}">${available}</td>`;
+          html += `<td>${isOutOfStock ? 'OUT OF STOCK' : (isLowStock ? 'LOW STOCK' : 'OK')}</td>`;
+          html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        document.getElementById('result').innerHTML = html;
+
+      } catch (error) {
+        document.getElementById('result').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+      }
+    }
+  </script>
+</body>
+</html>

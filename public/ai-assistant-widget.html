@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Assistant Widget - Tích hợp vào hệ thống</title>
+  <style>
+    /* AI Assistant Widget - Luôn hiển thị ở góc phải màn hình */
+    #ai-assistant-widget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 400px;
+      max-height: 600px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    #ai-assistant-widget.minimized {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    #ai-assistant-widget.minimized .ai-content {
+      display: none;
+    }
+
+    .ai-header {
+      padding: 15px 20px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .ai-header h3 {
+      margin: 0;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ai-header .ai-icon {
+      font-size: 20px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .ai-controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .ai-controls button {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .ai-controls button:hover {
+      background: rgba(255,255,255,0.3);
+      transform: scale(1.1);
+    }
+
+    .ai-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      background: white;
+      border-radius: 0 0 15px 15px;
+    }
+
+    .ai-insight {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 5px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .ai-insight.priority-HIGH {
+      border-left-color: #dc3545;
+      background: #fff5f5;
+    }
+
+    .ai-insight.priority-CRITICAL {
+      border-left-color: #ff0000;
+      background: #ffe6e6;
+      animation: shake 0.5s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .ai-insight-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .ai-insight-title {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .ai-priority {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .ai-priority.HIGH {
+      background: #dc3545;
+      color: white;
+    }
+
+    .ai-priority.MEDIUM {
+      background: #ffc107;
+      color: #333;
+    }
+
+    .ai-priority.LOW {
+      background: #28a745;
+      color: white;
+    }
+
+    .ai-priority.CRITICAL {
+      background: #ff0000;
+      color: white;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .ai-insight-message {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .ai-insight-action {
+      background: #667eea;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-size: 12px;
+      margin-top: 8px;
+      display: inline-block;
+    }
+
+    .ai-insight-impact {
+      color: #28a745;
+      font-size: 12px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .ai-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .ai-stat {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .ai-stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    .ai-stat-label {
+      font-size: 11px;
+      opacity: 0.9;
+    }
+
+    .ai-loading {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+    }
+
+    .ai-loading-spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .ai-action-button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 8px;
+      transition: all 0.2s;
+    }
+
+    .ai-action-button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .ai-empty {
+      text-align: center;
+      padding: 30px;
+      color: #999;
+    }
+
+    .ai-empty-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+
+    /* Minimized state */
+    #ai-assistant-widget.minimized .ai-header {
+      border: none;
+      padding: 0;
+      justify-content: center;
+    }
+
+    #ai-assistant-widget.minimized .ai-header h3 {
+      font-size: 24px;
+    }
+
+    #ai-assistant-widget.minimized .ai-controls {
+      display: none;
+    }
+
+    /* Notification badge */
+    .ai-notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #dc3545;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      animation: bounce 0.5s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+  <!-- AI Assistant Widget -->
+  <div id="ai-assistant-widget">
+    <div class="ai-notification-badge" id="ai-notification-badge" style="display: none;">0</div>
+    
+    <div class="ai-header">
+      <h3>
+        <span class="ai-icon">🤖</span>
+        <span class="ai-title">AI Assistant</span>
+      </h3>
+      <div class="ai-controls">
+        <button onclick="refreshAI()" title="Làm mới">🔄</button>
+        <button onclick="toggleAI()" title="Thu gọn">−</button>
+      </div>
+    </div>
+
+    <div class="ai-content" id="ai-content">
+      <div class="ai-loading">
+        <div class="ai-loading-spinner"></div>
+        <div>AI đang phân tích...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = null;
+    let isMinimized = false;
+    let currentPage = 'unknown';
+    let refreshInterval = null;
+
+    // Detect current page
+    function detectCurrentPage() {
+      const path = window.location.pathname;
+      if (path.includes('product')) return 'products';
+      if (path.includes('wave')) return 'waves';
+      if (path.includes('picking')) return 'picking';
+      if (path.includes('inventory')) return 'inventory';
+      if (path.includes('warehouse')) return 'warehouse';
+      if (path.includes('dashboard')) return 'dashboard';
+      return 'general';
+    }
+
+    // Login
+    async function login() {
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'admin', password: 'admin123' })
+        });
+        const data = await response.json();
+        if (data.success) {
+          authToken = data.token;
+          return true;
+        }
+      } catch (error) {
+        console.error('AI Assistant login failed:', error);
+      }
+      return false;
+    }
+
+    // Toggle minimize/maximize - GLOBAL
+    window.toggleAI = function() {
+      const widget = document.getElementById('ai-assistant-widget');
+      const title = document.querySelector('.ai-title');
+      isMinimized = !isMinimized;
+      
+      if (isMinimized) {
+        widget.classList.add('minimized');
+        title.textContent = '';
+      } else {
+        widget.classList.remove('minimized');
+        title.textContent = 'AI Assistant';
+      }
+    };
+
+    // Refresh AI insights - GLOBAL
+    window.refreshAI = async function() {
+      currentPage = detectCurrentPage();
+      await loadAIInsights();
+    };
+
+    // Load AI insights based on current page
+    async function loadAIInsights() {
+      const content = document.getElementById('ai-content');
+      if (!content) {
+        console.error('AI widget content element not found!');
+        return;
+      }
+      
+      content.innerHTML = '<div class="ai-loading"><div class="ai-loading-spinner"></div><div>AI đang phân tích...</div></div>';
+
+      try {
+        // Check if we have auth token
+        if (!authToken) {
+          console.log('No auth token, attempting login...');
+          const loggedIn = await login();
+          if (!loggedIn) {
+            throw new Error('Login failed');
+          }
+        }
+        
+        // Set timeout 10 seconds
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        console.log('Fetching AI insights with token:', authToken ? 'present' : 'missing');
+        
+        const response = await fetch('/api/ai/optimization/comprehensive', {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('AI API response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('AI data received:', data.success ? 'success' : 'failed');
+        
+        if (data.success && data.data) {
+          displayInsights(data.data);
+        } else {
+          throw new Error('Invalid response data');
+        }
+        
+      } catch (error) {
+        console.error('Error loading AI insights:', error);
+        
+        // Show error with retry button
+        content.innerHTML = `
+          <div class="ai-empty">
+            <div class="ai-empty-icon">⚠️</div>
+            <div>Không thể tải AI insights</div>
+            <div style="font-size: 12px; margin-top: 5px; color: #999;">
+              ${error.name === 'AbortError' ? 'Timeout - API quá chậm' : error.message}
+            </div>
+            <button class="ai-action-button" onclick="refreshAI()" style="margin-top: 10px;">
+              🔄 Thử lại
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    function displayInsights(data) {
+      const content = document.getElementById('ai-content');
+      const recs = data.comprehensive_recommendations?.recommendations || [];
+      
+      let html = '<div class="ai-stats">';
+      html += `<div class="ai-stat">
+        <div class="ai-stat-value">${data.ai_confidence_score || 0}%</div>
+        <div class="ai-stat-label">AI Confidence</div>
+      </div>`;
+      html += `<div class="ai-stat">
+        <div class="ai-stat-value">${recs.length}</div>
+        <div class="ai-stat-label">Đề xuất</div>
+      </div>`;
+      html += `<div class="ai-stat">
+        <div class="ai-stat-value">${recs.filter(r => r.priority === 'CRITICAL' || r.priority === 'HIGH').length}</div>
+        <div class="ai-stat-label">Ưu tiên cao</div>
+      </div>`;
+      html += '</div>';
+
+      if (recs.length > 0) {
+        recs.slice(0, 5).forEach(rec => {
+          html += `
+            <div class="ai-insight priority-${rec.priority}">
+              <div class="ai-insight-header">
+                <div class="ai-insight-title">${rec.title || rec.type}</div>
+                <div class="ai-priority ${rec.priority}">${rec.priority}</div>
+              </div>
+              <div class="ai-insight-message">${rec.description || rec.message}</div>
+              ${rec.impact ? `<div class="ai-insight-impact">💡 ${rec.impact}</div>` : ''}
+            </div>
+          `;
+        });
+      } else {
+        html += `
+          <div class="ai-empty">
+            <div class="ai-empty-icon">✅</div>
+            <div>Hệ thống đang hoạt động tốt!</div>
+          </div>
+        `;
+      }
+
+      content.innerHTML = html;
+      
+      // Update notification badge
+      const criticalCount = recs.filter(r => r.priority === 'CRITICAL' || r.priority === 'HIGH').length;
+      const badge = document.getElementById('ai-notification-badge');
+      if (badge) {
+        if (criticalCount > 0) {
+          badge.textContent = criticalCount;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    }
+
+    // Initialize
+    async function initAI() {
+      console.log('Initializing AI widget...');
+      
+      // Wait a bit for DOM to be ready
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const widget = document.getElementById('ai-assistant-widget');
+      const content = document.getElementById('ai-content');
+      
+      if (!widget || !content) {
+        console.error('AI widget elements not found in DOM');
+        return;
+      }
+      
+      console.log('AI widget elements found, attempting login...');
+      const loggedIn = await login();
+      
+      if (loggedIn) {
+        console.log('Login successful, loading AI insights...');
+        await refreshAI();
+        
+        // Auto-refresh every 30 seconds
+        refreshInterval = setInterval(refreshAI, 30000);
+      } else {
+        console.error('Login failed');
+        content.innerHTML = `
+          <div class="ai-empty">
+            <div class="ai-empty-icon">⚠️</div>
+            <div>Không thể đăng nhập</div>
+            <button class="ai-action-button" onclick="initAI()" style="margin-top: 10px;">
+              🔄 Thử lại
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Make initAI global for retry
+    window.initAI = initAI;
+
+    // Start when page loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAI);
+    } else {
+      initAI();
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    });
+  </script>
+</body>
+</html>

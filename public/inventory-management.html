@@ -499,7 +499,17 @@
     </div>
   </div>
 
-  <script src="navigation.js"></script>
+  <script src="/navigation.js"></script>
+  <script>
+    // Global fallback functions for AI widget
+    window.toggleAI = window.toggleAI || function() {
+      const widget = document.getElementById('ai-assistant-widget');
+      if (widget) widget.classList.toggle('minimized');
+    };
+    window.refreshAI = window.refreshAI || function() {
+      console.log('refreshAI called');
+    };
+  </script>
   <script>
     let currentPage = 1;
     let totalPages = 1;

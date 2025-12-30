@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D Warehouse Map - WMS</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1>2D Warehouse Map</h1>
+          <nav class="breadcrumb">
+            <a href="/">Dashboard</a>
+            <span>/</span>
+            <a href="/warehouse">Warehouse</a>
+            <span>/</span>
+            <span>2D Map</span>
+          </nav>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-secondary" onclick="refreshMap()">
+            Refresh
+          </button>
+          <button class="btn btn-primary" onclick="toggleAIPanel()">
+            AI Optimize
+          </button>
+          <button class="btn btn-primary" onclick="toggleFullscreen()">
+            Fullscreen
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <div class="controls-section">
+        <h3>Filters & Controls</h3>
+        
+        <div class="control-group">
+          <label for="floorSelect">Floor Level:</label>
+          <select id="floorSelect" onchange="filterByFloor()">
+            <option value="">All Floors</option>
+            <option value="1">Floor 1</option>
+            <option value="2">Floor 2</option>
+            <option value="3">Floor 3</option>
+            <option value="4">Floor 4</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="zoneSelect">Zone:</label>
+          <select id="zoneSelect" onchange="filterByZone()">
+            <option value="">All Zones</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="utilizationFilter">Utilization:</label>
+          <select id="utilizationFilter" onchange="filterByUtilization()">
+            <option value="">All Locations</option>
+            <option value="empty">Empty (0%)</option>
+            <option value="low">Low (1-30%)</option>
+            <option value="medium">Medium (31-70%)</option>
+            <option value="high">High (71-99%)</option>
+            <option value="full">Full (100%)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="searchLocation">Search Location:</label>
+          <input type="text" id="searchLocation" placeholder="Enter location code..." onkeyup="searchLocation(event)">
+        </div>
+
+        <div class="control-group">
+          <label>
+            <input type="checkbox" id="showInventory" onchange="toggleInventoryView()">
+            Show Inventory Details
+          </label>
+        </div>
+
+        <div class="control-group">
+          <label>
+            <input type="checkbox" id="showGrid" onchange="toggleGrid()" checked>
+            Show Grid Lines
+          </label>
+        </div>
+      </div>
+
+      <!-- Map Statistics -->
+      <div class="controls-section">
+        <h3>Map Statistics</h3>
+        <div class="stats-mini">
+          <div class="stat-mini">
+            <div class="stat-value" id="totalLocationsMap">-</div>
+            <div class="stat-label">Total Locations</div>
+          </div>
+          <div class="stat-mini">
+            <div class="stat-value" id="visibleLocations">-</div>
+            <div class="stat-label">Visible</div>
+          </div>
+          <div class="stat-mini">
+            <div class="stat-value" id="utilizationRate">-</div>
+            <div class="stat-label">Avg Utilization</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone Legend -->
+      <div class="controls-section">
+        <h3>Zone Legend</h3>
+        <div class="zone-legend" id="zoneLegend">
+          <!-- Zone colors will be populated here -->
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="controls-section">
+        <h3>Quick Actions</h3>
+        <div class="quick-actions">
+          <button class="btn btn-sm btn-info" onclick="showMovementHistory()">
+            📋 Movement History
+          </button>
+          <button class="btn btn-sm btn-success" onclick="showQuickInbound()">
+            📥 Quick Inbound
+          </button>
+          <button class="btn btn-sm btn-warning" onclick="showQuickOutbound()">
+            📤 Quick Outbound
+          </button>
+          <button class="btn btn-sm btn-primary" onclick="showTransferStock()">
+            🔄 Transfer Stock
+          </button>
+          <button class="btn btn-sm btn-secondary" onclick="generateReport()">
+            📊 Generate Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="map-container">
+      <div class="map-toolbar">
+        <div class="zoom-controls">
+          <button class="btn btn-sm" onclick="zoomIn()">🔍+</button>
+          <button class="btn btn-sm" onclick="zoomOut()">🔍-</button>
+          <button class="btn btn-sm" onclick="resetZoom()">🎯</button>
+        </div>
+        <div class="map-info">
+          <span id="mapCoordinates">Hover over locations to see details</span>
+        </div>
+      </div>
+
+      <div class="map-viewport" id="mapViewport">
+        <svg id="warehouseMap" class="warehouse-svg">
+          <!-- Map content will be rendered here -->
+        </svg>
+      </div>
+    </div>
+
+    <!-- Location Detail Modal -->
+    <div id="locationModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="locationModalTitle">Location Details</h3>
+          <button class="modal-close" onclick="closeLocationModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="locationDetails">
+            <!-- Location details will be loaded here -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeLocationModal()">Close</button>
+          <button class="btn btn-primary" onclick="editLocation()">Edit Location</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action Modals -->
+    <div id="quickActionModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="quickActionTitle">Quick Action</h3>
+          <button class="modal-close" onclick="closeQuickActionModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="quickActionContent">
+            <!-- Quick action form will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading warehouse map...</div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let warehouseData = [];
+    let filteredData = [];
+    let currentZoom = 1;
+    let currentPan = { x: 0, y: 0 };
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let selectedLocation = null;
+    let authToken = null;
+
+    // Zone colors
+    const zoneColors = {
+      'A': '#FF6B6B', 'B': '#4ECDC4', 'C': '#45B7D1', 'D': '#96CEB4',
+      'E': '#FFEAA7', 'F': '#DDA0DD', 'G': '#98D8C8', 'H': '#F7DC6F',
+      'I': '#BB8FCE', 'J': '#85C1E9', 'K': '#F8C471', 'L': '#82E0AA',
+      'M': '#F1948A', 'N': '#85C1E9', 'O': '#F4D03F', 'P': '#AED6F1',
+      'Q': '#A9DFBF', 'R': '#F5B7B1'
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      login().then(() => {
+        loadWarehouseMap();
+        setupMapInteractions();
+      });
+    });
+
+    // Authentication
+    async function login() {
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'admin', password: 'admin123' })
+        });
+        const data = await response.json();
+        if (data.success) {
+          authToken = data.token;
+        }
+      } catch (error) {
+        console.error('Login failed:', error);
+      }
+    }
+
+    // Load warehouse map data
+    async function loadWarehouseMap() {
+      try {
+        showLoading();
+        
+        const response = await fetch('/api/warehouse/layout?include_inventory=true', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load warehouse data');
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+          warehouseData = data.data.layout;
+          filteredData = [...warehouseData];
+          
+          populateZoneSelect(data.data.metadata.zones_available);
+          populateZoneLegend(data.data.metadata.zones_available);
+          renderMap();
+          updateMapStatistics();
+        } else {
+          throw new Error(data.error || 'Failed to load warehouse data');
+        }
+
+      } catch (error) {
+        console.error('Error loading warehouse map:', error);
+        showError('Failed to load warehouse map: ' + error.message);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Populate zone select dropdown
+    function populateZoneSelect(zones) {
+      const zoneSelect = document.getElementById('zoneSelect');
+      zoneSelect.innerHTML = '<option value="">All Zones</option>';
+      
+      zones.forEach(zone => {
+        const option = document.createElement('option');
+        option.value = zone;
+        option.textContent = `Zone ${zone}`;
+        zoneSelect.appendChild(option);
+      });
+    }
+
+    // Populate zone legend
+    function populateZoneLegend(zones) {
+      const legend = document.getElementById('zoneLegend');
+      legend.innerHTML = '';
+      
+      zones.forEach(zone => {
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        legendItem.innerHTML = `
+          <div class="legend-color" style="background-color: ${zoneColors[zone] || '#999'}"></div>
+          <span>Zone ${zone}</span>
+        `;
+        legend.appendChild(legendItem);
+      });
+    }
+
+    // Render the warehouse map
+    function renderMap() {
+      const svg = document.getElementById('warehouseMap');
+      svg.innerHTML = '';
+
+      if (filteredData.length === 0) {
+        svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="#666">No locations to display</text>';
+        return;
+      }
+
+      // Calculate map dimensions
+      const padding = 50;
+      const minX = Math.min(...filteredData.map(l => l.x)) - padding;
+      const maxX = Math.max(...filteredData.map(l => l.x)) + padding;
+      const minY = Math.min(...filteredData.map(l => l.y)) - padding;
+      const maxY = Math.max(...filteredData.map(l => l.y)) + padding;
+      
+      const mapWidth = maxX - minX;
+      const mapHeight = maxY - minY;
+      
+      // Set SVG viewBox
+      svg.setAttribute('viewBox', `${minX} ${minY} ${mapWidth} ${mapHeight}`);
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+
+      // Add grid if enabled
+      if (document.getElementById('showGrid').checked) {
+        addGrid(svg, minX, maxX, minY, maxY);
+      }
+
+      // Add zone boundaries
+      addZoneBoundaries(svg);
+
+      // Render locations
+      filteredData.forEach(location => {
+        renderLocation(svg, location);
+      });
+
+      // Update visible locations count
+      document.getElementById('visibleLocations').textContent = filteredData.length;
+    }
+
+    // Add grid lines
+    function addGrid(svg, minX, maxX, minY, maxY) {
+      const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      gridGroup.setAttribute('class', 'grid-lines');
+      
+      const gridSize = 50;
+      
+      // Vertical lines
+      for (let x = Math.ceil(minX / gridSize) * gridSize; x <= maxX; x += gridSize) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x);
+        line.setAttribute('y1', minY);
+        line.setAttribute('x2', x);
+        line.setAttribute('y2', maxY);
+        line.setAttribute('stroke', '#e0e0e0');
+        line.setAttribute('stroke-width', '0.5');
+        gridGroup.appendChild(line);
+      }
+      
+      // Horizontal lines
+      for (let y = Math.ceil(minY / gridSize) * gridSize; y <= maxY; y += gridSize) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', minX);
+        line.setAttribute('y1', y);
+        line.setAttribute('x2', maxX);
+        line.setAttribute('y2', y);
+        line.setAttribute('stroke', '#e0e0e0');
+        line.setAttribute('stroke-width', '0.5');
+        gridGroup.appendChild(line);
+      }
+      
+      svg.appendChild(gridGroup);
+    }
+
+    // Add zone boundaries
+    function addZoneBoundaries(svg) {
+      const zones = {};
+      
+      // Group locations by zone
+      filteredData.forEach(location => {
+        if (!zones[location.zone]) {
+          zones[location.zone] = [];
+        }
+        zones[location.zone].push(location);
+      });
+
+      // Draw zone boundaries
+      Object.keys(zones).forEach(zone => {
+        const locations = zones[zone];
+        if (locations.length === 0) return;
+
+        const minX = Math.min(...locations.map(l => l.x)) - 10;
+        const maxX = Math.max(...locations.map(l => l.x)) + 10;
+        const minY = Math.min(...locations.map(l => l.y)) - 10;
+        const maxY = Math.max(...locations.map(l => l.y)) + 10;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', minX);
+        rect.setAttribute('y', minY);
+        rect.setAttribute('width', maxX - minX);
+        rect.setAttribute('height', maxY - minY);
+        rect.setAttribute('fill', 'none');
+        rect.setAttribute('stroke', zoneColors[zone] || '#999');
+        rect.setAttribute('stroke-width', '2');
+        rect.setAttribute('stroke-dasharray', '5,5');
+        rect.setAttribute('opacity', '0.7');
+        svg.appendChild(rect);
+
+        // Add zone label
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', minX + 5);
+        text.setAttribute('y', minY + 15);
+        text.setAttribute('fill', zoneColors[zone] || '#999');
+        text.setAttribute('font-size', '12');
+        text.setAttribute('font-weight', 'bold');
+        text.textContent = `Zone ${zone}`;
+        svg.appendChild(text);
+      });
+    }
+
+    // Render individual location
+    function renderLocation(svg, location) {
+      const size = 8;
+      const x = location.x - size/2;
+      const y = location.y - size/2;
+
+      // Determine color based on utilization
+      let fillColor = '#e0e0e0'; // Empty
+      const utilization = location.utilization_percentage || 0;
+      
+      if (utilization === 0) {
+        fillColor = '#e0e0e0'; // Empty - Gray
+      } else if (utilization <= 30) {
+        fillColor = '#90EE90'; // Low - Light Green
+      } else if (utilization <= 70) {
+        fillColor = '#FFD700'; // Medium - Gold
+      } else if (utilization < 100) {
+        fillColor = '#FFA500'; // High - Orange
+      } else {
+        fillColor = '#FF6B6B'; // Full - Red
+      }
+
+      // Create location rectangle
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', size);
+      rect.setAttribute('height', size);
+      rect.setAttribute('fill', fillColor);
+      rect.setAttribute('stroke', zoneColors[location.zone] || '#999');
+      rect.setAttribute('stroke-width', '1');
+      rect.setAttribute('class', 'location-rect');
+      rect.setAttribute('data-location', JSON.stringify(location));
+
+      // Add hover and click events
+      rect.addEventListener('mouseenter', (e) => showLocationTooltip(e, location));
+      rect.addEventListener('mouseleave', hideLocationTooltip);
+      rect.addEventListener('click', (e) => showLocationDetails(location));
+
+      svg.appendChild(rect);
+
+      // Add location code text if zoomed in enough
+      if (currentZoom > 2) {
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', location.x);
+        text.setAttribute('y', location.y - 10);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('font-size', '6');
+        text.setAttribute('fill', '#333');
+        text.textContent = location.location_code;
+        svg.appendChild(text);
+      }
+    }
+
+    // Show location tooltip
+    function showLocationTooltip(event, location) {
+      const tooltip = document.getElementById('mapCoordinates');
+      tooltip.innerHTML = `
+        <strong>${location.location_code}</strong> | 
+        Zone: ${location.zone} | 
+        Coordinates: (${location.x}, ${location.y}, ${location.z}) | 
+        Utilization: ${location.utilization_percentage || 0}% | 
+        Capacity: ${location.current_occupancy}/${location.capacity}
+      `;
+    }
+
+    // Hide location tooltip
+    function hideLocationTooltip() {
+      const tooltip = document.getElementById('mapCoordinates');
+      tooltip.textContent = 'Hover over locations to see details';
+    }
+
+    // Show location details modal
+    function showLocationDetails(location) {
+      selectedLocation = location;
+      document.getElementById('locationModalTitle').textContent = `Location: ${location.location_code}`;
+      
+      const details = document.getElementById('locationDetails');
+      details.innerHTML = `
+        <div class="location-detail-grid">
+          <div class="detail-section">
+            <h4>Basic Information</h4>
+            <div class="detail-item">
+              <label>Location Code:</label>
+              <span>${location.location_code}</span>
+            </div>
+            <div class="detail-item">
+              <label>Zone:</label>
+              <span>${location.zone}</span>
+            </div>
+            <div class="detail-item">
+              <label>Coordinates:</label>
+              <span>(${location.x}, ${location.y}, ${location.z})</span>
+            </div>
+            <div class="detail-item">
+              <label>Status:</label>
+              <span class="status-badge status-${location.status}">${location.status}</span>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>Capacity Information</h4>
+            <div class="detail-item">
+              <label>Total Capacity:</label>
+              <span>${location.capacity} units</span>
+            </div>
+            <div class="detail-item">
+              <label>Current Occupancy:</label>
+              <span>${location.current_occupancy} units</span>
+            </div>
+            <div class="detail-item">
+              <label>Available Space:</label>
+              <span>${location.capacity - location.current_occupancy} units</span>
+            </div>
+            <div class="detail-item">
+              <label>Utilization:</label>
+              <span>${location.utilization_percentage || 0}%</span>
+            </div>
+          </div>
+
+          ${location.products ? `
+          <div class="detail-section">
+            <h4>Inventory Information</h4>
+            <div class="detail-item">
+              <label>Products Stored:</label>
+              <span>${location.product_count || 0} products</span>
+            </div>
+            <div class="detail-item">
+              <label>Total Quantity:</label>
+              <span>${location.total_quantity || 0} units</span>
+            </div>
+            <div class="detail-item">
+              <label>Reserved Quantity:</label>
+              <span>${location.total_reserved || 0} units</span>
+            </div>
+            ${location.products ? `
+            <div class="detail-item">
+              <label>Product References:</label>
+              <span class="product-list">${location.products.split(',').slice(0, 5).join(', ')}${location.products.split(',').length > 5 ? '...' : ''}</span>
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
+        </div>
+      `;
+      
+      document.getElementById('locationModal').style.display = 'flex';
+    }
+
+    // Filter functions
+    function filterByFloor() {
+      const floor = document.getElementById('floorSelect').value;
+      applyFilters();
+    }
+
+    function filterByZone() {
+      const zone = document.getElementById('zoneSelect').value;
+      applyFilters();
+    }
+
+    function filterByUtilization() {
+      const utilization = document.getElementById('utilizationFilter').value;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const floor = document.getElementById('floorSelect').value;
+      const zone = document.getElementById('zoneSelect').value;
+      const utilization = document.getElementById('utilizationFilter').value;
+
+      filteredData = warehouseData.filter(location => {
+        // Floor filter
+        if (floor && location.z !== parseInt(floor)) {
+          return false;
+        }
+
+        // Zone filter
+        if (zone && location.zone !== zone) {
+          return false;
+        }
+
+        // Utilization filter
+        if (utilization) {
+          const util = location.utilization_percentage || 0;
+          switch (utilization) {
+            case 'empty':
+              if (util !== 0) return false;
+              break;
+            case 'low':
+              if (util <= 0 || util > 30) return false;
+              break;
+            case 'medium':
+              if (util <= 30 || util > 70) return false;
+              break;
+            case 'high':
+              if (util <= 70 || util >= 100) return false;
+              break;
+            case 'full':
+              if (util !== 100) return false;
+              break;
+          }
+        }
+
+        return true;
+      });
+
+      renderMap();
+      updateMapStatistics();
+    }
+
+    // Search location
+    function searchLocation(event) {
+      if (event.key === 'Enter') {
+        const searchTerm = event.target.value.toLowerCase();
+        if (!searchTerm) {
+          filteredData = [...warehouseData];
+        } else {
+          filteredData = warehouseData.filter(location => 
+            location.location_code.toLowerCase().includes(searchTerm)
+          );
+        }
+        renderMap();
+        updateMapStatistics();
+      }
+    }
+
+    // Toggle inventory view
+    function toggleInventoryView() {
+      const showInventory = document.getElementById('showInventory').checked;
+      loadWarehouseMap(); // Reload with/without inventory data
+    }
+
+    // Toggle grid
+    function toggleGrid() {
+      renderMap();
+    }
+
+    // Zoom functions
+    function zoomIn() {
+      currentZoom = Math.min(currentZoom * 1.5, 10);
+      applyTransform();
+    }
+
+    function zoomOut() {
+      currentZoom = Math.max(currentZoom / 1.5, 0.1);
+      applyTransform();
+    }
+
+    function resetZoom() {
+      currentZoom = 1;
+      currentPan = { x: 0, y: 0 };
+      applyTransform();
+    }
+
+    function applyTransform() {
+      const svg = document.getElementById('warehouseMap');
+      svg.style.transform = `scale(${currentZoom}) translate(${currentPan.x}px, ${currentPan.y}px)`;
+    }
+
+    // Map interactions
+    function setupMapInteractions() {
+      const viewport = document.getElementById('mapViewport');
+      
+      viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          zoomIn();
+        } else {
+          zoomOut();
+        }
+      });
+
+      viewport.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragStart = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
+        viewport.style.cursor = 'grabbing';
+      });
+
+      viewport.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          currentPan.x = e.clientX - dragStart.x;
+          currentPan.y = e.clientY - dragStart.y;
+          applyTransform();
+        }
+      });
+
+      viewport.addEventListener('mouseup', () => {
+        isDragging = false;
+        viewport.style.cursor = 'grab';
+      });
+
+      viewport.addEventListener('mouseleave', () => {
+        isDragging = false;
+        viewport.style.cursor = 'grab';
+      });
+    }
+
+    // Update map statistics
+    function updateMapStatistics() {
+      document.getElementById('totalLocationsMap').textContent = warehouseData.length;
+      document.getElementById('visibleLocations').textContent = filteredData.length;
+      
+      if (filteredData.length > 0) {
+        const avgUtilization = filteredData.reduce((sum, loc) => sum + (loc.utilization_percentage || 0), 0) / filteredData.length;
+        document.getElementById('utilizationRate').textContent = Math.round(avgUtilization) + '%';
+      } else {
+        document.getElementById('utilizationRate').textContent = '0%';
+      }
+    }
+
+    // Quick actions
+    function showMovementHistory() {
+      // Implementation for movement history
+      alert('Movement History - Feature coming soon');
+    }
+
+    function showQuickInbound() {
+      document.getElementById('quickActionTitle').textContent = 'Quick Inbound';
+      document.getElementById('quickActionContent').innerHTML = `
+        <form onsubmit="processInbound(event)">
+          <div class="form-group">
+            <label for="inboundProduct">Product Reference:</label>
+            <input type="text" id="inboundProduct" required>
+          </div>
+          <div class="form-group">
+            <label for="inboundLocation">Location Code:</label>
+            <input type="text" id="inboundLocation" required>
+          </div>
+          <div class="form-group">
+            <label for="inboundQuantity">Quantity:</label>
+            <input type="number" id="inboundQuantity" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="inboundNotes">Notes:</label>
+            <textarea id="inboundNotes" rows="3"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeQuickActionModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Process Inbound</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('quickActionModal').style.display = 'flex';
+    }
+
+    function showQuickOutbound() {
+      document.getElementById('quickActionTitle').textContent = 'Quick Outbound';
+      document.getElementById('quickActionContent').innerHTML = `
+        <form onsubmit="processOutbound(event)">
+          <div class="form-group">
+            <label for="outboundProduct">Product Reference:</label>
+            <input type="text" id="outboundProduct" required>
+          </div>
+          <div class="form-group">
+            <label for="outboundLocation">Location Code:</label>
+            <input type="text" id="outboundLocation" required>
+          </div>
+          <div class="form-group">
+            <label for="outboundQuantity">Quantity:</label>
+            <input type="number" id="outboundQuantity" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="outboundNotes">Notes:</label>
+            <textarea id="outboundNotes" rows="3"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeQuickActionModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Process Outbound</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('quickActionModal').style.display = 'flex';
+    }
+
+    function showTransferStock() {
+      document.getElementById('quickActionTitle').textContent = 'Transfer Stock';
+      document.getElementById('quickActionContent').innerHTML = `
+        <form onsubmit="processTransfer(event)">
+          <div class="form-group">
+            <label for="transferProduct">Product Reference:</label>
+            <input type="text" id="transferProduct" required>
+          </div>
+          <div class="form-group">
+            <label for="transferFromLocation">From Location:</label>
+            <input type="text" id="transferFromLocation" required>
+          </div>
+          <div class="form-group">
+            <label for="transferToLocation">To Location:</label>
+            <input type="text" id="transferToLocation" required>
+          </div>
+          <div class="form-group">
+            <label for="transferQuantity">Quantity:</label>
+            <input type="number" id="transferQuantity" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="transferNotes">Notes:</label>
+            <textarea id="transferNotes" rows="3"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeQuickActionModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Process Transfer</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('quickActionModal').style.display = 'flex';
+    }
+
+    // Process quick actions
+    async function processInbound(event) {
+      event.preventDefault();
+      
+      const data = {
+        product_reference: document.getElementById('inboundProduct').value,
+        location_code: document.getElementById('inboundLocation').value,
+        quantity: parseInt(document.getElementById('inboundQuantity').value),
+        notes: document.getElementById('inboundNotes').value
+      };
+
+      try {
+        showLoading();
+        
+        const response = await fetch('/api/warehouse/inbound', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showSuccess(result.message);
+          closeQuickActionModal();
+          refreshMap();
+        } else {
+          throw new Error(result.error);
+        }
+
+      } catch (error) {
+        showError('Inbound operation failed: ' + error.message);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function processOutbound(event) {
+      event.preventDefault();
+      
+      const data = {
+        product_reference: document.getElementById('outboundProduct').value,
+        location_code: document.getElementById('outboundLocation').value,
+        quantity: parseInt(document.getElementById('outboundQuantity').value),
+        notes: document.getElementById('outboundNotes').value
+      };
+
+      try {
+        showLoading();
+        
+        const response = await fetch('/api/warehouse/outbound', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showSuccess(result.message);
+          closeQuickActionModal();
+          refreshMap();
+        } else {
+          throw new Error(result.error);
+        }
+
+      } catch (error) {
+        showError('Outbound operation failed: ' + error.message);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function processTransfer(event) {
+      event.preventDefault();
+      
+      const data = {
+        product_reference: document.getElementById('transferProduct').value,
+        from_location: document.getElementById('transferFromLocation').value,
+        to_location: document.getElementById('transferToLocation').value,
+        quantity: parseInt(document.getElementById('transferQuantity').value),
+        notes: document.getElementById('transferNotes').value
+      };
+
+      try {
+        showLoading();
+        
+        const response = await fetch('/api/warehouse/transfer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showSuccess(result.message);
+          closeQuickActionModal();
+          refreshMap();
+        } else {
+          throw new Error(result.error);
+        }
+
+      } catch (error) {
+        showError('Transfer operation failed: ' + error.message);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Modal functions
+    function closeLocationModal() {
+      document.getElementById('locationModal').style.display = 'none';
+      selectedLocation = null;
+    }
+
+    function closeQuickActionModal() {
+      document.getElementById('quickActionModal').style.display = 'none';
+    }
+
+    function editLocation() {
+      if (selectedLocation) {
+        alert(`Edit location ${selectedLocation.location_code} - Feature coming soon`);
+      }
+    }
+
+    function generateReport() {
+      alert('Generate Report - Feature coming soon');
+    }
+
+    // Utility functions
+    function refreshMap() {
+      loadWarehouseMap();
+    }
+
+    function toggleFullscreen() {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        document.documentElement.requestFullscreen();
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+      alert('Success: ' + message);
+    }
+
+    function showError(message) {
+      alert('Error: ' + message);
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+      const modals = document.querySelectorAll('.modal');
+      modals.forEach(modal => {
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    };
+  </script>
+
+  <style>
+    /* 2D Warehouse Map Styles */
+    .controls-panel {
+      position: fixed;
+      left: 0;
+      top: 80px;
+      width: 300px;
+      height: calc(100vh - 80px);
+      background: white;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .map-container {
+      margin-left: 300px;
+      height: calc(100vh - 80px);
+      position: relative;
+      background: #f8f9fa;
+    }
+
+    .map-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .zoom-controls {
+      display: flex;
+      gap: 5px;
+    }
+
+    .map-info {
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .map-viewport {
+      width: 100%;
+      height: calc(100% - 60px);
+      overflow: hidden;
+      cursor: grab;
+      position: relative;
+    }
+
+    .warehouse-svg {
+      width: 100%;
+      height: 100%;
+      background: white;
+    }
+
+    .controls-section {
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .controls-section h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 1.1em;
+    }
+
+    .control-group {
+      margin-bottom: 15px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #555;
+    }
+
+    .control-group select,
+    .control-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .stats-mini {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-mini {
+      text-align: center;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 5px;
+    }
+
+    .stat-mini .stat-value {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #4ECDC4;
+    }
+
+    .stat-mini .stat-label {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .zone-legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9em;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      border: 1px solid #ccc;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .quick-actions .btn {
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .location-rect {
+      cursor: pointer;
+      transition: stroke-width 0.2s;
+    }
+
+    .location-rect:hover {
+      stroke-width: 2;
+    }
+
+    .grid-lines {
+      opacity: 0.3;
+    }
+
+    .location-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .detail-section {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+    }
+
+    .detail-section h4 {
+      margin: 0 0 15px 0;
+      color: #333;
+      border-bottom: 2px solid #4ECDC4;
+      padding-bottom: 5px;
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .detail-item label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .product-list {
+      font-family: monospace;
+      font-size: 0.9em;
+      background: #fff;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .status-active {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .status-inactive {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    /* AI Panel Styles */
+    .ai-panel {
+      position: fixed;
+      right: -400px;
+      top: 0;
+      width: 400px;
+      height: 100vh;
+      background: #ffffff;
+      box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    
+    .ai-panel.open {
+      right: 0;
+    }
+    
+    .ai-panel-header {
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #ffffff;
+    }
+    
+    .ai-panel-header h2 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 1.5em;
+    }
+    
+    .ai-panel-header .btn {
+      background: rgba(255,255,255,0.2);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    .ai-panel-header .btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .ai-panel-content {
+      padding: 20px;
+      background: #ffffff;
+    }
+    
+    .ai-feature {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    
+    .ai-feature h4 {
+      margin: 0 0 10px 0;
+      color: #667eea;
+      font-weight: 600;
+    }
+    
+    .ai-feature p {
+      margin: 0 0 10px 0;
+      color: #64748b;
+      font-size: 0.9em;
+    }
+    
+    .ai-result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f8fafc;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #334155;
+      border-left: 3px solid #667eea;
+    }
+    
+    .ai-result strong {
+      color: #1e293b;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 1024px) {
+      .controls-panel {
+        width: 250px;
+      }
+      
+      .map-container {
+        margin-left: 250px;
+      }
+      
+      .location-detail-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .ai-panel {
+        width: 100%;
+        right: -100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .controls-panel {
+        position: absolute;
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+        top: 0;
+        z-index: 200;
+        transform: translateY(-100%);
+        transition: transform 0.3s ease;
+      }
+      
+      .controls-panel.open {
+        transform: translateY(0);
+      }
+      
+      .map-container {
+        margin-left: 0;
+        height: 100vh;
+      }
+      
+      .stats-mini {
+        grid-template-columns: 1fr;
+      }
+      
+      .zone-legend {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <!-- AI Optimization Panel -->
+  <div id="aiPanel" class="ai-panel">
+    <div class="ai-panel-header">
+      <h2>AI Warehouse Optimization</h2>
+      <button class="btn btn-secondary" onclick="toggleAIPanel()" style="float: right; margin-top: -30px;">Close</button>
+    </div>
+    <div class="ai-panel-content">
+      
+      <!-- Hotspot Detection -->
+      <div class="ai-feature">
+        <h4>Hotspot Detection</h4>
+        <p>Identify high-traffic locations for optimization</p>
+        <button class="btn btn-primary" onclick="detectHotspots()">Analyze Hotspots</button>
+        <div id="hotspotResult" class="ai-result" style="display:none;"></div>
+      </div>
+
+      <!-- Storage Optimization -->
+      <div class="ai-feature">
+        <h4>Storage Optimization</h4>
+        <p>AI-powered recommendations for product placement</p>
+        <button class="btn btn-primary" onclick="optimizeStorage()">Optimize Layout</button>
+        <div id="storageResult" class="ai-result" style="display:none;"></div>
+      </div>
+
+      <!-- Capacity Prediction -->
+      <div class="ai-feature">
+        <h4>Capacity Prediction</h4>
+        <p>Predict future capacity needs</p>
+        <button class="btn btn-primary" onclick="predictCapacity()">Predict</button>
+        <div id="capacityResult" class="ai-result" style="display:none;"></div>
+      </div>
+
+      <!-- Route Optimization -->
+      <div class="ai-feature">
+        <h4>Picking Route Optimization</h4>
+        <p>Optimize routes based on current layout</p>
+        <button class="btn btn-primary" onclick="optimizeRoutes()">Optimize Routes</button>
+        <div id="routeResult" class="ai-result" style="display:none;"></div>
+      </div>
+
+      <!-- Anomaly Detection -->
+      <div class="ai-feature">
+        <h4>Anomaly Detection</h4>
+        <p>Detect unusual patterns in warehouse operations</p>
+        <button class="btn btn-primary" onclick="detectAnomalies()">Detect Anomalies</button>
+        <div id="anomalyResult" class="ai-result" style="display:none;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // AI Panel Toggle
+    function toggleAIPanel() {
+      const panel = document.getElementById('aiPanel');
+      panel.classList.toggle('open');
+    }
+
+    // AI Feature: Hotspot Detection
+    async function detectHotspots() {
+      const resultDiv = document.getElementById('hotspotResult');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = 'Analyzing...';
+      
+      try {
+        const response = await fetch('/api/ai/storage-optimizer/hotspots');
+        const data = await response.json();
+        
+        if (data.success) {
+          const hotspots = data.hotspots || [];
+          resultDiv.innerHTML = `
+            <strong>Top Hotspots Found: ${hotspots.length}</strong><br>
+            ${hotspots.slice(0, 5).map(h => `
+              <div style="margin: 5px 0;">
+                ${h.location_code}: ${h.pick_frequency} picks
+                <span style="color: #ef4444;">(High Traffic)</span>
+              </div>
+            `).join('')}
+          `;
+          
+          // Highlight hotspots on map
+          highlightLocations(hotspots.map(h => h.location_code), '#ef4444');
+        }
+      } catch (error) {
+        resultDiv.innerHTML = 'Error analyzing hotspots';
+      }
+    }
+
+    // AI Feature: Storage Optimization
+    async function optimizeStorage() {
+      const resultDiv = document.getElementById('storageResult');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = 'Optimizing...';
+      
+      try {
+        const response = await fetch('/api/ai/storage-optimizer/recommendations');
+        const data = await response.json();
+        
+        if (data.success) {
+          const recs = data.recommendations || [];
+          resultDiv.innerHTML = `
+            <strong>Recommendations: ${recs.length}</strong><br>
+            ${recs.slice(0, 5).map(r => `
+              <div style="margin: 5px 0;">
+                ${r.product_reference} → ${r.recommended_location}
+                <br><small>${r.reason}</small>
+              </div>
+            `).join('')}
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = 'Error optimizing storage';
+      }
+    }
+
+    // AI Feature: Capacity Prediction
+    async function predictCapacity() {
+      const resultDiv = document.getElementById('capacityResult');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = 'Predicting...';
+      
+      try {
+        const response = await fetch('/api/ai/predictive-analytics/capacity-forecast');
+        const data = await response.json();
+        
+        if (data.success) {
+          const forecast = data.forecast || {};
+          resultDiv.innerHTML = `
+            <strong>Capacity Forecast (Next 30 days)</strong><br>
+            Current Utilization: ${forecast.current_utilization || 0}%<br>
+            Predicted Utilization: ${forecast.predicted_utilization || 0}%<br>
+            Trend: <span style="color: ${forecast.trend === 'increasing' ? '#ef4444' : '#22c55e'};">
+              ${forecast.trend || 'stable'}
+            </span><br>
+            <small>Recommendation: ${forecast.recommendation || 'Monitor regularly'}</small>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = 'Error predicting capacity';
+      }
+    }
+
+    // AI Feature: Route Optimization
+    async function optimizeRoutes() {
+      const resultDiv = document.getElementById('routeResult');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = 'Optimizing routes...';
+      
+      try {
+        const response = await fetch('/api/ai/route-optimizer/optimize');
+        const data = await response.json();
+        
+        if (data.success) {
+          const result = data.result || {};
+          resultDiv.innerHTML = `
+            <strong>Route Optimization Complete</strong><br>
+            Original Distance: ${result.original_distance || 0}m<br>
+            Optimized Distance: ${result.optimized_distance || 0}m<br>
+            Improvement: <span style="color: #22c55e;">${result.improvement || 0}%</span><br>
+            Time Saved: ${result.time_saved || 0} minutes
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = 'Error optimizing routes';
+      }
+    }
+
+    // AI Feature: Anomaly Detection
+    async function detectAnomalies() {
+      const resultDiv = document.getElementById('anomalyResult');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = 'Detecting anomalies...';
+      
+      try {
+        const response = await fetch('/api/ai/anomaly-detection/detect');
+        const data = await response.json();
+        
+        if (data.success) {
+          const anomalies = data.anomalies || [];
+          resultDiv.innerHTML = `
+            <strong>Anomalies Detected: ${anomalies.length}</strong><br>
+            ${anomalies.length === 0 ? 'No anomalies found' : ''}
+            ${anomalies.slice(0, 5).map(a => `
+              <div style="margin: 5px 0; color: #ef4444;">
+                ${a.location_code}: ${a.type}
+                <br><small>${a.description}</small>
+              </div>
+            `).join('')}
+          `;
+          
+          if (anomalies.length > 0) {
+            highlightLocations(anomalies.map(a => a.location_code), '#ef4444');
+          }
+        }
+      } catch (error) {
+        resultDiv.innerHTML = 'Error detecting anomalies';
+      }
+    }
+
+    // Helper: Highlight locations on map
+    function highlightLocations(locationCodes, color) {
+      // This function would highlight the specified locations on the canvas
+      // Implementation depends on your existing map rendering code
+      console.log('Highlighting locations:', locationCodes, 'with color:', color);
+    }
+  </script>
+</body>
+</html>

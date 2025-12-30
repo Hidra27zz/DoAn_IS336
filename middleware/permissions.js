@@ -1,5 +1,5 @@
 // Role-Based Access Control (RBAC) System
-const { requireRole } = require('./auth');
+const { authMiddleware } = require('./auth');
 
 // Define role hierarchy and permissions
 const ROLES = {
@@ -299,6 +299,9 @@ const requireRoleLevel = (level) => {
   };
 };
 
+// Import requireRole from auth.js for backward compatibility
+const { requireRole } = require('./auth');
+
 module.exports = {
   ROLES,
   PERMISSIONS,
@@ -310,5 +313,6 @@ module.exports = {
   getUserPermissions,
   hasRoleLevel,
   requireRoleLevel,
-  requireRole // Re-export from auth.js for backward compatibility
+  requireRole,
+  authMiddleware
 };

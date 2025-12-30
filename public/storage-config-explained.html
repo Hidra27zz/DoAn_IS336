@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giải Thích Storage Configuration - WMS</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0 0 10px 0;
+    }
+
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .section h2 {
+      color: #667eea;
+      margin: 0 0 20px 0;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .config-box {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+
+    .config-box h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+
+    .example {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+
+    .example h4 {
+      margin: 0 0 10px 0;
+      color: #1976d2;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .comparison-table th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .comparison-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .comparison-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .highlight {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+
+    .highlight strong {
+      color: #856404;
+    }
+
+    .visual-demo {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .zone-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .zone-box.high {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .zone-box.low {
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    .step-by-step {
+      counter-reset: step;
+    }
+
+    .step {
+      position: relative;
+      padding-left: 60px;
+      margin: 25px 0;
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      background: #667eea;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .step h4 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .step p {
+      margin: 0;
+      color: #666;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚙️ Giải Thích Storage Configuration</h1>
+      <p>Hiểu rõ cách cấu hình và tối ưu hóa kho hàng</p>
+    </div>
+
+    <!-- ABC Classification -->
+    <div class="section">
+      <h2>1. ABC Classification - Phân Loại Sản Phẩm</h2>
+      
+      <div class="config-box">
+        <h3>🎯 Mục Đích</h3>
+        <p>Phân loại sản phẩm theo <strong>tần suất xuất kho</strong> để đặt sản phẩm quan trọng ở vị trí dễ tiếp cận nhất.</p>
+      </div>
+
+      <div class="highlight">
+        <strong>💡 Nguyên Tắc 80-20 (Pareto):</strong><br>
+        20% sản phẩm chiếm 80% lượng xuất kho → Đặt gần nhất!
+      </div>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Tỷ Lệ Sản Phẩm</th>
+            <th>Tần Suất Xuất</th>
+            <th>Vị Trí Lưu Trữ</th>
+            <th>Ví Dụ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Class A</strong></td>
+            <td>20%</td>
+            <td>80% lượng xuất</td>
+            <td>Zone A, B, C (gần nhất)</td>
+            <td>Laptop, điện thoại hot</td>
+          </tr>
+          <tr>
+            <td><strong>Class B</strong></td>
+            <td>30%</td>
+            <td>15% lượng xuất</td>
+            <td>Zone D, E, F, G (trung bình)</td>
+            <td>Phụ kiện thông dụng</td>
+          </tr>
+          <tr>
+            <td><strong>Class C</strong></td>
+            <td>50%</td>
+            <td>5% lượng xuất</td>
+            <td>Zone H-R (xa nhất)</td>
+            <td>Hàng ít bán, dự trữ</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="example">
+        <h4>📝 Ví Dụ Thực Tế</h4>
+        <p><strong>Trước khi cấu hình:</strong></p>
+        <ul>
+          <li>Laptop (bán 50 cái/ngày) đang ở Zone R (xa 350m)</li>
+          <li>Nhân viên phải đi 350m × 50 lần = 17,500m/ngày!</li>
+        </ul>
+        <p><strong>Sau khi cấu hình ABC:</strong></p>
+        <ul>
+          <li>AI phát hiện Laptop nên là Class A</li>
+          <li>Hệ thống đề xuất chuyển sang Zone A (gần 50m)</li>
+          <li>Tiết kiệm: 50m × 50 lần = 2,500m/ngày (giảm 85%!)</li>
+        </ul>
+      </div>
+
+      <div class="config-box">
+        <h3>⚙️ Cách Cấu Hình</h3>
+        <div class="step-by-step">
+          <div class="step">
+            <h4>Đặt Threshold (Ngưỡng)</h4>
+            <p><strong>Class A Threshold: 20%</strong> → Top 20% sản phẩm có tần suất cao nhất</p>
+            <p><strong>Class B Threshold: 50%</strong> → 30% tiếp theo (từ 20% đến 50%)</p>
+            <p>Còn lại 50% là Class C</p>
+          </div>
+          <div class="step">
+            <h4>AI Tự Động Phân Loại</h4>
+            <p>Hệ thống chạy K-Means algorithm để phân tích tần suất picking và tự động gán ABC code cho từng sản phẩm</p>
+          </div>
+          <div class="step">
+            <h4>Áp Dụng Vào Kho</h4>
+            <p>Sản phẩm Class A được đề xuất chuyển sang Zone A, B, C (gần khu picking)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Storage Strategy -->
+    <div class="section">
+      <h2>2. Storage Strategy - Chiến Lược Lưu Trữ</h2>
+
+      <div class="config-box">
+        <h3>🎯 Mục Đích</h3>
+        <p>Chọn <strong>phương pháp tổ chức kho</strong> phù hợp với đặc điểm hàng hóa và quy trình làm việc.</p>
+      </div>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Strategy</th>
+            <th>Đặc Điểm</th>
+            <th>Ưu Điểm</th>
+            <th>Nhược Điểm</th>
+            <th>Khi Nào Dùng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Class-Based</strong></td>
+            <td>Phân zone theo ABC</td>
+            <td>Giảm thời gian picking</td>
+            <td>Cần phân loại chính xác</td>
+            <td>Hàng có tần suất rõ ràng</td>
+          </tr>
+          <tr>
+            <td><strong>Dedicated</strong></td>
+            <td>Mỗi sản phẩm 1 vị trí cố định</td>
+            <td>Dễ tìm, dễ quản lý</td>
+            <td>Lãng phí không gian</td>
+            <td>Ít SKU, ổn định</td>
+          </tr>
+          <tr>
+            <td><strong>Random</strong></td>
+            <td>Đặt bất kỳ chỗ trống nào</td>
+            <td>Tối ưu không gian</td>
+            <td>Khó tìm, cần WMS tốt</td>
+            <td>Nhiều SKU, thay đổi nhanh</td>
+          </tr>
+          <tr>
+            <td><strong>Hybrid</strong></td>
+            <td>Kết hợp các phương pháp</td>
+            <td>Linh hoạt, cân bằng</td>
+            <td>Phức tạp hơn</td>
+            <td>Kho lớn, đa dạng</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="example">
+        <h4>📝 Ví Dụ: Chọn Strategy Nào?</h4>
+        
+        <p><strong>Scenario 1: Kho điện tử</strong></p>
+        <ul>
+          <li>208 sản phẩm, tần suất rõ ràng (laptop hot, phụ kiện ít)</li>
+          <li>→ Dùng <strong>Class-Based Storage</strong></li>
+          <li>→ Laptop (Class A) ở Zone A, phụ kiện (Class C) ở Zone R</li>
+        </ul>
+
+        <p><strong>Scenario 2: Kho thời trang</strong></p>
+        <ul>
+          <li>5000 SKU, thay đổi theo mùa</li>
+          <li>→ Dùng <strong>Random Storage</strong></li>
+          <li>→ Đặt bất kỳ đâu, WMS tracking vị trí</li>
+        </ul>
+
+        <p><strong>Scenario 3: Kho tổng hợp</strong></p>
+        <ul>
+          <li>Vừa có hàng hot, vừa có hàng ít bán</li>
+          <li>→ Dùng <strong>Hybrid Strategy</strong></li>
+          <li>→ Top 50 SKU dùng Dedicated, còn lại dùng Random</li>
+        </ul>
+      </div>
+
+      <div class="highlight">
+        <strong>🤖 AI Tự Động Đề Xuất:</strong><br>
+        Hệ thống phân tích dữ liệu và đề xuất strategy phù hợp nhất. Ví dụ: "Nên dùng Hybrid vì có 20% sản phẩm chiếm 80% picking"
+      </div>
+    </div>
+
+    <!-- Zone Configuration -->
+    <div class="section">
+      <h2>3. Zone Configuration - Cấu Hình Zones</h2>
+
+      <div class="config-box">
+        <h3>🎯 Mục Đích</h3>
+        <p>Phân chia kho thành các <strong>zones</strong> và gán mục đích sử dụng cho từng zone.</p>
+      </div>
+
+      <div class="visual-demo">
+        <div class="zone-box high">
+          <h3>High-Frequency Zone</h3>
+          <p>Zone A, B, C</p>
+          <p>Gần khu picking</p>
+          <p>Class A products</p>
+        </div>
+        <div class="zone-box">
+          <h3>Medium-Frequency Zone</h3>
+          <p>Zone D, E, F, G, H</p>
+          <p>Khoảng cách trung bình</p>
+          <p>Class B products</p>
+        </div>
+        <div class="zone-box low">
+          <h3>Low-Frequency Zone</h3>
+          <p>Zone I-R</p>
+          <p>Xa khu picking</p>
+          <p>Class C products</p>
+        </div>
+      </div>
+
+      <div class="example">
+        <h4>📝 Ví Dụ Layout Kho</h4>
+        <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto;">
+┌─────────────────────────────────────────┐
+│  PICKING AREA (Khu lấy hàng)           │
+├─────────────────────────────────────────┤
+│  Zone A  │  Zone B  │  Zone C          │  ← High-Frequency (gần)
+│  (Class A products)                     │
+├─────────────────────────────────────────┤
+│  Zone D  │  Zone E  │  Zone F  │ Zone G│  ← Medium-Frequency
+│  (Class B products)                     │
+├─────────────────────────────────────────┤
+│  Zone H  │  Zone I  │  Zone J  │ Zone K│
+│  Zone L  │  Zone M  │  Zone N  │ Zone O│  ← Low-Frequency (xa)
+│  Zone P  │  Zone Q  │  Zone R          │
+│  (Class C products)                     │
+└─────────────────────────────────────────┘
+        </pre>
+      </div>
+
+      <div class="config-box">
+        <h3>⚙️ Cách Cấu Hình</h3>
+        <div class="step-by-step">
+          <div class="step">
+            <h4>Chọn High-Frequency Zones</h4>
+            <p>Chọn zones gần khu picking nhất (A, B, C) để đặt sản phẩm Class A</p>
+          </div>
+          <div class="step">
+            <h4>Chọn Low-Frequency Zones</h4>
+            <p>Chọn zones xa (D-R) để đặt sản phẩm Class C</p>
+          </div>
+          <div class="step">
+            <h4>AI Tự Động Phân Bổ</h4>
+            <p>Khi nhập hàng mới, AI tự động đề xuất zone phù hợp dựa trên ABC class</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- How It Works Together -->
+    <div class="section">
+      <h2>4. Cách 3 Phần Hoạt Động Cùng Nhau</h2>
+
+      <div class="step-by-step">
+        <div class="step">
+          <h4>Nhập Hàng Mới</h4>
+          <p>Nhân viên nhập 100 units sản phẩm "LAPTOP-001"</p>
+        </div>
+
+        <div class="step">
+          <h4>AI Phân Tích</h4>
+          <p>
+            - Kiểm tra lịch sử: Sản phẩm này được pick 45 lần/tuần<br>
+            - Chạy K-Means: Xếp vào top 10% → <strong>Class A</strong><br>
+            - Kiểm tra Strategy: Đang dùng <strong>Class-Based Storage</strong>
+          </p>
+        </div>
+
+        <div class="step">
+          <h4>Tìm Vị Trí</h4>
+          <p>
+            - Kiểm tra Zone Config: Class A nên ở Zone A, B, C<br>
+            - Tìm vị trí trống: Zone A-01-05 còn trống 80%<br>
+            - Tính khoảng cách: 50m từ khu picking
+          </p>
+        </div>
+
+        <div class="step">
+          <h4>Đề Xuất</h4>
+          <p>
+            AI hiển thị: "Đề xuất lưu tại <strong>A-01-05</strong>"<br>
+            Lý do: Class A, gần nhất, còn trống<br>
+            Lợi ích: Giảm 85% quãng đường picking
+          </p>
+        </div>
+
+        <div class="step">
+          <h4>Nhân Viên Xác Nhận</h4>
+          <p>
+            Click "Apply" → Hệ thống tự động:<br>
+            - Cập nhật location: A-01-05<br>
+            - Cập nhật occupancy: 80% → 100%<br>
+            - Ghi log: "Đã lưu theo đề xuất AI"
+          </p>
+        </div>
+      </div>
+
+      <div class="highlight">
+        <strong>✅ Kết Quả:</strong><br>
+        Sản phẩm được đặt đúng vị trí tối ưu ngay từ đầu, không cần di chuyển sau này!
+      </div>
+    </div>
+
+    <!-- Benefits -->
+    <div class="section">
+      <h2>5. Lợi Ích Khi Cấu Hình Đúng</h2>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Chỉ Số</th>
+            <th>Trước Cấu Hình</th>
+            <th>Sau Cấu Hình</th>
+            <th>Cải Thiện</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thời gian picking</td>
+            <td>5 phút/task</td>
+            <td>3.5 phút/task</td>
+            <td class="improvement">-30%</td>
+          </tr>
+          <tr>
+            <td>Quãng đường đi</td>
+            <td>450m/wave</td>
+            <td>315m/wave</td>
+            <td class="improvement">-30%</td>
+          </tr>
+          <tr>
+            <td>Sử dụng không gian</td>
+            <td>65%</td>
+            <td>85%</td>
+            <td class="improvement">+20%</td>
+          </tr>
+          <tr>
+            <td>Sai sót</td>
+            <td>5%</td>
+            <td>2%</td>
+            <td class="improvement">-60%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Quick Start -->
+    <div class="section">
+      <h2>6. Bắt Đầu Nhanh</h2>
+
+      <div class="config-box">
+        <h3>🚀 Cấu Hình Mặc Định (Khuyến Nghị)</h3>
+        <ol style="line-height: 2;">
+          <li><strong>ABC Classification:</strong> Class A = 20%, Class B = 50%</li>
+          <li><strong>Storage Strategy:</strong> Class-Based Storage</li>
+          <li><strong>Zone Config:</strong> 
+            <ul>
+              <li>High-Frequency: Zone A, B, C</li>
+              <li>Low-Frequency: Zone D, E, F</li>
+            </ul>
+          </li>
+          <li><strong>Để AI tự động:</strong> Hệ thống sẽ phân tích và đề xuất tối ưu</li>
+        </ol>
+      </div>
+
+      <div class="highlight">
+        <strong>💡 Mẹo:</strong> Bắt đầu với cấu hình mặc định, sau 1-2 tuần xem báo cáo AI để điều chỉnh!
+      </div>
+    </div>
+  </div>
+</body>
+</html>

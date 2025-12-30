@@ -766,30 +766,74 @@ router.get('/route/visualization/:waveId', async (req, res) => {
 // Get AI Analytics Summary
 router.get('/analytics', async (req, res) => {
   try {
-    const clusters = await db.getLatestClusters();
-    const optimizations = await db.getOptimizations();
+    const database = await getDatabase();
     
-    const routeOptimizations = optimizations.filter(o => o.type === 'route');
-    const avgImprovement = routeOptimizations.length > 0
-      ? routeOptimizations.reduce((sum, o) => sum + (o.result?.improvement_percentage || 0), 0) / routeOptimizations.length
-      : 0;
+    // Get AI optimization stats from system_logs
+    const aiLogs = await database.all(`
+      SELECT 
+        module,
+        message,
+        details,
+        created_at
+      FROM system_logs
+      WHERE module = 'ai' OR module LIKE '%ai%'
+      ORDER BY created_at DESC
+      LIMIT 100
+    `);
+    
+    // Get picking performance stats
+    const pickingStats = await database.get(`
+      SELECT 
+        COUNT(*) as total_picks,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_picks,
+        AVG(CASE 
+          WHEN status = 'completed' AND updated_at IS NOT NULL AND created_at IS NOT NULL
+          THEN (JULIANDAY(updated_at) - JULIANDAY(created_at)) * 24 * 60
+          ELSE NULL
+        END) as avg_pick_time
+      FROM picking_tasks
+      WHERE created_at >= DATE('now', '-30 days')
+    `);
+    
+    // Get storage optimization stats
+    const storageStats = await database.get(`
+      SELECT 
+        COUNT(*) as total_locations,
+        SUM(current_occupancy) as total_occupancy,
+        SUM(capacity) as total_capacity,
+        ROUND(CAST(SUM(current_occupancy) AS FLOAT) / NULLIF(SUM(capacity), 0) * 100, 2) as utilization_rate
+      FROM storage_locations
+      WHERE status = 'active'
+    `);
     
     res.json({
       success: true,
       data: {
-        clustering: {
-          total_runs: clusters.length,
-          latest: clusters[clusters.length - 1] || null
+        ai_logs_count: aiLogs.length,
+        picking_performance: {
+          total_picks: pickingStats.total_picks || 0,
+          completed_picks: pickingStats.completed_picks || 0,
+          avg_pick_time_minutes: Math.round((pickingStats.avg_pick_time || 0) * 100) / 100,
+          completion_rate: pickingStats.total_picks > 0 
+            ? Math.round((pickingStats.completed_picks / pickingStats.total_picks) * 100) 
+            : 0
         },
-        route_optimization: {
-          total_runs: routeOptimizations.length,
-          average_improvement_percentage: Math.round(avgImprovement * 100) / 100
-        }
+        storage_optimization: {
+          total_locations: storageStats.total_locations || 0,
+          utilization_rate: storageStats.utilization_rate || 0,
+          total_capacity: storageStats.total_capacity || 0,
+          total_occupancy: storageStats.total_occupancy || 0
+        },
+        last_updated: new Date().toISOString()
       }
     });
   } catch (error) {
     console.error('AI analytics error:', error);
-    res.status(500).json({ error: 'Failed to get AI analytics' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get AI analytics',
+      details: error.message 
+    });
   }
 });
 
@@ -1353,6 +1397,365 @@ router.post('/optimization/routes', async (req, res) => {
     });
   }
 });
+
+// AI Storage Optimization Routes
+const AIStorageOptimizer = require('../services/ai-storage-optimizer');
+const AIDemandForecasting = require('../services/ai-demand-forecasting');
+const AIPredictiveAnalytics = require('../services/ai-predictive-analytics');
+
+// GET /api/ai/storage/analyze - Analyze current storage performance
+router.get('/storage/analyze', async (req, res) => {
+  try {
+    const optimizer = new AIStorageOptimizer();
+    const analysis = await optimizer.analyzeStoragePerformance();
+    
+    res.json({
+      success: true,
+      data: analysis
+    });
+    
+  } catch (error) {
+    console.error('Error analyzing storage performance:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to analyze storage performance',
+      details: error.message
+    });
+  }
+});
+
+// POST /api/ai/storage/recommend - Get storage strategy recommendation
+router.post('/storage/recommend', async (req, res) => {
+  try {
+    const optimizer = new AIStorageOptimizer();
+    
+    // First analyze current performance
+    const analysis = await optimizer.analyzeStoragePerformance();
+    
+    // Then get strategy recommendation
+    const recommendation = await optimizer.recommendOptimalStrategy(analysis.analysis);
+    
+    res.json({
+      success: true,
+      data: {
+        current_analysis: analysis.analysis,
+        recommendation: recommendation,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error generating storage recommendation:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate storage recommendation',
+      details: error.message
+    });
+  }
+});
+
+// POST /api/ai/storage/apply - Apply storage strategy
+router.post('/storage/apply', async (req, res) => {
+  try {
+    const { strategy, options = {} } = req.body;
+    
+    if (!strategy) {
+      return res.status(400).json({
+        success: false,
+        error: 'Storage strategy is required'
+      });
+    }
+    
+    const optimizer = new AIStorageOptimizer();
+    const result = await optimizer.applyStorageStrategy(strategy, options);
+    
+    res.json({
+      success: true,
+      message: `Storage strategy '${strategy}' applied successfully`,
+      data: result
+    });
+    
+  } catch (error) {
+    console.error('Error applying storage strategy:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to apply storage strategy',
+      details: error.message
+    });
+  }
+});
+
+// GET /api/ai/demand/forecast - Generate demand forecast
+router.get('/demand/forecast', async (req, res) => {
+  try {
+    const { 
+      product_references, 
+      forecast_days = 30, 
+      include_seasonality = true,
+      confidence_level = 0.95 
+    } = req.query;
+
+    const forecaster = new AIDemandForecasting();
+    
+    const options = {
+      product_references: product_references ? product_references.split(',') : [],
+      forecast_days: parseInt(forecast_days),
+      include_seasonality: include_seasonality === 'true',
+      confidence_level: parseFloat(confidence_level)
+    };
+
+    const forecast = await forecaster.generateDemandForecast(options);
+    
+    res.json({
+      success: true,
+      data: forecast.data
+    });
+    
+  } catch (error) {
+    console.error('Error generating demand forecast:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate demand forecast',
+      details: error.message
+    });
+  }
+});
+
+// GET /api/ai/demand/stockout-risk - Get stock-out risk analysis
+router.get('/demand/stockout-risk', async (req, res) => {
+  try {
+    const { product_references } = req.query;
+    
+    const forecaster = new AIDemandForecasting();
+    const productRefs = product_references ? product_references.split(',') : [];
+    
+    const riskAnalysis = await forecaster.getStockOutRisk(productRefs);
+    
+    res.json({
+      success: true,
+      data: riskAnalysis.data
+    });
+    
+  } catch (error) {
+    console.error('Error calculating stock-out risk:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to calculate stock-out risk',
+      details: error.message
+    });
+  }
+});
+
+// GET /api/ai/predictive/insights - Generate predictive analytics insights
+router.get('/predictive/insights', async (req, res) => {
+  try {
+    const { 
+      analysis_types = 'all',
+      time_horizon = 30,
+      include_recommendations = true
+    } = req.query;
+
+    const analytics = new AIPredictiveAnalytics();
+    
+    const options = {
+      analysis_types: analysis_types === 'all' ? ['all'] : analysis_types.split(','),
+      time_horizon: parseInt(time_horizon),
+      include_recommendations: include_recommendations === 'true'
+    };
+
+    const insights = await analytics.generatePredictiveInsights(options);
+    
+    res.json({
+      success: true,
+      data: insights.data
+    });
+    
+  } catch (error) {
+    console.error('Error generating predictive insights:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate predictive insights',
+      details: error.message
+    });
+  }
+});
+
+// GET /api/ai/optimization/comprehensive - Comprehensive AI optimization analysis
+router.get('/optimization/comprehensive', async (req, res) => {
+  try {
+    const { include_forecasting = true, include_predictive = true } = req.query;
+    
+    // Run multiple AI analyses in parallel
+    const promises = [];
+    
+    // Storage optimization
+    const optimizer = new AIStorageOptimizer();
+    promises.push(optimizer.analyzeStoragePerformance());
+    
+    // Demand forecasting (if requested)
+    if (include_forecasting === 'true') {
+      const forecaster = new AIDemandForecasting();
+      promises.push(forecaster.generateDemandForecast({ forecast_days: 14 }));
+      promises.push(forecaster.getStockOutRisk([]));
+    }
+    
+    // Predictive analytics (if requested)
+    if (include_predictive === 'true') {
+      const analytics = new AIPredictiveAnalytics();
+      promises.push(analytics.generatePredictiveInsights({ time_horizon: 14 }));
+    }
+    
+    const results = await Promise.allSettled(promises);
+    
+    // Process results
+    const comprehensiveAnalysis = {
+      storage_optimization: results[0].status === 'fulfilled' ? results[0].value : { error: results[0].reason?.message },
+      demand_forecasting: null,
+      stockout_risk: null,
+      predictive_insights: null
+    };
+    
+    let resultIndex = 1;
+    
+    if (include_forecasting === 'true') {
+      comprehensiveAnalysis.demand_forecasting = results[resultIndex].status === 'fulfilled' ? 
+        results[resultIndex].value : { error: results[resultIndex].reason?.message };
+      resultIndex++;
+      
+      comprehensiveAnalysis.stockout_risk = results[resultIndex].status === 'fulfilled' ? 
+        results[resultIndex].value : { error: results[resultIndex].reason?.message };
+      resultIndex++;
+    }
+    
+    if (include_predictive === 'true') {
+      comprehensiveAnalysis.predictive_insights = results[resultIndex].status === 'fulfilled' ? 
+        results[resultIndex].value : { error: results[resultIndex].reason?.message };
+    }
+    
+    // Generate comprehensive recommendations
+    const comprehensiveRecommendations = generateComprehensiveRecommendations(comprehensiveAnalysis);
+    
+    res.json({
+      success: true,
+      data: {
+        analysis: comprehensiveAnalysis,
+        comprehensive_recommendations: comprehensiveRecommendations,
+        analysis_timestamp: new Date().toISOString(),
+        ai_confidence_score: calculateOverallAIConfidence(comprehensiveAnalysis)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error generating comprehensive AI analysis:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate comprehensive AI analysis',
+      details: error.message
+    });
+  }
+});
+
+// Helper function to generate comprehensive recommendations
+function generateComprehensiveRecommendations(analysis) {
+  const recommendations = [];
+  
+  // Storage optimization recommendations
+  if (analysis.storage_optimization && analysis.storage_optimization.recommendations) {
+    const storageRecs = analysis.storage_optimization.recommendations.recommendations || [];
+    storageRecs.forEach(rec => {
+      recommendations.push({
+        ...rec,
+        source: 'Storage Optimization AI',
+        category: 'STORAGE'
+      });
+    });
+  }
+  
+  // Demand forecasting recommendations
+  if (analysis.demand_forecasting && analysis.demand_forecasting.data) {
+    const forecasts = analysis.demand_forecasting.data.forecasts || {};
+    Object.values(forecasts).forEach(forecast => {
+      if (forecast.recommendations) {
+        forecast.recommendations.forEach(rec => {
+          recommendations.push({
+            ...rec,
+            source: 'Demand Forecasting AI',
+            category: 'DEMAND',
+            product_reference: forecast.product_reference
+          });
+        });
+      }
+    });
+  }
+  
+  // Stock-out risk recommendations
+  if (analysis.stockout_risk && analysis.stockout_risk.data) {
+    const riskItems = analysis.stockout_risk.data.risk_analysis || [];
+    const criticalItems = riskItems.filter(item => item.risk_level === 'CRITICAL');
+    
+    if (criticalItems.length > 0) {
+      recommendations.push({
+        type: 'CRITICAL_STOCKOUT_RISK',
+        priority: 'CRITICAL',
+        title: 'Immediate Stock-Out Risk',
+        description: `${criticalItems.length} products have critical stock-out risk within 3 days`,
+        source: 'Stock-Out Risk AI',
+        category: 'INVENTORY',
+        affected_products: criticalItems.map(item => item.product_reference)
+      });
+    }
+  }
+  
+  // Predictive analytics recommendations
+  if (analysis.predictive_insights && analysis.predictive_insights.data) {
+    const predictiveRecs = analysis.predictive_insights.data.recommendations || [];
+    predictiveRecs.forEach(rec => {
+      recommendations.push({
+        ...rec,
+        source: 'Predictive Analytics AI',
+        category: 'PREDICTIVE'
+      });
+    });
+  }
+  
+  // Sort by priority
+  const priorityOrder = { 'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 };
+  recommendations.sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0));
+  
+  return {
+    total_recommendations: recommendations.length,
+    critical_recommendations: recommendations.filter(r => r.priority === 'CRITICAL').length,
+    high_priority_recommendations: recommendations.filter(r => r.priority === 'HIGH').length,
+    recommendations: recommendations.slice(0, 20) // Limit to top 20 recommendations
+  };
+}
+
+// Helper function to calculate overall AI confidence
+function calculateOverallAIConfidence(analysis) {
+  let totalConfidence = 0;
+  let analysisCount = 0;
+  
+  // Storage optimization confidence
+  if (analysis.storage_optimization && !analysis.storage_optimization.error) {
+    totalConfidence += 85; // Base confidence for storage optimization
+    analysisCount++;
+  }
+  
+  // Demand forecasting confidence
+  if (analysis.demand_forecasting && !analysis.demand_forecasting.error) {
+    totalConfidence += 75; // Base confidence for demand forecasting
+    analysisCount++;
+  }
+  
+  // Predictive analytics confidence
+  if (analysis.predictive_insights && !analysis.predictive_insights.error) {
+    const confidence = analysis.predictive_insights.data?.model_confidence || 70;
+    totalConfidence += confidence;
+    analysisCount++;
+  }
+  
+  return analysisCount > 0 ? Math.round(totalConfidence / analysisCount) : 0;
+}
 
 module.exports = router;
 // ========================================

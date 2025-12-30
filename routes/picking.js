@@ -519,24 +519,27 @@ router.post('/tasks/:id/complete', async (req, res) => {
         });
       }
 
+      // Determine task status based on quantity picked
+      const taskStatus = pickedQty >= task.quantity_to_pick ? 'completed' : 'in_progress';
+
       // Update task
       await db.run(`
         UPDATE picking_tasks 
         SET quantity_picked = ?, 
-            status = 'completed',
+            status = ?,
             updated_at = CURRENT_TIMESTAMP 
         WHERE id = ?
-      `, [pickedQty, id]);
+      `, [pickedQty, taskStatus, id]);
 
       // Update inventory (reduce quantity and reserved quantity)
       if (task.product_reference && task.location_code) {
         await db.run(`
           UPDATE inventory 
           SET quantity = quantity - ?,
-              reserved_quantity = reserved_quantity - ?,
+              reserved_quantity = MAX(0, reserved_quantity - ?),
               updated_at = CURRENT_TIMESTAMP
           WHERE product_reference = ? AND location_code = ?
-        `, [pickedQty, task.quantity_to_pick, task.product_reference, task.location_code]);
+        `, [pickedQty, pickedQty, task.product_reference, task.location_code]);
       }
 
       // Log the picking action

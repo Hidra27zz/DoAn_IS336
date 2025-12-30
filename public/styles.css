@@ -3586,3 +3586,135 @@ tbody tr:hover {
     transform: rotate(360deg);
   }
 }
+
+/* Low Stock Alerts */
+.low-stock-alert {
+  background-color: #fff3cd !important;
+  border-left: 4px solid #ffc107 !important;
+}
+
+.low-stock-alert:hover {
+  background-color: #ffe69c !important;
+}
+
+.very-low-stock {
+  background-color: #f8d7da !important;
+  border-left: 4px solid #dc3545 !important;
+}
+
+.very-low-stock:hover {
+  background-color: #f5c2c7 !important;
+}
+
+.text-danger {
+  color: #dc3545 !important;
+  font-weight: bold;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+  font-weight: bold;
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  color: #000;
+  border: 1px solid #ffc107;
+}
+
+.btn-warning:hover {
+  background-color: #ffca2c;
+  border-color: #ffc720;
+}
+
+/* Dashboard Alerts */
+.dashboard-alerts {
+  margin-bottom: 24px;
+}
+
+.alerts-section h3 {
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.alert {
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.alert strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.alert-success {
+  border-left-color: var(--success-color);
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.alert-info {
+  border-left-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.alert-warning {
+  border-left-color: var(--warning-color);
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.alert-danger {
+  border-left-color: var(--danger-color);
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.alert .btn {
+  margin-left: 12px;
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background: var(--success-color);
+  color: white;
+}
+
+.badge-info {
+  background: #3b82f6;
+  color: white;
+}
+
+.badge-warning {
+  background: var(--warning-color);
+  color: white;
+}
+
+.badge-danger {
+  background: var(--danger-color);
+  color: white;
+}

@@ -59,30 +59,55 @@ router.get('/', async (req, res) => {
     `, params);
     const total = countResult?.total || 0;
 
-    // Get waves from picking_tasks grouped by wave_number
+    // Get waves from picking_tasks grouped by wave_number with order count
     const offset = (page - 1) * limit;
+    
+    // Return empty array if no waves exist
+    if (total === 0) {
+      return res.json({
+        waves: [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: 0,
+          pages: 0
+        },
+        filters: {
+          status,
+          search,
+          date_from,
+          date_to,
+          operator_id,
+          priority
+        },
+        data_source: 'SQL Database'
+      });
+    }
+    
     const waves = await db.all(`
       SELECT 
-        wave_number,
-        MIN(id) as id,
-        operator,
-        status,
+        pt.wave_number,
+        MIN(pt.id) as id,
+        pt.operator,
+        pt.status,
         COUNT(*) as total_items,
-        SUM(quantity_to_pick) as total_quantity,
-        SUM(quantity_picked) as total_picked,
-        MIN(created_at) as created_at,
-        MAX(updated_at) as updated_at,
-        COUNT(DISTINCT location_code) as location_count,
+        SUM(pt.quantity_to_pick) as total_quantity,
+        SUM(pt.quantity_picked) as total_picked,
+        MIN(pt.created_at) as created_at,
+        MAX(pt.updated_at) as updated_at,
+        COUNT(DISTINCT pt.location_code) as location_count,
+        COUNT(DISTINCT o.id) as order_count,
         CASE 
-          WHEN COUNT(*) = SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) THEN 'completed'
-          WHEN SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) > 0 THEN 'in_progress'
-          WHEN SUM(CASE WHEN status = 'paused' THEN 1 ELSE 0 END) > 0 THEN 'paused'
+          WHEN COUNT(*) = SUM(CASE WHEN pt.status = 'completed' THEN 1 ELSE 0 END) THEN 'completed'
+          WHEN SUM(CASE WHEN pt.status = 'in_progress' THEN 1 ELSE 0 END) > 0 THEN 'in_progress'
+          WHEN SUM(CASE WHEN pt.status = 'paused' THEN 1 ELSE 0 END) > 0 THEN 'paused'
           ELSE 'created'
         END as calculated_status
-      FROM picking_tasks
+      FROM picking_tasks pt
+      LEFT JOIN orders o ON pt.wave_number = o.wave_number
       ${whereClause}
-      GROUP BY wave_number
-      ORDER BY created_at DESC
+      GROUP BY pt.wave_number
+      ORDER BY pt.created_at DESC
       LIMIT ? OFFSET ?
     `, [...params, parseInt(limit), offset]);
 
@@ -94,7 +119,7 @@ router.get('/', async (req, res) => {
     
     const operatorMap = new Map(operators.map(op => [op.id, op.username]));
 
-    // Format waves with enhanced data
+    // Format waves with enhanced data including order count
     const formattedWaves = waves.map(w => {
       const completionPercentage = w.total_quantity > 0 ? Math.round((w.total_picked / w.total_quantity) * 100) : 0;
       const estimatedTimeMinutes = Math.ceil(w.total_items * 2.5); // 2.5 minutes per item average
@@ -103,6 +128,7 @@ router.get('/', async (req, res) => {
         id: w.id,
         wave_number: w.wave_number,
         status: w.calculated_status,
+        order_count: w.order_count || 0,
         total_items: w.total_items,
         total_quantity: w.total_quantity,
         total_picked: w.total_picked || 0,
@@ -358,76 +384,14 @@ router.post('/', async (req, res) => {
         tasksCreated++;
       }
 
-      // If there are inventory issues, decide whether to proceed or rollback
+      // If there are inventory issues, ALWAYS rollback - no auto-fix
       if (inventoryIssues.length > 0) {
-        // In development mode, auto-fix inventory issues
-        if (process.env.AUTO_FIX_INVENTORY === 'true') {
-          console.log('🔧 AUTO_FIX_INVENTORY enabled - creating missing inventory...');
-          
-          for (const issue of inventoryIssues) {
-            if (issue.location_code === 'MISSING') {
-              // Create inventory for missing products
-              const defaultLocation = await db.get(`
-                SELECT location_code FROM storage_locations 
-                WHERE zone = 'A' 
-                ORDER BY location_code 
-                LIMIT 1
-              `);
-              
-              const locationCode = defaultLocation?.location_code || 'A-01-01';
-              
-              await db.run(`
-                INSERT OR REPLACE INTO inventory (
-                  product_reference, location_code, quantity, reserved_quantity, created_at
-                )
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-              `, [issue.product_reference, locationCode, issue.required_quantity * 2, issue.required_quantity]);
-              
-              // Create the picking task
-              await db.run(`
-                INSERT INTO picking_tasks (
-                  wave_number, product_reference, location_code, 
-                  quantity_to_pick, quantity_picked, operator, 
-                  size, status, estimated_time_minutes, zone,
-                  created_at, updated_at
-                )
-                VALUES (?, ?, ?, ?, 0, ?, 'M', 'created', 3, 'A', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-              `, [waveNumber, issue.product_reference, locationCode, issue.required_quantity, operator_id]);
-              
-              tasksCreated++;
-              console.log(`✅ Auto-fixed: ${issue.product_reference} at ${locationCode}`);
-            } else if (issue.location_code !== 'INSUFFICIENT') {
-              // Increase inventory for insufficient quantity
-              await db.run(`
-                UPDATE inventory 
-                SET quantity = quantity + ?, reserved_quantity = COALESCE(reserved_quantity, 0) + ?
-                WHERE product_reference = ? AND location_code = ?
-              `, [issue.required_quantity, issue.required_quantity, issue.product_reference, issue.location_code]);
-              
-              // Create the picking task
-              await db.run(`
-                INSERT INTO picking_tasks (
-                  wave_number, product_reference, location_code, 
-                  quantity_to_pick, quantity_picked, operator, 
-                  size, status, estimated_time_minutes, zone,
-                  created_at, updated_at
-                )
-                VALUES (?, ?, ?, ?, 0, ?, 'M', 'created', 3, 'A', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-              `, [waveNumber, issue.product_reference, issue.location_code, issue.required_quantity, operator_id]);
-              
-              tasksCreated++;
-              console.log(`✅ Auto-fixed quantity: ${issue.product_reference} at ${issue.location_code}`);
-            }
-          }
-        } else {
-          // In production mode, return error for inventory issues
-          await db.run('ROLLBACK');
-          return res.status(400).json({
-            error: 'Inventory issues found',
-            inventory_issues: inventoryIssues,
-            message: 'Please resolve inventory issues before creating wave'
-          });
-        }
+        await db.run('ROLLBACK');
+        return res.status(400).json({
+          error: 'Insufficient inventory',
+          inventory_issues: inventoryIssues,
+          message: 'Cannot create wave: insufficient inventory for some items. Please restock or adjust order quantities.'
+        });
       }
 
       // Calculate total estimated time for the wave
@@ -1109,81 +1073,79 @@ router.get('/:id/activity-log', async (req, res) => {
   }
 });
 
-// GET /api/waves/:id - Get single wave with tasks
+// GET /api/waves/:id - Get wave details with full info
 router.get('/:id', async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
-
-    // Get wave info
-    const wave = await db.get(`
-      SELECT 
-        wave_number,
-        MIN(id) as id,
-        operator,
-        status,
-        COUNT(*) as total_items,
-        SUM(quantity_to_pick) as total_quantity,
-        SUM(quantity_picked) as total_picked,
-        MIN(created_at) as created_at,
-        MAX(updated_at) as updated_at
-      FROM picking_tasks
-      WHERE id = ? OR wave_number = ?
-      GROUP BY wave_number
-    `, [id, id]);
-
-    if (!wave) {
-      return res.status(404).json({ error: 'Wave not found' });
-    }
-
-    // Get all tasks for this wave
+    
+    // Get wave tasks with full details
     const tasks = await db.all(`
       SELECT 
         pt.*,
-        p.description as product_description,
+        u.username as operator_name,
+        u.role as operator_role,
+        p.reference as product_ref,
+        p.description as product_name,
+        p.unit_price as product_price,
         p.abc_code,
         sl.zone,
-        i.quantity as available_quantity
+        sl.x, sl.y, sl.z
       FROM picking_tasks pt
+      LEFT JOIN users u ON pt.operator = u.id
       LEFT JOIN products p ON pt.product_reference = p.reference
       LEFT JOIN storage_locations sl ON pt.location_code = sl.location_code
-      LEFT JOIN inventory i ON pt.product_reference = i.product_reference AND pt.location_code = i.location_code
-      WHERE pt.wave_number = ?
-      ORDER BY sl.zone, pt.location_code
-    `, [wave.wave_number]);
-
-    // Calculate actual status based on tasks
-    const actualStatus = tasks.every(t => t.status === 'completed') ? 'completed' :
-                        tasks.some(t => t.status === 'in_progress') ? 'in_progress' :
-                        tasks.some(t => t.status === 'paused') ? 'paused' : 'created';
-
-    const completionPercentage = wave.total_quantity > 0 ? 
-      Math.round((wave.total_picked / wave.total_quantity) * 100) : 0;
-
+      WHERE pt.wave_number = ? OR pt.id = ?
+      ORDER BY pt.id
+    `, [id, id]);
+    
+    if (tasks.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Wave not found'
+      });
+    }
+    
+    // Calculate stats
+    const totalQuantity = tasks.reduce((sum, t) => sum + (t.quantity_to_pick || 0), 0);
+    const pickedQuantity = tasks.reduce((sum, t) => sum + (t.quantity_picked || 0), 0);
+    const completedTasks = tasks.filter(t => t.status === 'completed').length;
+    const estimatedTime = Math.ceil(totalQuantity * 0.5); // 0.5 min per item
+    
+    // Get wave info from first task
+    const waveInfo = {
+      wave_number: tasks[0].wave_number,
+      status: tasks[0].status,
+      operator_id: tasks[0].operator,
+      operator_name: tasks[0].operator_name || 'Unassigned',
+      priority: tasks[0].priority || 'normal',
+      created_at: tasks[0].created_at,
+      updated_at: tasks[0].updated_at
+    };
+    
     res.json({
-      wave: {
-        id: wave.id,
-        wave_number: wave.wave_number,
-        status: actualStatus,
-        total_items: wave.total_items,
-        total_quantity: wave.total_quantity,
-        total_picked: wave.total_picked || 0,
-        completion_percentage: completionPercentage,
-        assigned_operator_id: wave.operator,
-        created_at: wave.created_at,
-        updated_at: wave.updated_at
-      },
-      tasks: tasks.map(task => ({
-        ...task,
-        has_inventory_issue: !task.available_quantity || task.available_quantity < task.quantity_to_pick,
-        available_quantity: task.available_quantity || 0
-      })),
-      data_source: 'SQL Database'
+      success: true,
+      data: {
+        wave: waveInfo,
+        tasks: tasks,
+        stats: {
+          total_items: tasks.length,
+          total_quantity: totalQuantity,
+          picked_quantity: pickedQuantity,
+          completed_tasks: completedTasks,
+          progress: tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0,
+          estimated_time: estimatedTime
+        }
+      }
     });
-
+    
   } catch (error) {
-    console.error('Get wave error:', error);
-    res.status(500).json({ error: 'Failed to get wave' });
+    console.error('Error fetching wave details:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch wave details',
+      details: error.message
+    });
   }
 });
 
@@ -1193,11 +1155,24 @@ router.post('/:id/start', async (req, res) => {
   
   try {
     const { id } = req.params;
-    const { operator_id } = req.body;
+    let { operator_id } = req.body;
 
-    // Validation
+    // Auto-assign operator if not provided or invalid
     if (!operator_id) {
-      return res.status(400).json({ error: 'Operator ID is required' });
+      // Get first available operator
+      const defaultOperator = await db.get(`
+        SELECT id FROM users 
+        WHERE role IN ('operator', 'admin', 'manager')
+        ORDER BY id ASC
+        LIMIT 1
+      `);
+      
+      if (defaultOperator) {
+        operator_id = defaultOperator.id;
+        console.log('Auto-assigned operator:', operator_id);
+      } else {
+        return res.status(400).json({ error: 'No operators available in system' });
+      }
     }
 
     // Begin transaction
@@ -1236,9 +1211,29 @@ router.post('/:id/start', async (req, res) => {
         return res.status(400).json({ error: 'Wave is already completed' });
       }
 
-      // Verify operator exists
-      const operator = await db.get('SELECT id, username FROM users WHERE id = ?', [operator_id]);
+      // Verify operator exists (with auto-fix)
+      let operator = await db.get('SELECT id, username FROM users WHERE id = ?', [operator_id]);
       if (!operator) {
+        // Try to find any operator
+        operator = await db.get(`
+          SELECT id, username FROM users 
+          WHERE role IN ('operator', 'admin', 'manager')
+          ORDER BY id ASC
+          LIMIT 1
+        `);
+        
+        if (!operator) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'No operators available in system' });
+        }
+        
+        operator_id = operator.id;
+        console.log('Auto-corrected operator ID to:', operator_id);
+      }
+
+      // Verify operator exists
+      const operatorCheck = await db.get('SELECT id, username FROM users WHERE id = ?', [operator_id]);
+      if (!operatorCheck) {
         await db.run('ROLLBACK');
         console.error('Invalid operator ID:', operator_id);
         console.log('Available users in database:');
@@ -1658,6 +1653,429 @@ router.post('/:id/cancel', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to cancel wave',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// POST /api/waves/build - Create wave from selected orders (Wave Build)
+router.post('/build', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { order_ids, wave_settings = {} } = req.body;
+
+    if (!order_ids || !Array.isArray(order_ids) || order_ids.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Order IDs array is required' 
+      });
+    }
+
+    // Validate orders exist and are available for wave creation
+    const orderPlaceholders = order_ids.map(() => '?').join(',');
+    const orders = await db.all(`
+      SELECT id, order_number, status, priority 
+      FROM orders 
+      WHERE id IN (${orderPlaceholders}) AND status = 'pending'
+    `, order_ids);
+
+    if (orders.length !== order_ids.length) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Some orders are not available for wave creation' 
+      });
+    }
+
+    // Generate wave number
+    const waveNumber = `WAVE_${Date.now()}`;
+
+    // Get order items for these orders
+    const orderItems = await db.all(`
+      SELECT oi.*, o.order_number, o.priority
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      WHERE o.id IN (${orderPlaceholders})
+    `, order_ids);
+
+    // Create picking tasks for each order item
+    const pickingTasks = [];
+    for (const item of orderItems) {
+      // Find inventory location for this product
+      const inventory = await db.get(`
+        SELECT location_code, quantity
+        FROM inventory
+        WHERE product_reference = ? AND quantity >= ?
+        ORDER BY quantity DESC
+        LIMIT 1
+      `, [item.product_reference, item.quantity]);
+
+      if (inventory) {
+        pickingTasks.push({
+          wave_number: waveNumber,
+          product_reference: item.product_reference,
+          location_code: inventory.location_code,
+          quantity_to_pick: item.quantity,
+          quantity_picked: 0,
+          status: 'pending',
+          order_id: item.order_id,
+          priority: item.priority || 1
+        });
+      }
+    }
+
+    // Insert picking tasks
+    if (pickingTasks.length > 0) {
+      const taskInsertSql = `
+        INSERT INTO picking_tasks (wave_number, product_reference, location_code, quantity_to_pick, quantity_picked, status, priority)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      for (const task of pickingTasks) {
+        await db.run(taskInsertSql, [
+          task.wave_number,
+          task.product_reference,
+          task.location_code,
+          task.quantity_to_pick,
+          task.quantity_picked,
+          task.status,
+          task.priority
+        ]);
+      }
+
+      // Update order status to 'assigned'
+      await db.run(`
+        UPDATE orders 
+        SET status = 'assigned', wave_number = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id IN (${orderPlaceholders})
+      `, [waveNumber, ...order_ids]);
+    }
+
+    // Get wave summary
+    const waveSummary = await db.get(`
+      SELECT 
+        wave_number,
+        COUNT(*) as total_tasks,
+        SUM(quantity_to_pick) as total_quantity,
+        COUNT(DISTINCT location_code) as location_count,
+        COUNT(DISTINCT product_reference) as product_count
+      FROM picking_tasks
+      WHERE wave_number = ?
+    `, [waveNumber]);
+
+    res.status(201).json({
+      success: true,
+      message: 'Wave created successfully',
+      data: {
+        wave_number: waveNumber,
+        orders_count: orders.length,
+        tasks_created: pickingTasks.length,
+        summary: waveSummary
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating wave:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to create wave',
+      details: error.message 
+    });
+  }
+});
+
+// POST /api/waves/auto-generate - Auto-generate waves from orders
+router.post('/auto-generate', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { 
+      max_orders_per_wave = 10,
+      max_picks_per_wave = 50,
+      priority_threshold = 1,
+      zone_grouping = true
+    } = req.body;
+
+    // Get pending orders
+    const pendingOrders = await db.all(`
+      SELECT o.*, COUNT(oi.id) as item_count
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE o.status = 'pending'
+      GROUP BY o.id
+      ORDER BY o.priority DESC, o.created_at ASC
+    `);
+
+    if (pendingOrders.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No pending orders available for wave generation',
+        data: { waves_created: 0 }
+      });
+    }
+
+    const generatedWaves = [];
+    let currentWave = [];
+    let currentWavePickCount = 0;
+
+    for (const order of pendingOrders) {
+      // Check if adding this order would exceed limits
+      if (currentWave.length >= max_orders_per_wave || 
+          (currentWavePickCount + order.item_count) > max_picks_per_wave) {
+        
+        // Create current wave if it has orders
+        if (currentWave.length > 0) {
+          const waveResult = await createWaveFromOrders(db, currentWave);
+          generatedWaves.push(waveResult);
+        }
+        
+        // Start new wave
+        currentWave = [order];
+        currentWavePickCount = order.item_count;
+      } else {
+        // Add to current wave
+        currentWave.push(order);
+        currentWavePickCount += order.item_count;
+      }
+    }
+
+    // Create final wave if there are remaining orders
+    if (currentWave.length > 0) {
+      const waveResult = await createWaveFromOrders(db, currentWave);
+      generatedWaves.push(waveResult);
+    }
+
+    res.json({
+      success: true,
+      message: `Auto-generated ${generatedWaves.length} waves`,
+      data: {
+        waves_created: generatedWaves.length,
+        total_orders_processed: pendingOrders.length,
+        waves: generatedWaves
+      }
+    });
+
+  } catch (error) {
+    console.error('Error auto-generating waves:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to auto-generate waves',
+      details: error.message 
+    });
+  }
+});
+
+// Helper function to create wave from orders
+async function createWaveFromOrders(db, orders) {
+  const waveNumber = `AUTO_WAVE_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  const orderIds = orders.map(o => o.id);
+  
+  // Get order items
+  const orderPlaceholders = orderIds.map(() => '?').join(',');
+  const orderItems = await db.all(`
+    SELECT oi.*, o.order_number, o.priority
+    FROM order_items oi
+    JOIN orders o ON oi.order_id = o.id
+    WHERE o.id IN (${orderPlaceholders})
+  `, orderIds);
+
+  // Create picking tasks
+  const pickingTasks = [];
+  for (const item of orderItems) {
+    const inventory = await db.get(`
+      SELECT location_code, quantity
+      FROM inventory
+      WHERE product_reference = ? AND quantity >= ?
+      ORDER BY quantity DESC
+      LIMIT 1
+    `, [item.product_reference, item.quantity]);
+
+    if (inventory) {
+      pickingTasks.push({
+        wave_number: waveNumber,
+        product_reference: item.product_reference,
+        location_code: inventory.location_code,
+        quantity_to_pick: item.quantity,
+        quantity_picked: 0,
+        status: 'pending',
+        priority: item.priority || 1
+      });
+    }
+  }
+
+  // Insert picking tasks
+  if (pickingTasks.length > 0) {
+    const taskInsertSql = `
+      INSERT INTO picking_tasks (wave_number, product_reference, location_code, quantity_to_pick, quantity_picked, status, priority)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    for (const task of pickingTasks) {
+      await db.run(taskInsertSql, [
+        task.wave_number,
+        task.product_reference,
+        task.location_code,
+        task.quantity_to_pick,
+        task.quantity_picked,
+        task.status,
+        task.priority
+      ]);
+    }
+
+    // Update order status
+    await db.run(`
+      UPDATE orders 
+      SET status = 'assigned', wave_number = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id IN (${orderPlaceholders})
+    `, [waveNumber, ...orderIds]);
+  }
+
+  return {
+    wave_number: waveNumber,
+    orders_count: orders.length,
+    tasks_count: pickingTasks.length,
+    total_quantity: pickingTasks.reduce((sum, task) => sum + task.quantity_to_pick, 0)
+  };
+}
+
+// PUT /api/waves/:id/assign - Assign operator to wave
+router.put('/:waveNumber/assign', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { waveNumber } = req.params;
+    const { operator_id } = req.body;
+
+    if (!operator_id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Operator ID is required' 
+      });
+    }
+
+    // Check if wave exists
+    const waveExists = await db.get('SELECT COUNT(*) as count FROM picking_tasks WHERE wave_number = ?', [waveNumber]);
+    if (waveExists.count === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Wave not found' 
+      });
+    }
+
+    // Check if operator exists
+    const operator = await db.get('SELECT id, username FROM users WHERE id = ? AND role = ?', [operator_id, 'operator']);
+    if (!operator) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Operator not found' 
+      });
+    }
+
+    // Assign operator to all tasks in the wave
+    await db.run(`
+      UPDATE picking_tasks 
+      SET operator = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE wave_number = ?
+    `, [operator_id, waveNumber]);
+
+    res.json({
+      success: true,
+      message: `Wave ${waveNumber} assigned to operator ${operator.username}`,
+      data: {
+        wave_number: waveNumber,
+        operator: {
+          id: operator.id,
+          username: operator.username
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error assigning operator to wave:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to assign operator',
+      details: error.message 
+    });
+  }
+});
+
+// GET /api/waves/:waveNumber/progress - Get wave progress
+router.get('/:waveNumber/progress', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { waveNumber } = req.params;
+
+    // Get wave progress
+    const progress = await db.get(`
+      SELECT 
+        wave_number,
+        COUNT(*) as total_tasks,
+        SUM(quantity_to_pick) as total_quantity,
+        SUM(quantity_picked) as picked_quantity,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_tasks,
+        COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_tasks,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_tasks,
+        MIN(created_at) as started_at,
+        MAX(updated_at) as last_updated,
+        operator
+      FROM picking_tasks
+      WHERE wave_number = ?
+    `, [waveNumber]);
+
+    if (!progress || progress.total_tasks === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Wave not found' 
+      });
+    }
+
+    // Calculate completion percentage
+    const completionPercentage = progress.total_quantity > 0 ? 
+      Math.round((progress.picked_quantity / progress.total_quantity) * 100) : 0;
+
+    // Get operator info if assigned
+    let operatorInfo = null;
+    if (progress.operator) {
+      operatorInfo = await db.get('SELECT id, username FROM users WHERE id = ?', [progress.operator]);
+    }
+
+    // Get task breakdown by location
+    const locationBreakdown = await db.all(`
+      SELECT 
+        location_code,
+        COUNT(*) as task_count,
+        SUM(quantity_to_pick) as total_quantity,
+        SUM(quantity_picked) as picked_quantity,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_tasks
+      FROM picking_tasks
+      WHERE wave_number = ?
+      GROUP BY location_code
+      ORDER BY location_code
+    `, [waveNumber]);
+
+    res.json({
+      success: true,
+      data: {
+        wave_number: waveNumber,
+        progress: {
+          total_tasks: progress.total_tasks,
+          completed_tasks: progress.completed_tasks,
+          in_progress_tasks: progress.in_progress_tasks,
+          pending_tasks: progress.pending_tasks,
+          completion_percentage: completionPercentage,
+          total_quantity: progress.total_quantity,
+          picked_quantity: progress.picked_quantity,
+          started_at: progress.started_at,
+          last_updated: progress.last_updated
+        },
+        operator: operatorInfo,
+        location_breakdown: locationBreakdown
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting wave progress:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get wave progress',
+      details: error.message 
     });
   }
 });
