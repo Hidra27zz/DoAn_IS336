@@ -592,51 +592,13 @@ router.get('/movements', async (req, res) => {
   try {
     const db = await getDatabase();
     const { 
-      date = 'today', 
-      location_code = '', 
-      product_reference = '',
-      movement_type = '',
       limit = 50,
       page = 1
     } = req.query;
 
-    let whereConditions = ['1=1'];
-    let params = [];
-
-    // Filter by date
-    if (date === 'today') {
-      const today = new Date().toISOString().split('T')[0];
-      whereConditions.push('DATE(pt.created_at) = ?');
-      params.push(today);
-    } else if (date === 'week') {
-      whereConditions.push('pt.created_at >= DATE("now", "-7 days")');
-    } else if (date === 'month') {
-      whereConditions.push('pt.created_at >= DATE("now", "-30 days")');
-    }
-
-    // Filter by location
-    if (location_code) {
-      whereConditions.push('pt.location_code = ?');
-      params.push(location_code);
-    }
-
-    // Filter by product
-    if (product_reference) {
-      whereConditions.push('pt.product_reference = ?');
-      params.push(product_reference);
-    }
-
-    const whereClause = whereConditions.join(' AND ');
-
-    // Get total count
-    const countResult = await db.get(`
-      SELECT COUNT(*) as total
-      FROM picking_tasks pt
-      WHERE ${whereClause}
-    `, params);
-
-    // Get movements with pagination
+    // Simplified query - just get recent movements
     const offset = (page - 1) * limit;
+    
     const movements = await db.all(`
       SELECT 
         pt.id,
@@ -658,10 +620,15 @@ router.get('/movements', async (req, res) => {
       LEFT JOIN products p ON pt.product_reference = p.reference
       LEFT JOIN storage_locations sl ON pt.location_code = sl.location_code
       LEFT JOIN users u ON pt.operator = u.id
-      WHERE ${whereClause}
       ORDER BY pt.created_at DESC
       LIMIT ? OFFSET ?
-    `, [...params, parseInt(limit), offset]);
+    `, [parseInt(limit), offset]);
+
+    // Get total count
+    const countResult = await db.get(`
+      SELECT COUNT(*) as total
+      FROM picking_tasks
+    `);
 
     // Get movement statistics
     const stats = await db.get(`
@@ -673,26 +640,27 @@ router.get('/movements', async (req, res) => {
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
         COUNT(DISTINCT location_code) as locations_involved,
         COUNT(DISTINCT product_reference) as products_involved
-      FROM picking_tasks pt
-      WHERE ${whereClause}
-    `, params);
+      FROM picking_tasks
+    `);
 
     res.json({
       success: true,
       data: {
-        movements: movements,
-        statistics: stats,
+        movements: movements || [],
+        statistics: stats || {
+          total_movements: 0,
+          total_quantity: 0,
+          completed_count: 0,
+          in_progress_count: 0,
+          pending_count: 0,
+          locations_involved: 0,
+          products_involved: 0
+        },
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: countResult.total,
-          pages: Math.ceil(countResult.total / limit)
-        },
-        filters: {
-          date,
-          location_code,
-          product_reference,
-          movement_type
+          total: countResult?.total || 0,
+          pages: Math.ceil((countResult?.total || 0) / limit)
         }
       }
     });

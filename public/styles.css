@@ -2880,8 +2880,6 @@ tbody tr:hover {
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-  z-index: 1;
 }
 
 .wave-planning-panel .panel-header {
@@ -2889,15 +2887,12 @@ tbody tr:hover {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  background: transparent;
-  padding: 0;
 }
 
 .wave-planning-panel h3 {
   color: var(--primary-color);
   font-size: 1.2em;
   font-weight: 600;
-  margin: 0;
 }
 
 /* Enhanced Filters */

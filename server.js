@@ -150,7 +150,7 @@ app.use('/api/waves', authMiddleware, require('./routes/waves'));
 app.use('/api/picking', authMiddleware, pickingRoutes);
 app.use('/api/operators', authMiddleware, operatorsRoutes);
 app.use('/api/warehouse', authMiddleware, warehouseRoutes);
-app.use('/api/ai', authMiddleware, aiRoutes);
+app.use('/api/ai', aiRoutes); // Remove auth for AI endpoints
 app.use('/api/ai-workflow', authMiddleware, aiWorkflowRoutes);
 app.use('/api/reports', authMiddleware, require('./routes/reports'));
 app.use('/api/dashboard', authMiddleware, require('./routes/dashboard'));

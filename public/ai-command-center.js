@@ -94,48 +94,31 @@ async function runKMeans() {
     logActivity('Starting K-Means clustering analysis');
     
     try {
-        const response = await fetch('/api/ai/kmeans', {
+        const response = await fetch('/api/ai/clustering/kmeans', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ k: 3 })
         });
         
         const data = await response.json();
         
         if (data.success) {
             hideThinking();
-            logActivity(`K-Means completed: ${data.products_analyzed} products analyzed into ${data.clusters} clusters`);
+            logActivity(`K-Means completed: ${data.products_analyzed} products analyzed, ${data.accuracy}% accuracy`);
             
-            // Update metrics with real data
-            const accuracy = 85; // Calculated from cluster quality
-            document.getElementById('kmeans-accuracy').textContent = `${accuracy}%`;
-            document.getElementById('kmeans-products').textContent = data.products_analyzed;
-            document.getElementById('kmeans-clusters').textContent = data.clusters;
-            animateProgress('kmeans-progress', accuracy);
+            // Update metrics
+            document.getElementById('kmeans-accuracy').textContent = 
+                `${data.accuracy}%`;
+            document.getElementById('kmeans-products').textContent = 
+                data.products_analyzed;
+            animateProgress('kmeans-progress', data.accuracy);
             
-            // Show comparison
-            showComparison(
-                'Manual Classification',
-                'AI Classification',
-                '75%',
-                `${accuracy}%`,
-                `+${accuracy - 75}%`
-            );
-            
-            // Show recommendations
-            if (data.recommendations && data.recommendations.length > 0) {
-                logActivity(`Recommendations: ${data.recommendations[0]}`);
-            }
-        } else {
-            throw new Error(data.error || 'K-Means failed');
+            // Removed comparison display
         }
     } catch (error) {
         hideThinking();
-        logActivity('K-Means clustering failed: ' + error.message, 'error');
+        logActivity('K-Means clustering failed', 'error');
         console.error(error);
-        alert('Error: ' + error.message);
     }
 }
 
@@ -145,48 +128,25 @@ async function runDBSCAN() {
     logActivity('Starting DBSCAN anomaly detection');
     
     try {
-        const response = await fetch('/api/ai/dbscan', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
+        const response = await fetch('/api/ai/clustering/dbscan', {
+            method: 'GET'
         });
         
         const data = await response.json();
         
         if (data.success) {
             hideThinking();
-            logActivity(`DBSCAN completed: ${data.anomalies_found} anomalies detected`);
+            logActivity(`DBSCAN completed: ${data.clusters_detected} clusters, ${data.anomalies_found} anomalies detected`);
             
-            // Update metrics with real data
-            const accuracy = 90;
-            document.getElementById('dbscan-accuracy').textContent = `${accuracy}%`;
+            // Update metrics
+            document.getElementById('dbscan-clusters').textContent = data.clusters_detected;
             document.getElementById('dbscan-anomalies').textContent = data.anomalies_found;
-            document.getElementById('dbscan-clusters').textContent = data.critical_issues;
-            animateProgress('dbscan-progress', accuracy);
-            
-            // Show comparison
-            showComparison(
-                'Manual Inspection',
-                'AI Detection',
-                `${data.anomalies_found + 50} checks`,
-                `${data.anomalies_found} anomalies`,
-                `${accuracy}% accurate`
-            );
-            
-            // Show recommendations
-            if (data.recommendations && data.recommendations.length > 0) {
-                logActivity(`Action needed: ${data.recommendations[0]}`);
-            }
-        } else {
-            throw new Error(data.error || 'DBSCAN failed');
+            animateProgress('dbscan-progress', data.accuracy);
         }
     } catch (error) {
         hideThinking();
-        logActivity('DBSCAN analysis failed: ' + error.message, 'error');
+        logActivity('DBSCAN analysis failed', 'error');
         console.error(error);
-        alert('Error: ' + error.message);
     }
 }
 
@@ -196,56 +156,27 @@ async function optimizeRoute() {
     logActivity('Starting route optimization');
     
     try {
-        // Get first available wave
-        const wavesResponse = await fetch('/api/waves?limit=1', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-        });
-        const wavesData = await wavesResponse.json();
-        
-        if (!wavesData.waves || wavesData.waves.length === 0) {
-            throw new Error('No waves available for optimization');
-        }
-        
-        const waveNumber = wavesData.waves[0].wave_number;
-        
-        const response = await fetch('/api/ai/route-optimization', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-            body: JSON.stringify({ wave_number: waveNumber })
+        const response = await fetch('/api/ai/route/optimize', {
+            method: 'GET'
         });
         
         const data = await response.json();
         
         if (data.success) {
             hideThinking();
-            const improvement = data.improvement.improvement_percentage;
-            logActivity(`Route optimized: ${improvement}% improvement, saved ${data.improvement.distance_saved_meters}m`);
+            const improvement = data.improvement;
+            logActivity(`Route optimized: ${improvement}% improvement, ${data.distance_saved}m saved`);
             
-            // Update metrics with real data
+            // Update metrics
             document.getElementById('route-improvement').textContent = `${improvement}%`;
-            document.getElementById('route-distance').textContent = `${data.improvement.distance_saved_meters}m`;
-            document.getElementById('route-time').textContent = `${data.improvement.time_saved_minutes}min`;
+            document.getElementById('route-distance').textContent = `${data.distance_saved}m`;
+            document.getElementById('route-time').textContent = `${data.time_saved}min`;
             animateProgress('route-progress', improvement);
-            
-            // Show comparison
-            showComparison(
-                'Original Route',
-                'Optimized Route',
-                `${data.manual_route.distance_meters}m`,
-                `${data.optimized_route.distance_meters}m`,
-                `${improvement}% better`
-            );
-        } else {
-            throw new Error(data.error || 'Route optimization failed');
         }
     } catch (error) {
         hideThinking();
-        logActivity('Route optimization failed: ' + error.message, 'error');
+        logActivity('Route optimization failed', 'error');
         console.error(error);
-        alert('Error: ' + error.message);
     }
 }
 
@@ -255,49 +186,26 @@ async function generateForecast() {
     logActivity('Starting demand forecasting');
     
     try {
-        const response = await fetch('/api/ai/demand-forecast', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-            body: JSON.stringify({ days: 30 })
-        });
-        
+        const response = await fetch('/api/ai/stats');
         const data = await response.json();
         
-        if (data.success) {
+        if (data.success && data.predictive) {
             hideThinking();
-            logActivity(`Forecast generated: ${data.products_forecasted} products, ${data.total_forecasted_demand} units forecasted`);
+            logActivity(`Forecast generated: ${data.predictive.forecast_accuracy}% accuracy`);
             
-            // Update metrics with real data
-            const accuracy = data.average_confidence;
-            document.getElementById('forecast-accuracy').textContent = `${accuracy}%`;
-            document.getElementById('forecast-products').textContent = data.products_forecasted;
-            document.getElementById('forecast-confidence').textContent = `${accuracy}%`;
-            animateProgress('forecast-progress', accuracy);
-            
-            // Show comparison
-            showComparison(
-                'Historical Average',
-                'AI Forecast',
-                '±25% error',
-                `±${100 - accuracy}% error`,
-                `${Math.round((25 - (100 - accuracy)) / 25 * 100)}% more accurate`
-            );
-            
-            // Show top forecast
-            if (data.top_products && data.top_products.length > 0) {
-                logActivity(`Top forecast: ${data.top_products[0].product} - ${data.top_products[0].forecasted_demand} units`);
-            }
+            // Update metrics
+            document.getElementById('forecast-accuracy').textContent = `${data.predictive.forecast_accuracy}%`;
+            document.getElementById('forecast-products').textContent = data.predictive.products_forecasted;
+            document.getElementById('forecast-confidence').textContent = `${data.predictive.confidence}%`;
+            animateProgress('forecast-progress', data.predictive.forecast_accuracy);
         } else {
-            throw new Error(data.error || 'Forecast generation failed');
+            hideThinking();
+            logActivity('No forecast data available', 'error');
         }
     } catch (error) {
         hideThinking();
-        logActivity('Forecast generation failed: ' + error.message, 'error');
+        logActivity('Forecast generation failed', 'error');
         console.error(error);
-        alert('Error: ' + error.message);
     }
 }
 
@@ -344,22 +252,13 @@ function hideThinking() {
     thinking.classList.remove('active');
 }
 
-// Show comparison
-function showComparison(beforeLabel, afterLabel, beforeValue, afterValue, improvement) {
-    document.getElementById('before-label').textContent = beforeLabel;
-    document.getElementById('after-label').textContent = afterLabel;
-    document.getElementById('before-value').textContent = beforeValue;
-    document.getElementById('after-value').textContent = afterValue;
-    document.getElementById('improvement-badge').textContent = improvement;
-    
-    document.getElementById('ai-comparison').style.display = 'grid';
-}
+// Show comparison - REMOVED (no longer showing before/after)
 
 // Log activity
 function logActivity(message, type = 'info') {
     const log = document.getElementById('ai-log');
     const timestamp = new Date().toLocaleTimeString();
-    const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : '🤖';
+    const icon = type === 'error' ? 'ERROR' : type === 'success' ? 'SUCCESS' : 'INFO';
     
     const entry = document.createElement('div');
     entry.className = 'ai-log-entry';

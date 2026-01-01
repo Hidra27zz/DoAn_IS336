@@ -18,71 +18,63 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    // Simple demo authentication (replace with proper auth in production)
-    if ((username === 'admin' && password === 'admin123') || 
-        (username === 'test' && password === 'test123')) {
-      
-      // Generate JWT token
-      const token = jwt.sign(
-        { 
-          username: username,
-          role: username === 'admin' ? 'admin' : 'operator',
-          id: username === 'admin' ? 'admin-001' : 'test-001'
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      const user = {
-        id: username === 'admin' ? 'admin-001' : 'test-001',
-        username: username,
-        role: username === 'admin' ? 'admin' : 'operator',
-        email: `${username}@warehouse.com`
-      };
-
-      res.json({
-        success: true,
-        token: token,
-        user: user,
-        data_source: 'SQL Database'
-      });
-    } else {
-      // Try to find user in database
-      const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
-      
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      // In a real system, you would verify the hashed password
-      // For now, we'll use simple comparison
-      if (user.password_hash !== password) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      // Generate JWT token
-      const token = jwt.sign(
-        { 
-          username: user.username,
-          role: user.role,
-          id: user.id
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      res.json({
-        success: true,
-        token: token,
-        user: {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          email: user.email
-        },
-        data_source: 'SQL Database'
-      });
+    // Try to find user in database first
+    const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Check password - support both bcrypt hash and demo plaintext
+    let isValidPassword = false;
+    
+    // If password_hash starts with $2a$ or $2b$, it's a bcrypt hash
+    if (user.password_hash && (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$'))) {
+      isValidPassword = await bcrypt.compare(password, user.password_hash);
+    } else {
+      // Demo mode: check against common demo passwords or plaintext hash
+      if (user.username === 'admin' && password === 'admin123') {
+        isValidPassword = true;
+      } else if (user.username === 'manager' && password === 'manager123') {
+        isValidPassword = true;
+      } else if (user.username === 'operator' && password === 'operator123') {
+        isValidPassword = true;
+      } else if (user.username === 'operator1' && password === 'operator123') {
+        isValidPassword = true;
+      } else if (user.username === 'operator2' && password === 'operator123') {
+        isValidPassword = true;
+      } else if (user.password_hash === password) {
+        // Direct comparison for demo
+        isValidPassword = true;
+      }
+    }
+
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        username: user.username,
+        role: user.role,
+        id: user.id
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      token: token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        email: user.email
+      },
+      data_source: 'SQL Database'
+    });
 
   } catch (error) {
     console.error('Login error:', error);

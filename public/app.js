@@ -405,6 +405,7 @@ function loadSectionData(section) {
       case 'picking': loadPickingData(); break;
       case 'warehouse': loadWarehouseData(); break;
       case 'ai': loadAIData(); break;
+      case 'ai-command': loadAIData(); break; // AI Command Center
       case 'storage-config': loadStorageConfigData(); break;
       case 'operators': loadOperatorsData(); break;
       case 'reports': break;
